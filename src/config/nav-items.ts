@@ -7,6 +7,7 @@ import {
   Settings,
   CreditCard,
   UserCheck,
+  GraduationCap,
 } from "lucide-react";
 
 export const navItems = {
@@ -19,10 +20,10 @@ export const navItems = {
   SCHOOL_ADMIN: [
     { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { title: "Teachers", href: "/admin/teachers", icon: UserCheck },
-    { title: "Students", href: "/admin/students", icon: Users },
+    { title: "Students", href: "/admin/students", icon: GraduationCap },
     { title: "Academics", href: "/admin/academics", icon: BookOpen },
-    { title: "Class Routine", href: "/admin/routine", icon: CalendarDays },
-    { title: "Fees & Finance", href: "/admin/fees", icon: CreditCard },
+    { title: "Routine", href: "/admin/routine", icon: CalendarDays },
+    { title: "Fees", href: "/admin/fees", icon: CreditCard },
     { title: "Site Config", href: "/admin/site-config", icon: Settings },
   ],
   TEACHER: [
@@ -32,6 +33,7 @@ export const navItems = {
   ],
   STUDENT: [
     { title: "Dashboard", href: "/student", icon: LayoutDashboard },
-    { title: "My Routine", href: "/student/routine", icon: CalendarDays },
+    { title: "Routine", href: "/student/routine", icon: CalendarDays },
+    { title: "Result", href: "/student/result", icon: BookOpen },
   ],
 };

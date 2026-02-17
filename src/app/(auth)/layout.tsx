@@ -5,7 +5,7 @@ export default function AuthLayout({
 }) {
     return (
         <div className="flex min-h-screen w-full items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-950">
-            <div className="w-full max-w-md space-y-8">
+            <div className="w-full  space-y-8">
                 <div className="flex flex-col items-center text-center">
                     <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
                         <svg
