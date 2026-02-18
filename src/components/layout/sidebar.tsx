@@ -20,8 +20,9 @@ export default function Sidebar() {
         );
     }
 
-    const userRole = user?.role?.toUpperCase() as keyof typeof navItems;
-    const items = navItems[userRole] || [];
+    // Role verification safely
+    const userRole = user?.role ? (user.role.toUpperCase() as keyof typeof navItems) : null;
+    const items = userRole ? navItems[userRole] : [];
 
     return (
         <div className="hidden h-screen border-r bg-muted/40 md:block sticky top-0">
@@ -34,12 +35,23 @@ export default function Sidebar() {
                         <span>Unifynt ERP</span>
                     </Link>
                 </div>
+
                 <ScrollArea className="flex-1 px-3 py-2">
                     <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-1">
                         {items.length > 0 ? (
                             items.map((item, index) => {
                                 const Icon = item.icon;
-                                const isActive = pathname === item.href;
+
+                                // 🔥 PROFESSIONAL ACTIVE ROUTE LOGIC
+                                // 1. Calculate how many segments the href has (e.g., "/admin" = 1, "/admin/students" = 2)
+                                const hrefSegments = item.href.split('/').filter(Boolean).length;
+
+                                // 2. Decide matching strategy:
+                                // - If segments <= 1 (e.g. Dashboard), require EXACT match.
+                                // - If segments > 1 (e.g. Modules), allow PARTIAL match (startsWith).
+                                const isActive = hrefSegments > 1
+                                    ? pathname === item.href || pathname.startsWith(`${item.href}/`)
+                                    : pathname === item.href;
 
                                 return (
                                     <Link
@@ -67,6 +79,7 @@ export default function Sidebar() {
                         )}
                     </nav>
                 </ScrollArea>
+
                 <div className="mt-auto p-4">
                     <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
                         <h4 className="mb-1 text-sm font-semibold">

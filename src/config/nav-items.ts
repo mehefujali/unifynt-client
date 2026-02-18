@@ -8,6 +8,7 @@ import {
   CreditCard,
   UserCheck,
   GraduationCap,
+  FileText, // Admission icon added
 } from "lucide-react";
 
 export const navItems = {
@@ -19,6 +20,7 @@ export const navItems = {
   ],
   SCHOOL_ADMIN: [
     { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { title: "Admission", href: "/admin/admission/settings", icon: FileText }, // 🔥 Added Here
     { title: "Teachers", href: "/admin/teachers", icon: UserCheck },
     { title: "Students", href: "/admin/students", icon: GraduationCap },
     { title: "Academics", href: "/admin/academics", icon: BookOpen },
