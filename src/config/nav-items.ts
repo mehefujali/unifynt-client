@@ -8,25 +8,34 @@ import {
   CreditCard,
   UserCheck,
   GraduationCap,
-  FileText, // Admission icon added
+  FileText,
+  Globe,
+  Gem,
 } from "lucide-react";
 
 export const navItems = {
   SUPER_ADMIN: [
     { title: "Dashboard", href: "/super-admin", icon: LayoutDashboard },
+    {
+      title: "Subscription Plans",
+      href: "/super-admin/plans",
+      icon: Gem,
+      color: "text-blue-500",
+    },
     { title: "Schools", href: "/super-admin/schools", icon: School },
     { title: "Users", href: "/super-admin/users", icon: Users },
-    { title: "Settings", href: "/super-admin/settings", icon: Settings },
+    { title: "Global Settings", href: "/super-admin/settings", icon: Settings },
   ],
   SCHOOL_ADMIN: [
     { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { title: "Admission", href: "/admin/admission/settings", icon: FileText }, // 🔥 Added Here
+    { title: "Admission", href: "/admin/admission/settings", icon: FileText },
     { title: "Teachers", href: "/admin/teachers", icon: UserCheck },
     { title: "Students", href: "/admin/students", icon: GraduationCap },
     { title: "Academics", href: "/admin/academics", icon: BookOpen },
     { title: "Routine", href: "/admin/routine", icon: CalendarDays },
     { title: "Fees", href: "/admin/fees", icon: CreditCard },
-    { title: "Site Config", href: "/admin/site-config", icon: Settings },
+
+    { title: "Website Settings", href: "/admin/settings", icon: Globe },
   ],
   TEACHER: [
     { title: "Dashboard", href: "/teacher", icon: LayoutDashboard },
