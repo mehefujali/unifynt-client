@@ -4,7 +4,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, ExternalLink, Building2 } from "lucide-react";
+import { Eye, ExternalLink } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -19,6 +19,7 @@ export type SchoolColumn = {
     };
     isActive: boolean;
     studentLimit: number;
+    createdAt: string;
     _count?: {
         students: number;
         teachers: number;
@@ -32,10 +33,10 @@ export const columns: ColumnDef<SchoolColumn>[] = [
         cell: ({ row }) => {
             const school = row.original;
             return (
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-10 w-10 border border-border/50 shadow-sm">
-                        <AvatarImage src={school.logo} alt={school.name} />
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                <div className="flex items-center gap-4 py-1">
+                    <Avatar className="h-10 w-10 border border-border/50 shadow-sm bg-background">
+                        <AvatarImage src={school.logo} alt={school.name} className="object-contain p-1" />
+                        <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs">
                             {school.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
@@ -57,7 +58,7 @@ export const columns: ColumnDef<SchoolColumn>[] = [
                     href={`https://${subdomain}.unifynt.com`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 bg-muted/30 w-fit px-2.5 py-1 rounded-md border border-border/50"
+                    className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 bg-muted/30 w-fit px-2.5 py-1.5 rounded-md border border-border/50"
                 >
                     {subdomain}
                     <ExternalLink className="h-3 w-3" />
@@ -69,8 +70,8 @@ export const columns: ColumnDef<SchoolColumn>[] = [
         id: "plan",
         header: "Active Plan",
         cell: ({ row }) => {
-            const planName = row.original.plan?.name || "Custom Plan";
-            const isPremium = !planName.toLowerCase().includes("free") && !planName.toLowerCase().includes("trial");
+            const planName = row.original.plan?.name || "Free Tier";
+            const isPremium = !planName.toLowerCase().includes("free");
 
             return (
                 <Badge variant={isPremium ? "default" : "secondary"} className={`font-semibold shadow-sm ${isPremium ? 'bg-indigo-500 hover:bg-indigo-600' : ''}`}>
@@ -81,7 +82,7 @@ export const columns: ColumnDef<SchoolColumn>[] = [
     },
     {
         id: "usage",
-        header: "Capacity / Usage",
+        header: "Capacity",
         cell: ({ row }) => {
             const current = row.original._count?.students || 0;
             const limit = row.original.studentLimit || 1;
@@ -89,12 +90,12 @@ export const columns: ColumnDef<SchoolColumn>[] = [
             const isNearLimit = percentage >= 90;
 
             return (
-                <div className="flex flex-col gap-1.5 w-[120px]">
+                <div className="flex flex-col gap-1.5 w-[110px]">
                     <div className="flex items-center justify-between text-xs font-semibold">
                         <span className={isNearLimit ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}>
                             {current} Users
                         </span>
-                        <span className="text-muted-foreground">{limit} Limit</span>
+                        <span className="text-muted-foreground">{limit}</span>
                     </div>
                     <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                         <div
@@ -137,7 +138,7 @@ export const columns: ColumnDef<SchoolColumn>[] = [
                         variant="ghost"
                         size="sm"
                         onClick={() => router.push(`${pathname}?schoolId=${school.id}`)}
-                        className="hover:bg-primary/10 hover:text-primary font-semibold transition-all"
+                        className="hover:bg-primary/10 hover:text-primary font-bold transition-all shadow-sm border border-transparent hover:border-primary/20"
                     >
                         <Eye className="mr-2 h-4 w-4" />
                         Manage
