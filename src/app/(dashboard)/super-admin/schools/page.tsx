@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Plus, Building2, Search } from "lucide-react";
+import { Loader2, Plus, Building2, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SchoolService } from "@/services/school.service";
-
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +12,6 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { DataTable } from "./data-table";
 import { SchoolDetailsModal } from "./school-details-modal";
 import { columns } from "./columns";
-
-
 
 export default function SchoolsPage() {
     const router = useRouter();
@@ -51,50 +48,51 @@ export default function SchoolsPage() {
     }
 
     return (
-        <div className="flex flex-col gap-8 p-8">
-            <div className="flex items-center justify-between bg-card p-8 rounded-xl border shadow-sm">
-                <div className="flex items-center gap-4">
-                    <div className="p-4 bg-primary/10 rounded-xl text-primary">
-                        <Building2 className="h-8 w-8" />
-                    </div>
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                            Client Schools
-                        </h1>
-                        <p className="text-base text-muted-foreground">
-                            Monitor, manage, and renew subscriptions for all registered schools.
-                        </p>
-                    </div>
+        <div className="max-w-[1400px] mx-auto space-y-8 p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Registered Institutions</h1>
+                    <p className="text-sm text-muted-foreground mt-1.5 font-medium">
+                        Manage workspaces, monitor limits, and control billing for all client schools.
+                    </p>
                 </div>
-                <Button size="lg" className="px-6 shadow-md">
-                    <Plus className="mr-2 h-5 w-5" /> Add New School
+                <Button size="lg" className="h-11 px-6 shadow-md font-bold">
+                    <Plus className="mr-2 h-5 w-5" /> Provision Workspace
                 </Button>
             </div>
 
-            <div className="bg-card rounded-xl border shadow-sm p-6 space-y-4">
-                <div className="flex items-center max-w-sm px-3 border rounded-md bg-background focus-within:ring-2 focus-within:ring-ring">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by name, email, subdomain..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
+            <div className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-border/50 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="relative w-full max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by school name, domain, or email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 h-11 bg-background border-border/60 shadow-sm"
+                        />
+                    </div>
+                    <Button variant="outline" className="h-11 px-4 border-border/60 shadow-sm shrink-0">
+                        <SlidersHorizontal className="mr-2 h-4 w-4 text-muted-foreground" />
+                        Filters
+                    </Button>
                 </div>
 
-                {isLoading ? (
-                    <div className="flex h-[400px] items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <DataTable
-                        columns={columns}
-                        data={response?.data || []}
-                        pageCount={response?.meta?.totalPage || -1}
-                        pagination={pagination}
-                        onPaginationChange={setPagination}
-                    />
-                )}
+                <div className="p-0">
+                    {isLoading ? (
+                        <div className="flex h-[500px] items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={response?.data || []}
+                            pageCount={response?.meta?.totalPage || -1}
+                            pagination={pagination}
+                            onPaginationChange={setPagination}
+                        />
+                    )}
+                </div>
             </div>
 
             <SchoolDetailsModal
