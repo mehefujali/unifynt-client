@@ -3,14 +3,10 @@
 import * as React from "react";
 import {
     ColumnDef,
-    ColumnFiltersState,
-    SortingState,
     flexRender,
     getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
     useReactTable,
+    PaginationState
 } from "@tanstack/react-table";
 
 import {
@@ -28,52 +24,55 @@ import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, ChevronsLeft, Che
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
+    pageCount: number;
+    pagination: PaginationState;
+    setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+    searchTerm: string;
+    setSearchTerm: (value: string) => void;
+    totalRecords: number;
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    pageCount,
+    pagination,
+    setPagination,
+    searchTerm,
+    setSearchTerm,
+    totalRecords
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-    const [globalFilter, setGlobalFilter] = React.useState("");
 
     const table = useReactTable({
         data,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
-        onColumnFiltersChange: setColumnFilters,
-        getFilteredRowModel: getFilteredRowModel(),
-        onGlobalFilterChange: setGlobalFilter,
+        pageCount,
         state: {
-            sorting,
-            columnFilters,
-            globalFilter,
+            pagination,
         },
+        onPaginationChange: setPagination,
+        getCoreRowModel: getCoreRowModel(),
+        manualPagination: true,
+        manualFiltering: true,
     });
 
     return (
         <div className="space-y-4">
-            {/* Toolbar (Search & Filters) */}
             <div className="flex items-center justify-between">
-                <div className="relative w-full max-w-sm">
+                <div className="relative w-full max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search any details..."
-                        value={globalFilter ?? ""}
-                        onChange={(event) => setGlobalFilter(event.target.value)}
+                        placeholder="Search by ID, name, or roll..."
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
                         className="pl-9 h-11 bg-muted/20 border-border/80 shadow-sm transition-colors focus-visible:bg-background"
                     />
                 </div>
                 <Button variant="outline" className="h-11 shadow-sm font-semibold text-muted-foreground">
-                    <SlidersHorizontal className="mr-2 h-4 w-4" /> View Options
+                    <SlidersHorizontal className="mr-2 h-4 w-4" /> Filter Records
                 </Button>
             </div>
 
-            {/* Table Core */}
             <div className="rounded-xl border shadow-sm overflow-hidden bg-background">
                 <Table>
                     <TableHeader className="bg-muted/30">
@@ -114,8 +113,8 @@ export function DataTable<TData, TValue>({
                                 <TableCell colSpan={columns.length} className="h-40 text-center">
                                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                                         <Search className="h-8 w-8 mb-2 opacity-20" />
-                                        <p className="font-semibold">No teachers found.</p>
-                                        <p className="text-sm">Try adjusting your search criteria.</p>
+                                        <p className="font-semibold">No students found.</p>
+                                        <p className="text-sm">Try adjusting your search query.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -124,11 +123,9 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
 
-            {/* Advanced Pagination */}
             <div className="flex items-center justify-between px-2 py-4">
                 <div className="flex-1 text-sm text-muted-foreground font-medium">
-                    Showing <span className="text-foreground">{table.getRowModel().rows.length}</span> of{" "}
-                    <span className="text-foreground">{table.getFilteredRowModel().rows.length}</span> entries
+                    Showing <span className="text-foreground">{data.length}</span> records on this page out of <span className="text-foreground">{totalRecords}</span> total entries
                 </div>
                 <div className="flex items-center space-x-6 lg:space-x-8">
                     <div className="flex items-center space-x-2">
@@ -141,7 +138,6 @@ export function DataTable<TData, TValue>({
                             onClick={() => table.setPageIndex(0)}
                             disabled={!table.getCanPreviousPage()}
                         >
-                            <span className="sr-only">Go to first page</span>
                             <ChevronsLeft className="h-4 w-4" />
                         </Button>
                         <Button
@@ -150,7 +146,6 @@ export function DataTable<TData, TValue>({
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
-                            <span className="sr-only">Go to previous page</span>
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button
@@ -159,7 +154,6 @@ export function DataTable<TData, TValue>({
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >
-                            <span className="sr-only">Go to next page</span>
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                         <Button
@@ -168,7 +162,6 @@ export function DataTable<TData, TValue>({
                             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                             disabled={!table.getCanNextPage()}
                         >
-                            <span className="sr-only">Go to last page</span>
                             <ChevronsRight className="h-4 w-4" />
                         </Button>
                     </div>
