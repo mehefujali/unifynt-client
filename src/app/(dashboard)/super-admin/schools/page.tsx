@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Plus, Building2, Search, SlidersHorizontal } from "lucide-react";
+import { Loader2, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SchoolService } from "@/services/school.service";
 
@@ -13,7 +13,8 @@ import { DataTable } from "./data-table";
 import { SchoolDetailsModal } from "./school-details-modal";
 import { columns } from "./columns";
 
-export default function SchoolsPage() {
+// 1. Separate the main logic into an inner component
+function SchoolsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const schoolId = searchParams.get("schoolId");
@@ -48,10 +49,10 @@ export default function SchoolsPage() {
     }
 
     return (
-        <div className="max-w-[1400px] mx-auto space-y-8 p-8">
+        <div className="max-w-[1400px] mx-auto space-y-8 p-8 animate-in fade-in duration-500">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">Registered Institutions</h1>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Registered Institutions</h1>
                     <p className="text-sm text-muted-foreground mt-1.5 font-medium">
                         Manage workspaces, monitor limits, and control billing for all client schools.
                     </p>
@@ -81,7 +82,7 @@ export default function SchoolsPage() {
                 <div className="p-0">
                     {isLoading ? (
                         <div className="flex h-[500px] items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
                         </div>
                     ) : (
                         <DataTable
@@ -100,5 +101,18 @@ export default function SchoolsPage() {
                 onClose={handleCloseModal}
             />
         </div>
+    );
+}
+
+// 2. Wrap the inner component with React Suspense in the main default export
+export default function SchoolsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex h-[80vh] items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        }>
+            <SchoolsContent />
+        </Suspense>
     );
 }
