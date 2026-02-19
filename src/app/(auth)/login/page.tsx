@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -55,7 +56,10 @@ export default function LoginPage() {
             return response.data;
         },
         onSuccess: (data) => {
-            // 🔥 Change: Use sonner toast
+            if (data.data?.accessToken) {
+                localStorage.setItem("accessToken", data.data.accessToken);
+            }
+
             toast.success("Logged in successfully");
 
             const role = data.data.role;
@@ -63,11 +67,9 @@ export default function LoginPage() {
             else if (role === "SCHOOL_ADMIN") router.push("/admin");
             else if (role === "TEACHER") router.push("/teacher");
             else if (role === "STUDENT") router.push("/student");
-            else router.push("/dashboard");
+            else router.push("/admin");
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
-
             toast.error(error.response?.data?.message || "Something went wrong");
         },
     });
@@ -150,7 +152,10 @@ export default function LoginPage() {
             <CardFooter className="flex justify-center">
                 <p className="text-sm text-gray-500">
                     Don&apos;t have an account?{" "}
-                    <Link href="/register" className="font-medium text-blue-600 hover:underline">
+                    <Link
+                        href="/register"
+                        className="font-medium text-blue-600 hover:underline"
+                    >
                         Register School
                     </Link>
                 </p>
