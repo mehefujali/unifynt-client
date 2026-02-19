@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import Link from "next/link";
@@ -64,8 +65,10 @@ export default function Sidebar() {
                                                 : "text-muted-foreground hover:bg-muted"
                                         )}
                                     >
-                                        <Icon className="h-4 w-4" />
-                                        {item.title}
+                                        <Icon className={cn("h-4 w-4", !isActive && (item as any).color)} />
+                                        <span className={cn(!isActive && (item as any).color)}>
+                                            {item.title}
+                                        </span>
                                     </Link>
                                 );
                             })

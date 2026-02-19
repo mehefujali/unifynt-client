@@ -8,19 +8,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
     Loader2,
-    Building,
+    Building2,
     Mail,
     Phone,
-    Calendar,
+    CalendarDays,
     Users,
     Activity,
     ExternalLink,
     Globe,
     Receipt,
     MapPin,
-    Landmark,
-    ShieldCheck,
-    CreditCard
+    ShieldAlert,
+    CreditCard,
+    Settings2,
+    History
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,9 +30,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SchoolService } from "@/services/school.service";
 import { PlanService } from "@/services/plan.service";
 import { TransactionService } from "@/services/transaction.service";
@@ -101,7 +104,7 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
     }, [watchPlanId, watchSubscriptionEnd, plans, school, renewForm]);
 
     useEffect(() => {
-        if (school && activeTab === "edit") {
+        if (school && activeTab === "settings") {
             editForm.reset({
                 name: school.name,
                 slug: school.slug,
@@ -137,19 +140,19 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
     const updateMutation = useMutation({
         mutationFn: (data: EditSchoolFormValues) => SchoolService.updateSchool(schoolId as string, data),
         onSuccess: () => {
-            toast.success("School details updated successfully");
+            toast.success("Workspace configuration updated.");
             queryClient.invalidateQueries({ queryKey: ["schools"] });
             queryClient.invalidateQueries({ queryKey: ["school", schoolId] });
             setActiveTab("overview");
         },
-        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to update school"),
+        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to update configuration."),
     });
 
     const processRenewal = async (data: RenewSchoolFormValues) => {
         if (data.paymentMethod === "ONLINE") {
             const isLoaded = await loadRazorpayScript();
             if (!isLoaded) {
-                toast.error("Failed to load Razorpay SDK");
+                toast.error("Failed to load secure payment gateway.");
                 return;
             }
             try {
@@ -162,8 +165,9 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                     amount: order.amount,
                     currency: order.currency,
                     name: "Unifynt SaaS",
-                    description: `Subscription Renewal for ${school?.name}`,
+                    description: `Subscription Renewal: ${school?.name}`,
                     order_id: order.id,
+                    theme: { color: "#000000" },
                     handler: async function (response: any) {
                         try {
                             await SchoolService.verifyRazorpayPayment(schoolId as string, {
@@ -175,11 +179,11 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                 subscriptionEnd: data.subscriptionEnd,
                                 amount: data.amount,
                             });
-                            toast.success("Subscription renewed via Online Payment");
+                            toast.success("Subscription updated successfully.");
                             queryClient.invalidateQueries({ queryKey: ["schools"] });
                             queryClient.invalidateQueries({ queryKey: ["school", schoolId] });
                             queryClient.invalidateQueries({ queryKey: ["transactions", schoolId] });
-                            setActiveTab("billing");
+                            setActiveTab("overview");
                         } catch (err: any) {
                             toast.error(err.response?.data?.message || "Payment verification failed");
                         }
@@ -188,7 +192,7 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                 const rzp = new (window as any).Razorpay(options);
                 rzp.open();
             } catch (err: any) {
-                toast.error(err.response?.data?.message || "Failed to create order");
+                toast.error(err.response?.data?.message || "Failed to initialize payment");
             }
         } else {
             try {
@@ -199,11 +203,11 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                     paymentMethod: data.paymentMethod,
                     amount: data.amount,
                 });
-                toast.success("Subscription renewed successfully");
+                toast.success("Subscription renewed manually.");
                 queryClient.invalidateQueries({ queryKey: ["schools"] });
                 queryClient.invalidateQueries({ queryKey: ["school", schoolId] });
                 queryClient.invalidateQueries({ queryKey: ["transactions", schoolId] });
-                setActiveTab("billing");
+                setActiveTab("overview");
             } catch (err: any) {
                 toast.error(err.response?.data?.message || "Failed to renew subscription");
             }
@@ -212,37 +216,50 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
 
     const isLoading = isSchoolLoading || isPlansLoading;
 
+    let isExpired = false;
+    let daysRemaining = 0;
+    if (school?.subscriptionEnd) {
+        const expiryDate = new Date(school.subscriptionEnd);
+        expiryDate.setHours(23, 59, 59, 999);
+        const now = new Date();
+        isExpired = expiryDate.getTime() < now.getTime();
+        daysRemaining = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+    } else {
+        isExpired = true;
+    }
+
     return (
         <Sheet open={!!schoolId} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent className="sm:max-w-[850px] w-[90vw] p-0 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950">
-
-                {/* sr-only Title for Radix UI Accessibility when Loading */}
-                <SheetTitle className="sr-only">School Management Modal</SheetTitle>
-                <SheetDescription className="sr-only">Manage school details, subscriptions, and billing.</SheetDescription>
+            <SheetContent className="sm:max-w-[900px] w-full p-0 flex flex-col h-full bg-background border-l-0 shadow-2xl">
+                <SheetTitle className="sr-only">Workspace Details</SheetTitle>
+                <SheetDescription className="sr-only">Detailed view and management of the selected workspace.</SheetDescription>
 
                 {isLoading || !school ? (
                     <div className="flex-1 flex flex-col items-center justify-center">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                 ) : (
                     <>
-                        <div className="p-6 border-b bg-background shadow-sm z-10">
+                        <div className="px-8 pt-10 pb-6 border-b border-border/60 bg-muted/10">
                             <SheetHeader>
                                 <div className="flex items-start justify-between">
-                                    <div className="flex gap-4 items-center">
-                                        <div className="h-16 w-16 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
-                                            <Building className="h-8 w-8" />
-                                        </div>
-                                        <div>
-                                            <SheetTitle className="text-2xl font-bold tracking-tight">{school.name}</SheetTitle>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                <a href={`https://${school.customDomain || school.subdomain + '.unifynt.com'}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary flex items-center hover:underline bg-primary/5 px-2 py-0.5 rounded-md">
-                                                    <Globe className="mr-1.5 h-3.5 w-3.5" />
+                                    <div className="flex gap-5 items-center">
+                                        <Avatar className="h-20 w-20 border-2 border-background shadow-md">
+                                            <AvatarImage src={school.logo} alt={school.name} />
+                                            <AvatarFallback className="bg-primary/5 text-primary text-2xl font-bold">
+                                                {school.name.substring(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="space-y-1.5">
+                                            <SheetTitle className="text-3xl font-extrabold tracking-tight text-foreground">{school.name}</SheetTitle>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <a href={`https://${school.customDomain || school.subdomain + '.unifynt.com'}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 bg-background border border-border/60 px-2.5 py-1 rounded-md shadow-sm">
+                                                    <Globe className="h-3.5 w-3.5" />
                                                     {school.customDomain || `${school.subdomain}.unifynt.com`}
-                                                    <ExternalLink className="ml-1.5 h-3 w-3" />
+                                                    <ExternalLink className="h-3 w-3" />
                                                 </a>
-                                                <Badge variant={school.isActive ? "default" : "destructive"} className="shadow-sm">
-                                                    {school.isActive ? "Active Account" : "Suspended"}
+                                                <Badge variant={school.isActive ? "default" : "destructive"} className={`shadow-sm ${school.isActive ? 'bg-green-500 hover:bg-green-600' : ''}`}>
+                                                    {school.isActive ? "Active Workspace" : "Suspended"}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -251,347 +268,303 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                             </SheetHeader>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6">
+                        <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/20">
                             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                                <TabsList className="grid w-full grid-cols-4 mb-8 bg-background border shadow-sm p-1 rounded-xl">
-                                    <TabsTrigger value="overview" className="rounded-lg">Overview</TabsTrigger>
-                                    <TabsTrigger value="edit" className="rounded-lg">Edit All Data</TabsTrigger>
-                                    <TabsTrigger value="renew" className="rounded-lg">Renew Plan</TabsTrigger>
-                                    <TabsTrigger value="billing" className="rounded-lg">Billing History</TabsTrigger>
-                                </TabsList>
+                                <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b px-8 py-4">
+                                    <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 rounded-lg h-12">
+                                        <TabsTrigger value="overview" className="rounded-md font-semibold text-sm h-full data-[state=active]:bg-background data-[state=active]:shadow-sm"><Activity className="mr-2 h-4 w-4" /> Overview</TabsTrigger>
+                                        <TabsTrigger value="settings" className="rounded-md font-semibold text-sm h-full data-[state=active]:bg-background data-[state=active]:shadow-sm"><Settings2 className="mr-2 h-4 w-4" /> Settings</TabsTrigger>
+                                        <TabsTrigger value="renew" className="rounded-md font-semibold text-sm h-full data-[state=active]:bg-background data-[state=active]:shadow-sm"><CreditCard className="mr-2 h-4 w-4" /> Upgrade Plan</TabsTrigger>
+                                        <TabsTrigger value="billing" className="rounded-md font-semibold text-sm h-full data-[state=active]:bg-background data-[state=active]:shadow-sm"><History className="mr-2 h-4 w-4" /> Billing logs</TabsTrigger>
+                                    </TabsList>
+                                </div>
 
-                                <TabsContent value="overview" className="space-y-6 outline-none">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <Card className="shadow-sm">
-                                            <CardContent className="p-5 flex flex-col gap-3">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-sm text-muted-foreground font-semibold">Active Plan</p>
-                                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg text-blue-600 dark:text-blue-400">
-                                                        <Activity className="h-4 w-4" />
+                                <div className="p-8">
+                                    <TabsContent value="overview" className="mt-0 space-y-8 outline-none animate-in fade-in duration-500">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <Card className="shadow-sm border-border/60">
+                                                <CardContent className="p-5 flex flex-col gap-2">
+                                                    <p className="text-sm font-semibold text-muted-foreground">Current Plan</p>
+                                                    <p className="text-2xl font-bold tracking-tight text-foreground">{school.plan?.name || "N/A"}</p>
+                                                </CardContent>
+                                            </Card>
+                                            <Card className="shadow-sm border-border/60">
+                                                <CardContent className="p-5 flex flex-col gap-2">
+                                                    <p className="text-sm font-semibold text-muted-foreground">User Capacity</p>
+                                                    <p className="text-2xl font-bold tracking-tight text-foreground">{school._count?.students || 0} <span className="text-lg text-muted-foreground font-medium">/ {school.studentLimit}</span></p>
+                                                </CardContent>
+                                            </Card>
+                                            <Card className="shadow-sm border-border/60">
+                                                <CardContent className="p-5 flex flex-col gap-2">
+                                                    <p className="text-sm font-semibold text-muted-foreground">SMS Credits</p>
+                                                    <p className="text-2xl font-bold tracking-tight text-foreground">{school.smsBalance || 0}</p>
+                                                </CardContent>
+                                            </Card>
+                                            <Card className="shadow-sm border-border/60">
+                                                <CardContent className="p-5 flex flex-col gap-2">
+                                                    <p className="text-sm font-semibold text-muted-foreground">Renewal Date</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-xl font-bold tracking-tight text-foreground">
+                                                            {school.subscriptionEnd ? new Date(school.subscriptionEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}
+                                                        </p>
                                                     </div>
-                                                </div>
-                                                <p className="text-2xl font-bold">{school.plan?.name || "N/A"}</p>
-                                            </CardContent>
-                                        </Card>
-                                        <Card className="shadow-sm">
-                                            <CardContent className="p-5 flex flex-col gap-3">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-sm text-muted-foreground font-semibold">Students</p>
-                                                    <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg text-green-600 dark:text-green-400">
-                                                        <Users className="h-4 w-4" />
-                                                    </div>
-                                                </div>
-                                                <p className="text-2xl font-bold">{school._count?.students || 0} / <span className="text-muted-foreground text-lg">{school.studentLimit}</span></p>
-                                            </CardContent>
-                                        </Card>
-                                        <Card className="shadow-sm">
-                                            <CardContent className="p-5 flex flex-col gap-3">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-sm text-muted-foreground font-semibold">SMS Balance</p>
-                                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-lg text-orange-600 dark:text-orange-400">
-                                                        <Mail className="h-4 w-4" />
-                                                    </div>
-                                                </div>
-                                                <p className="text-2xl font-bold">{school.smsBalance || 0}</p>
-                                            </CardContent>
-                                        </Card>
-                                        <Card className="shadow-sm">
-                                            <CardContent className="p-5 flex flex-col gap-3">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-sm text-muted-foreground font-semibold">Expiry Date</p>
-                                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg text-purple-600 dark:text-purple-400">
-                                                        <Calendar className="h-4 w-4" />
-                                                    </div>
-                                                </div>
-                                                <p className="text-lg font-bold truncate">
-                                                    {school.subscriptionEnd ? new Date(school.subscriptionEnd).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A"}
-                                                </p>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
+                                                    <p className={`text-xs font-semibold ${isExpired ? 'text-destructive' : 'text-muted-foreground'}`}>
+                                                        {isExpired ? 'Subscription Expired' : `${daysRemaining} days remaining`}
+                                                    </p>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <Card className="shadow-sm">
-                                            <CardHeader className="pb-3 border-b">
-                                                <CardTitle className="text-base flex items-center gap-2">
-                                                    <MapPin className="h-4 w-4 text-primary" /> Contact & Location
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-5 space-y-4">
-                                                <div className="flex items-start gap-3">
-                                                    <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs font-medium text-muted-foreground">Official Email</p>
-                                                        <p className="text-sm font-medium">{school.email || "N/A"}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-6">
+                                                <h3 className="font-semibold text-lg border-b pb-2">Institution Details</h3>
+                                                <div className="space-y-4">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="p-2 bg-muted rounded-md"><Building2 className="h-4 w-4 text-muted-foreground" /></div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">Primary Address</p>
+                                                            <p className="text-sm text-muted-foreground mt-0.5">{school.address || "No address provided."}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="p-2 bg-muted rounded-md"><Mail className="h-4 w-4 text-muted-foreground" /></div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">Contact Email</p>
+                                                            <p className="text-sm text-muted-foreground mt-0.5">{school.email || "N/A"}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="p-2 bg-muted rounded-md"><Phone className="h-4 w-4 text-muted-foreground" /></div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">Phone Number</p>
+                                                            <p className="text-sm text-muted-foreground mt-0.5">{school.phone || "N/A"}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-3">
-                                                    <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs font-medium text-muted-foreground">Official Phone</p>
-                                                        <p className="text-sm font-medium">{school.phone || "N/A"}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-start gap-3">
-                                                    <Building className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs font-medium text-muted-foreground">Full Address</p>
-                                                        <p className="text-sm font-medium leading-relaxed">{school.address || "N/A"}</p>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
 
-                                        <Card className="shadow-sm">
-                                            <CardHeader className="pb-3 border-b">
-                                                <CardTitle className="text-base flex items-center gap-2">
-                                                    <ShieldCheck className="h-4 w-4 text-primary" /> Legal & Administration
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-5 space-y-4">
-                                                <div className="flex items-start gap-3">
-                                                    <Users className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs font-medium text-muted-foreground">Principal Name</p>
-                                                        <p className="text-sm font-medium">{school.principalName || "N/A"}</p>
+                                            <div className="space-y-6">
+                                                <h3 className="font-semibold text-lg border-b pb-2">Administration & Legal</h3>
+                                                <div className="space-y-4">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="p-2 bg-muted rounded-md"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">Principal / Admin</p>
+                                                            <p className="text-sm text-muted-foreground mt-0.5">{school.principalName || "N/A"} {school.principalPhone ? `(${school.principalPhone})` : ''}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="p-2 bg-muted rounded-md"><Receipt className="h-4 w-4 text-muted-foreground" /></div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">Tax ID / GSTIN</p>
+                                                            <p className="text-sm text-muted-foreground mt-0.5">{school.taxId || "N/A"}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="p-2 bg-muted rounded-md"><ShieldAlert className="h-4 w-4 text-muted-foreground" /></div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-foreground">Registration Number</p>
+                                                            <p className="text-sm text-muted-foreground mt-0.5">{school.registrationCode || "N/A"}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-start gap-3">
-                                                    <Landmark className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs font-medium text-muted-foreground">Registration / Affiliation No.</p>
-                                                        <p className="text-sm font-medium">{school.registrationCode || "N/A"}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-start gap-3">
-                                                    <Receipt className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                                    <div>
-                                                        <p className="text-xs font-medium text-muted-foreground">Tax ID / GSTIN</p>
-                                                        <p className="text-sm font-medium">{school.taxId || "N/A"}</p>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                </TabsContent>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
 
-                                <TabsContent value="edit" className="outline-none">
-                                    <form onSubmit={editForm.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-6 pb-20">
-                                        <Card className="shadow-sm border-t-4 border-t-primary">
-                                            <CardHeader className="pb-4 border-b">
-                                                <CardTitle className="text-lg">Basic Information</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-6">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <TabsContent value="settings" className="mt-0 outline-none animate-in fade-in duration-500">
+                                        <form onSubmit={editForm.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-8 pb-20">
+
+                                            <div className="bg-background rounded-xl border p-6 shadow-sm space-y-6">
+                                                <h3 className="text-lg font-bold tracking-tight border-b pb-3">Workspace Identity</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                                                     <div className="space-y-2">
-                                                        <Label>School Name <span className="text-red-500">*</span></Label>
-                                                        <Input className="h-11" {...editForm.register("name")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">School Name</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("name")} />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label>Established Year</Label>
-                                                        <Input className="h-11" type="number" {...editForm.register("establishedYear", { valueAsNumber: true })} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Established Year</Label>
+                                                        <Input className="h-11 shadow-sm" type="number" {...editForm.register("establishedYear", { valueAsNumber: true })} />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label>Subdomain <span className="text-red-500">*</span></Label>
-                                                        <Input className="h-11 bg-muted/50" {...editForm.register("subdomain")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subdomain URL</Label>
+                                                        <Input className="h-11 bg-muted/30 shadow-sm" {...editForm.register("subdomain")} />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label>Unique Slug <span className="text-red-500">*</span></Label>
-                                                        <Input className="h-11 bg-muted/50" {...editForm.register("slug")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Domain</Label>
+                                                        <Input className="h-11 shadow-sm" placeholder="e.g. www.school.com" {...editForm.register("customDomain")} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-background rounded-xl border p-6 shadow-sm space-y-6">
+                                                <h3 className="text-lg font-bold tracking-tight border-b pb-3">Contact Information</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Support Email</Label>
+                                                        <Input className="h-11 shadow-sm" type="email" {...editForm.register("email")} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Support Phone</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("phone")} />
                                                     </div>
                                                     <div className="space-y-2 md:col-span-2">
-                                                        <Label>Custom Domain</Label>
-                                                        <Input className="h-11" placeholder="e.g. www.myschool.com" {...editForm.register("customDomain")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Full Address</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("address")} />
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
 
-                                        <Card className="shadow-sm">
-                                            <CardHeader className="pb-4 border-b">
-                                                <CardTitle className="text-lg">Contact & Location</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-6">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="bg-background rounded-xl border p-6 shadow-sm space-y-6">
+                                                <h3 className="text-lg font-bold tracking-tight border-b pb-3">Legal & Administration</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                                                     <div className="space-y-2">
-                                                        <Label>Official Email</Label>
-                                                        <Input className="h-11" type="email" {...editForm.register("email")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Principal Name</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("principalName")} />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label>Official Phone</Label>
-                                                        <Input className="h-11" {...editForm.register("phone")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Principal Phone</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("principalPhone")} />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label>Website</Label>
-                                                        <Input className="h-11" placeholder="https://" {...editForm.register("website")} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Registration Number</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("registrationCode")} />
                                                     </div>
-                                                    <div className="space-y-2 md:col-span-2">
-                                                        <Label>Full Address</Label>
-                                                        <Input className="h-11" {...editForm.register("address")} />
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax ID / GSTIN</Label>
+                                                        <Input className="h-11 shadow-sm" {...editForm.register("taxId")} />
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
 
-                                        <Card className="shadow-sm">
-                                            <CardHeader className="pb-4 border-b">
-                                                <CardTitle className="text-lg">Administration & Legal</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-6">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <Label>Principal Name</Label>
-                                                        <Input className="h-11" {...editForm.register("principalName")} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Principal Phone</Label>
-                                                        <Input className="h-11" {...editForm.register("principalPhone")} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Registration / Affiliation No.</Label>
-                                                        <Input className="h-11" {...editForm.register("registrationCode")} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Tax ID / GSTIN</Label>
-                                                        <Input className="h-11" {...editForm.register("taxId")} />
-                                                    </div>
-                                                    <div className="space-y-2 md:col-span-2">
-                                                        <Label>Billing Address</Label>
-                                                        <Input className="h-11" {...editForm.register("billingAddress")} />
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-
-                                        <Card className="shadow-sm bg-primary/5 border-primary/20">
-                                            <CardHeader className="pb-4 border-b border-primary/10">
-                                                <CardTitle className="text-lg text-primary">System Control</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="p-6">
+                                            <div className="bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-900/50 p-6 space-y-6">
+                                                <h3 className="text-lg font-bold tracking-tight text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-900/50 pb-3">Danger Zone & Limits</h3>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                                                     <div className="space-y-2">
-                                                        <Label className="text-foreground font-semibold">SMS Balance (Credits)</Label>
-                                                        <Input className="h-11 border-primary/20 focus-visible:ring-primary" type="number" {...editForm.register("smsBalance", { valueAsNumber: true })} />
+                                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Allocate SMS Credits</Label>
+                                                        <Input className="h-11 shadow-sm border-red-200 dark:border-red-900/50" type="number" {...editForm.register("smsBalance", { valueAsNumber: true })} />
                                                     </div>
-                                                    <div className="flex items-center justify-between p-5 border border-primary/20 rounded-xl bg-background shadow-sm">
+                                                    <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-900/50 rounded-lg bg-background">
                                                         <div className="space-y-1">
-                                                            <Label className="text-base font-bold">Account Status</Label>
-                                                            <p className="text-sm text-muted-foreground">
-                                                                Suspend or activate this school access instantly.
-                                                            </p>
+                                                            <Label className="font-bold text-foreground">Workspace Status</Label>
+                                                            <p className="text-xs text-muted-foreground">Disable access immediately.</p>
                                                         </div>
                                                         <Switch
                                                             checked={editForm.watch("isActive")}
                                                             onCheckedChange={(val) => editForm.setValue("isActive", val)}
-                                                            className="scale-125 mr-2"
                                                         />
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
 
-                                        <div className="fixed bottom-0 right-0 p-6 w-full max-w-[850px] bg-background/80 backdrop-blur-md border-t z-50 flex justify-end shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-                                            <Button type="submit" size="lg" className="w-full md:w-auto px-8 shadow-lg text-md h-12" disabled={updateMutation.isPending}>
-                                                {updateMutation.isPending && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                                                Save Changes
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </TabsContent>
+                                            <div className="fixed bottom-0 right-0 w-full max-w-[900px] bg-background/80 backdrop-blur-md border-t p-4 z-50 flex justify-end shadow-2xl">
+                                                <Button type="submit" className="h-11 px-8 font-bold shadow-md" disabled={updateMutation.isPending}>
+                                                    {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Save Configuration
+                                                </Button>
+                                            </div>
+                                        </form>
+                                    </TabsContent>
 
-                                <TabsContent value="renew" className="outline-none">
-                                    <Card className="shadow-sm border-t-4 border-t-green-500">
-                                        <CardHeader className="pb-4 border-b">
-                                            <CardTitle className="text-lg flex items-center gap-2">
-                                                <CreditCard className="h-5 w-5 text-green-600" /> Renew Subscription
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-6">
-                                            <form onSubmit={renewForm.handleSubmit(processRenewal)} className="space-y-6">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <Label>Select Premium Plan</Label>
+                                    <TabsContent value="renew" className="mt-0 outline-none animate-in fade-in duration-500">
+                                        <div className="bg-background border rounded-xl shadow-sm p-8">
+                                            <div className="mb-8">
+                                                <h3 className="text-2xl font-bold tracking-tight">Upgrade Workspace</h3>
+                                                <p className="text-sm text-muted-foreground mt-1">Select a new plan or extend the current subscription duration.</p>
+                                            </div>
+
+                                            <form onSubmit={renewForm.handleSubmit(processRenewal)} className="space-y-8">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div className="space-y-3">
+                                                        <Label className="font-semibold text-foreground">1. Select Premium Tier</Label>
                                                         <Select onValueChange={(val) => renewForm.setValue("planId", val)} defaultValue={renewForm.getValues("planId")}>
-                                                            <SelectTrigger className="h-12"><SelectValue placeholder="Choose a plan" /></SelectTrigger>
+                                                            <SelectTrigger className="h-14 text-md bg-muted/10 shadow-sm"><SelectValue placeholder="Choose a plan" /></SelectTrigger>
                                                             <SelectContent>
                                                                 {plans?.map((plan: any) => (
-                                                                    <SelectItem key={plan.id} value={plan.id} className="font-medium py-3">
-                                                                        {plan.name} (₹{plan.pricePerMonth} / month)
+                                                                    <SelectItem key={plan.id} value={plan.id} className="py-4 cursor-pointer">
+                                                                        <div className="flex flex-col gap-1">
+                                                                            <span className="font-bold text-base">{plan.name}</span>
+                                                                            <span className="text-muted-foreground text-xs font-medium">₹{plan.pricePerMonth}/mo • Upto {plan.studentLimit} Students</span>
+                                                                        </div>
                                                                     </SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Payment Method</Label>
+
+                                                    <div className="space-y-3">
+                                                        <Label className="font-semibold text-foreground">2. Set Expiration Date</Label>
+                                                        <Input className="h-14 bg-muted/10 shadow-sm" type="date" {...renewForm.register("subscriptionEnd")} />
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        <Label className="font-semibold text-foreground">3. Payment Mode</Label>
                                                         <Select onValueChange={(val) => renewForm.setValue("paymentMethod", val as any)} defaultValue={renewForm.getValues("paymentMethod")}>
-                                                            <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                                                            <SelectTrigger className="h-14 text-md bg-muted/10 shadow-sm"><SelectValue /></SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="CASH">Cash Payment (Offline)</SelectItem>
-                                                                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                                                                <SelectItem value="ONLINE">Online (Razorpay)</SelectItem>
+                                                                <SelectItem value="CASH" className="py-3">Cash / Offline Settlement</SelectItem>
+                                                                <SelectItem value="BANK_TRANSFER" className="py-3">Direct Bank Transfer</SelectItem>
+                                                                <SelectItem value="ONLINE" className="py-3 font-bold text-primary">Process Online (Razorpay)</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <Label>New Expiry Date</Label>
-                                                        <Input className="h-12" type="date" {...renewForm.register("subscriptionEnd")} />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Student Limit (Auto-filled by Plan)</Label>
-                                                        <Input className="h-12 bg-muted/50" type="number" {...renewForm.register("studentLimit", { valueAsNumber: true })} />
+
+                                                    <div className="space-y-3">
+                                                        <Label className="font-semibold text-foreground text-muted-foreground">System Allocated Capacity</Label>
+                                                        <Input className="h-14 bg-muted/50 cursor-not-allowed font-bold" type="number" readOnly {...renewForm.register("studentLimit", { valueAsNumber: true })} />
                                                     </div>
                                                 </div>
-                                                <div className="p-6 bg-slate-100 dark:bg-slate-900 border rounded-xl flex items-center justify-between mt-6">
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Payable Amount</p>
-                                                        <p className="text-xs text-muted-foreground">Calculated automatically based on plan and duration.</p>
+
+                                                <Separator className="my-8" />
+
+                                                <div className="flex flex-col items-end gap-6">
+                                                    <div className="flex items-center gap-6">
+                                                        <div className="text-right">
+                                                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Due Amount</p>
+                                                            <p className="text-xs text-muted-foreground">Auto-calculated based on duration.</p>
+                                                        </div>
+                                                        <div className="relative">
+                                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-foreground">₹</span>
+                                                            <Input
+                                                                type="number"
+                                                                {...renewForm.register("amount", { valueAsNumber: true })}
+                                                                className="h-16 w-56 pl-10 text-3xl font-extrabold text-right border-border/60 shadow-inner bg-muted/10"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <div className="relative">
-                                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-foreground">₹</span>
-                                                        <Input
-                                                            type="number"
-                                                            {...renewForm.register("amount", { valueAsNumber: true })}
-                                                            className="h-14 w-48 pl-9 text-2xl font-bold text-right border-primary/30 focus-visible:ring-primary shadow-inner bg-background"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="pt-4 flex justify-end">
-                                                    <Button type="submit" size="lg" className="w-full md:w-auto px-10 h-14 text-lg bg-green-600 hover:bg-green-700 shadow-xl shadow-green-600/20">
-                                                        Process Payment & Renew
+                                                    <Button type="submit" size="lg" className="w-full md:w-auto h-14 px-12 text-lg font-bold shadow-xl">
+                                                        Confirm & Update Subscription
                                                     </Button>
                                                 </div>
                                             </form>
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
+                                        </div>
+                                    </TabsContent>
 
-                                <TabsContent value="billing" className="outline-none">
-                                    <Card className="shadow-sm">
-                                        <CardHeader className="pb-4 border-b">
-                                            <CardTitle className="text-lg flex items-center gap-2">
-                                                <Receipt className="h-5 w-5 text-primary" /> Billing & Transaction History
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-0">
-                                            {isTransactionsLoading ? (
-                                                <div className="flex h-40 items-center justify-center">
-                                                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                    <TabsContent value="billing" className="mt-0 outline-none animate-in fade-in duration-500">
+                                        <div className="bg-background rounded-xl border shadow-sm overflow-hidden">
+                                            <div className="p-6 border-b bg-muted/10 flex justify-between items-center">
+                                                <div>
+                                                    <h3 className="font-bold text-lg">Transaction History</h3>
+                                                    <p className="text-sm text-muted-foreground mt-0.5">All billing logs and invoices for this workspace.</p>
                                                 </div>
-                                            ) : transactions?.length === 0 ? (
-                                                <div className="flex flex-col h-40 items-center justify-center text-muted-foreground">
-                                                    <Receipt className="h-10 w-10 mb-2 opacity-20" />
-                                                    <p>No billing history found for this school.</p>
-                                                </div>
-                                            ) : (
-                                                <div className="overflow-x-auto">
+                                                <Button variant="outline" size="sm" className="shadow-sm">Download CSV</Button>
+                                            </div>
+                                            <div className="p-0">
+                                                {isTransactionsLoading ? (
+                                                    <div className="flex h-64 items-center justify-center">
+                                                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                                                    </div>
+                                                ) : transactions?.length === 0 ? (
+                                                    <div className="flex flex-col h-64 items-center justify-center text-muted-foreground">
+                                                        <History className="h-10 w-10 mb-3 opacity-20" />
+                                                        <p className="font-medium">No billing records found.</p>
+                                                    </div>
+                                                ) : (
                                                     <Table>
-                                                        <TableHeader className="bg-muted/50">
-                                                            <TableRow>
+                                                        <TableHeader>
+                                                            <TableRow className="bg-muted/30 hover:bg-muted/30">
                                                                 <TableHead className="font-semibold h-12 px-6">Date</TableHead>
-                                                                <TableHead className="font-semibold h-12">Plan Name</TableHead>
+                                                                <TableHead className="font-semibold h-12">Plan</TableHead>
                                                                 <TableHead className="font-semibold h-12">Method</TableHead>
                                                                 <TableHead className="font-semibold h-12 text-right">Amount</TableHead>
                                                                 <TableHead className="font-semibold h-12 text-center">Status</TableHead>
@@ -599,23 +572,21 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                         </TableHeader>
                                                         <TableBody>
                                                             {transactions?.map((trx: any) => (
-                                                                <TableRow key={trx.id} className="hover:bg-muted/30 transition-colors">
-                                                                    <TableCell className="px-6 py-4 font-medium">
+                                                                <TableRow key={trx.id} className="hover:bg-muted/10 h-16">
+                                                                    <TableCell className="px-6 font-medium text-sm">
                                                                         {new Date(trx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                                     </TableCell>
-                                                                    <TableCell className="py-4">
-                                                                        <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                                                                            {trx.plan?.name || "Custom"}
-                                                                        </Badge>
+                                                                    <TableCell>
+                                                                        <span className="font-semibold text-foreground">{trx.plan?.name || "Custom"}</span>
                                                                     </TableCell>
-                                                                    <TableCell className="py-4 text-muted-foreground text-sm">
+                                                                    <TableCell className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
                                                                         {trx.paymentMethod.replace("_", " ")}
                                                                     </TableCell>
-                                                                    <TableCell className="py-4 text-right font-bold">
+                                                                    <TableCell className="text-right font-bold text-base">
                                                                         ₹{trx.amount.toLocaleString()}
                                                                     </TableCell>
-                                                                    <TableCell className="py-4 text-center">
-                                                                        <Badge variant={trx.status === "SUCCESS" ? "default" : "secondary"} className={trx.status === "SUCCESS" ? "bg-green-500 hover:bg-green-600" : ""}>
+                                                                    <TableCell className="text-center">
+                                                                        <Badge variant={trx.status === "SUCCESS" ? "default" : "secondary"} className={`shadow-sm ${trx.status === "SUCCESS" ? "bg-green-500 hover:bg-green-600" : ""}`}>
                                                                             {trx.status}
                                                                         </Badge>
                                                                     </TableCell>
@@ -623,12 +594,12 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                             ))}
                                                         </TableBody>
                                                     </Table>
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </TabsContent>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </TabsContent>
 
+                                </div>
                             </Tabs>
                         </div>
                     </>

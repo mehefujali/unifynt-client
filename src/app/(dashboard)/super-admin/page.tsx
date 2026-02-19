@@ -35,7 +35,7 @@ import { Badge } from "@/components/ui/badge";
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 export default function SuperAdminDashboard() {
-    const { data: stats, isLoading } = useQuery({
+    const { data: stats, isLoading, isError } = useQuery({
         queryKey: ["superAdminStats"],
         queryFn: async () => {
             const res = await api.get("/dashboard/super-admin");
@@ -43,8 +43,12 @@ export default function SuperAdminDashboard() {
         },
     });
 
-    if (isLoading) {
-        return <div className="p-8 text-center">Loading dashboard analytics...</div>;
+    if (isLoading || !stats) {
+        return <div className="p-8 text-center font-bold text-lg">Loading dashboard analytics...</div>;
+    }
+
+    if (isError) {
+        return <div className="p-8 text-center text-red-500 font-bold text-lg">Failed to load dashboard data.</div>;
     }
 
     return (
@@ -53,7 +57,6 @@ export default function SuperAdminDashboard() {
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     title="Total Schools"
@@ -82,7 +85,6 @@ export default function SuperAdminDashboard() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                {/* Chart: Schools by Plan */}
                 <Card className="col-span-4">
                     <CardHeader>
                         <CardTitle>Subscription Overview</CardTitle>
@@ -118,7 +120,6 @@ export default function SuperAdminDashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Recent Registrations */}
                 <Card className="col-span-3">
                     <CardHeader>
                         <CardTitle>Recent Registrations</CardTitle>
@@ -135,7 +136,7 @@ export default function SuperAdminDashboard() {
                                     <div className="ml-4 space-y-1">
                                         <p className="text-sm font-medium leading-none">{school.name}</p>
                                         <p className="text-xs text-muted-foreground">
-                                            {school.subdomain}.app.com
+                                            {school.slug}.app.com
                                         </p>
                                     </div>
                                     <div className="ml-auto font-medium">
