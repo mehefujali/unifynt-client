@@ -2,18 +2,33 @@
 import api from "@/lib/axios";
 
 export const TeacherService = {
-  getAllTeachers: async () => {
-    const response = await api.get("/teachers?limit=1000");
-    return response.data.data;
+  // Fetch all teachers (For Data Table)
+  getAllTeachers: async (params?: any) => {
+    const response = await api.get("/teachers", { params });
+    return response.data?.data;
   },
 
+  // Fetch a single teacher by ID (For View/Edit Modal)
+  getSingleTeacher: async (id: string) => {
+    const response = await api.get(`/teachers/${id}`);
+    return response.data?.data;
+  },
+
+  // Create a new teacher (For Add Modal)
   createTeacher: async (data: any) => {
     const response = await api.post("/teachers", data);
-    return response.data;
+    return response.data?.data;
   },
 
+  // Update an existing teacher (For Edit Modal)
+  updateTeacher: async (id: string, data: any) => {
+    const response = await api.patch(`/teachers/${id}`, data);
+    return response.data?.data;
+  },
+
+  // Delete a teacher (For Data Table Action)
   deleteTeacher: async (id: string) => {
     const response = await api.delete(`/teachers/${id}`);
-    return response.data;
+    return response.data?.data;
   },
 };
