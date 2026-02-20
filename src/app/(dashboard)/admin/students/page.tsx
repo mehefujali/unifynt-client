@@ -1,31 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Loader2, GraduationCap } from "lucide-react";
 import { StudentService } from "@/services/student.service";
-
-import { AddStudentModal } from "./add-student-modal";
-import { useDebounce } from "@/hooks/use-debounce";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
+import { AddStudentModal } from "./add-student-modal";
+import { useDebounce } from "@/hooks/use-debounce";
 
 export default function StudentsPage() {
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
     const [searchTerm, setSearchTerm] = useState("");
-
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-    const { data: response, isLoading, isError } = useQuery({
+    const [pagination, setPagination] = useState({
+        pageIndex: 0,
+        pageSize: 10,
+    });
+
+    const { data: response, isLoading, isError, isFetching } = useQuery({
         queryKey: ["students", pagination.pageIndex, pagination.pageSize, debouncedSearchTerm],
         queryFn: () => StudentService.getAllStudents({
             page: pagination.pageIndex + 1,
             limit: pagination.pageSize,
-            searchTerm: debouncedSearchTerm
+            searchTerm: debouncedSearchTerm || undefined,
         }),
+        placeholderData: keepPreviousData, // <--- MAGIC FIX
     });
 
-    if (isLoading) {
+    // Show full page loader ONLY on the very first load
+    if (isLoading && !response) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -36,14 +40,11 @@ export default function StudentsPage() {
     if (isError) {
         return (
             <div className="flex h-[80vh] items-center justify-center flex-col gap-3">
-                <p className="text-destructive font-bold text-lg">Failed to load student data.</p>
+                <p className="text-destructive font-bold text-lg">Failed to load students data.</p>
                 <p className="text-muted-foreground text-sm">Please check your connection or try again later.</p>
             </div>
         );
     }
-
-    const students = response?.data || [];
-    const meta = response?.meta || { total: 0, totalPage: 0, page: 1, limit: 10 };
 
     return (
         <div className="flex flex-col gap-8 p-8 animate-in fade-in duration-500">
@@ -55,7 +56,7 @@ export default function StudentsPage() {
                     <div>
                         <h1 className="text-2xl font-extrabold tracking-tight">Student Directory</h1>
                         <p className="text-muted-foreground text-sm font-medium mt-1">
-                            Manage enrollments, academic records, and parent information.
+                            Manage student enrollments, academic records, and profiles.
                         </p>
                     </div>
                 </div>
@@ -64,16 +65,22 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            <div className="bg-background rounded-xl border shadow-sm p-4">
+            <div className="bg-background rounded-xl border shadow-sm p-0 overflow-hidden relative">
+                {/* Subtle Top Loader during search/pagination */}
+                {isFetching && (
+                    <div className="absolute top-0 left-0 w-full h-1 bg-primary/10 z-50 overflow-hidden">
+                        <div className="h-full bg-primary/60 animate-pulse w-1/2 rounded-full"></div>
+                    </div>
+                )}
+
                 <DataTable
                     columns={columns}
-                    data={students}
-                    pageCount={meta.totalPage}
+                    data={response?.data || []}
+                    pageCount={response?.meta?.totalPage || -1}
                     pagination={pagination}
-                    setPagination={setPagination}
+                    onPaginationChange={setPagination}
                     searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    totalRecords={meta.total}
+                    onSearchChange={setSearchTerm}
                 />
             </div>
         </div>

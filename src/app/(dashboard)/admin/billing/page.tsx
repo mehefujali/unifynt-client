@@ -184,7 +184,7 @@ export default function BillingOverviewPage() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-10">
+        <div className="max-w-6xl mx-auto  pb-10">
             <div>
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground">Billing & Subscription</h1>
                 <p className="text-sm text-muted-foreground mt-1">Manage your workspace plan, view usage, and update payment methods.</p>
@@ -247,13 +247,13 @@ export default function BillingOverviewPage() {
                 </Card>
             </div>
 
-            <Separator className="bg-border/50" />
+            <Separator className="bg-border/50 my-4" />
 
             <form onSubmit={form.handleSubmit(handlePayment)}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                    <div className="lg:col-span-2 space-y-8">
-                        <div>
-                            <h2 className="text-lg font-semibold">Change Plan</h2>
+                    <div className="lg:col-span-2 space-y-8 ">
+                        <div >
+                            <h2 className="text-lg font-semibold ">Change Plan</h2>
                             <p className="text-sm text-muted-foreground mt-1 mb-5">Select a plan that scales with your institution.</p>
 
                             <div className="space-y-4">

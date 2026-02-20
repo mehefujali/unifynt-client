@@ -2,18 +2,17 @@ import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import SubscriptionGuard from "@/components/layout/subscription-guard";
 
-
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     return (
-        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <div className="grid min-h-screen w-full lg:grid-cols-[260px_1fr]">
             <Sidebar />
-            <div className="flex flex-col">
+            <div className="flex flex-col h-screen overflow-hidden bg-background">
                 <Header />
-                <main className="flex-1 p-4 lg:p-6 bg-slate-50/50 dark:bg-slate-900/50">
+                <main className="flex-1 overflow-y-auto bg-muted/20 p-4 lg:p-8 custom-scrollbar">
                     <SubscriptionGuard>
                         {children}
                     </SubscriptionGuard>

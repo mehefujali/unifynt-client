@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 
 import { useState } from "react";
@@ -19,11 +18,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ViewTeacherModal } from "./view-teacher-modal";
 import { EditTeacherModal } from "./edit-teacher-modal";
+import { DeleteTeacherModal } from "./delete-teacher-modal";
 
-// Actions Cell Component to manage local state cleanly
 const TeacherActions = ({ teacher }: { teacher: any }) => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   return (
     <>
@@ -47,13 +47,13 @@ const TeacherActions = ({ teacher }: { teacher: any }) => {
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
+
+          <DropdownMenuItem onClick={() => setIsDeleteModalOpen(true)} className="cursor-pointer font-medium text-destructive focus:bg-destructive/10 focus:text-destructive">
             <Trash2 className="mr-2 h-4 w-4" /> Delete Teacher
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Integrate Modals */}
       <ViewTeacherModal
         teacher={teacher}
         open={isViewModalOpen}
@@ -65,13 +65,19 @@ const TeacherActions = ({ teacher }: { teacher: any }) => {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
       />
+
+      <DeleteTeacherModal
+        teacher={teacher}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+      />
     </>
   );
 };
 
 export const columns: ColumnDef<any>[] = [
   {
-    accessorKey: "profile",
+    id: "profile",
     header: "Teacher Info",
     cell: ({ row }) => {
       const teacher = row.original;
@@ -87,8 +93,8 @@ export const columns: ColumnDef<any>[] = [
             <span className="font-bold text-sm truncate max-w-[150px]">
               {teacher.firstName} {teacher.lastName}
             </span>
-            <span className="text-xs text-muted-foreground truncate max-w-[150px]">
-              {teacher.user?.email}
+            <span className="text-xs text-muted-foreground truncate max-w-[180px]">
+              {teacher.user?.email || "No email provided"}
             </span>
           </div>
         </div>
@@ -130,7 +136,7 @@ export const columns: ColumnDef<any>[] = [
     }
   },
   {
-    accessorKey: "status",
+    id: "status",
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.user?.status;

@@ -397,7 +397,7 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                 </SheetHeader>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/20 relative">
+                            <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-950/20 relative">
                                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                                     <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b px-8 py-3 shadow-sm">
                                         <TabsList className="grid w-full grid-cols-4 bg-muted/40 p-1 rounded-xl h-14 border">

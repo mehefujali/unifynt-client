@@ -12,8 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-    Mail, Phone, MapPin, User, Briefcase, GraduationCap, 
+import {
+    Mail, Phone, MapPin, User, Briefcase, GraduationCap,
     Calendar, Building, Link as LinkIcon, FileText, AlertCircle, Clock
 } from "lucide-react";
 import { format } from "date-fns";
@@ -39,7 +39,7 @@ export function ViewTeacherModal({ teacher, open, onOpenChange }: ViewTeacherMod
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[650px] w-full p-0 flex flex-col h-full bg-slate-50/50 dark:bg-slate-950/50 border-l-0 shadow-2xl">
+            <SheetContent className="sm:max-w-[650px] w-full p-0 flex flex-col h-full bg-white dark:bg-slate-950/50 border-l-0 shadow-2xl">
                 <div className="bg-background border-b px-8 py-8 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
                     <SheetHeader>
@@ -83,28 +83,28 @@ export function ViewTeacherModal({ teacher, open, onOpenChange }: ViewTeacherMod
                         <TabsContent value="overview" className="space-y-6 animate-in fade-in duration-500">
                             <Card className="shadow-sm border-border/60">
                                 <CardContent className="p-6 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2"><User className="w-4 h-4"/> Contact & Personal</h4>
-                                    
+                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2"><User className="w-4 h-4" /> Contact & Personal</h4>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Address</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground"/> {teacher.user?.email}</p>
+                                            <p className="text-sm font-semibold flex items-center gap-2"><Mail className="w-4 h-4 text-muted-foreground" /> {teacher.user?.email}</p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Phone Number</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground"/> {teacher.phone || "N/A"}</p>
+                                            <p className="text-sm font-semibold flex items-center gap-2"><Phone className="w-4 h-4 text-muted-foreground" /> {teacher.phone || "N/A"}</p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Gender & DOB</p>
                                             <p className="text-sm font-semibold flex items-center gap-2">
-                                                <User className="w-4 h-4 text-muted-foreground"/> 
-                                                <span className="capitalize">{teacher.gender?.toLowerCase()}</span> 
+                                                <User className="w-4 h-4 text-muted-foreground" />
+                                                <span className="capitalize">{teacher.gender?.toLowerCase()}</span>
                                                 {teacher.dateOfBirth && ` • ${format(new Date(teacher.dateOfBirth), "dd MMM yyyy")}`}
                                             </p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Residential Address</p>
-                                            <p className="text-sm font-semibold flex items-start gap-2"><MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5"/> {teacher.address || "N/A"}</p>
+                                            <p className="text-sm font-semibold flex items-start gap-2"><MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" /> {teacher.address || "N/A"}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -112,7 +112,7 @@ export function ViewTeacherModal({ teacher, open, onOpenChange }: ViewTeacherMod
 
                             <Card className="shadow-sm border-red-100 dark:border-red-900/30 bg-red-50/30 dark:bg-red-950/10">
                                 <CardContent className="p-6 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-red-600 dark:text-red-400 border-b border-red-100 dark:border-red-900/30 pb-2 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Emergency Contact</h4>
+                                    <h4 className="font-bold text-sm uppercase tracking-widest text-red-600 dark:text-red-400 border-b border-red-100 dark:border-red-900/30 pb-2 flex items-center gap-2"><AlertCircle className="w-4 h-4" /> Emergency Contact</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Contact Person</p>
@@ -146,25 +146,25 @@ export function ViewTeacherModal({ teacher, open, onOpenChange }: ViewTeacherMod
 
                             <Card className="shadow-sm border-border/60">
                                 <CardContent className="p-6 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2"><Briefcase className="w-4 h-4"/> Academic & Work Profile</h4>
-                                    
+                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2"><Briefcase className="w-4 h-4" /> Academic & Work Profile</h4>
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Highest Qualification</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2"><GraduationCap className="w-4 h-4 text-muted-foreground"/> {teacher.qualification || "N/A"}</p>
+                                            <p className="text-sm font-semibold flex items-center gap-2"><GraduationCap className="w-4 h-4 text-muted-foreground" /> {teacher.qualification || "N/A"}</p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Experience</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2"><Clock className="w-4 h-4 text-muted-foreground"/> {teacher.experienceYears ? `${teacher.experienceYears} Years` : "Fresher"}</p>
+                                            <p className="text-sm font-semibold flex items-center gap-2"><Clock className="w-4 h-4 text-muted-foreground" /> {teacher.experienceYears ? `${teacher.experienceYears} Years` : "Fresher"}</p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Joining Date</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground"/> {teacher.joiningDate ? format(new Date(teacher.joiningDate), "dd MMM yyyy") : "N/A"}</p>
+                                            <p className="text-sm font-semibold flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> {teacher.joiningDate ? format(new Date(teacher.joiningDate), "dd MMM yyyy") : "N/A"}</p>
                                         </div>
                                         <div className="space-y-1.5">
                                             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Assigned Section</p>
                                             <p className="text-sm font-semibold flex items-center gap-2">
-                                                <Building className="w-4 h-4 text-muted-foreground"/> 
+                                                <Building className="w-4 h-4 text-muted-foreground" />
                                                 {teacher.assignedSection ? `${teacher.assignedSection.class?.name} - ${teacher.assignedSection.name}` : "Not Assigned"}
                                             </p>
                                         </div>
@@ -177,8 +177,8 @@ export function ViewTeacherModal({ teacher, open, onOpenChange }: ViewTeacherMod
                         <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-500">
                             <Card className="shadow-sm border-border/60">
                                 <CardContent className="p-6">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-4 mb-6 flex items-center gap-2"><FileText className="w-4 h-4"/> Attached Assets</h4>
-                                    
+                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-4 mb-6 flex items-center gap-2"><FileText className="w-4 h-4" /> Attached Assets</h4>
+
                                     <div className="space-y-6">
                                         {/* Resume */}
                                         <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/10">
