@@ -10,11 +10,6 @@ import Cropper from "react-easy-crop";
 import {
     Loader2,
     Building2,
-    Mail,
-    Phone,
-    Users,
-    Activity,
-    ExternalLink,
     Globe,
     Receipt,
     ShieldAlert,
@@ -24,7 +19,11 @@ import {
     UploadCloud,
     Palette,
     KeyRound,
-    Crop as CropIcon
+    Crop as CropIcon,
+    Activity,
+    ExternalLink,
+    MessageSquare,
+    Send
 } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -47,6 +46,9 @@ import { TransactionService } from "@/services/transaction.service";
 import { loadRazorpayScript } from "@/lib/load-razorpay";
 import { editSchoolSchema, EditSchoolFormValues, renewSchoolSchema, RenewSchoolFormValues } from "./schema";
 import api from "@/lib/axios";
+
+// FIXED: Import the Assign SMS Modal
+import { AssignSmsModal } from "./assign-sms-modal";
 
 interface SchoolDetailsModalProps {
     schoolId: string | null;
@@ -107,6 +109,9 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+    // FIXED: State for the new Assign SMS Modal
+    const [isAssignSmsModalOpen, setIsAssignSmsModalOpen] = useState(false);
 
     const { data: school, isLoading: isSchoolLoading } = useQuery({
         queryKey: ["school", schoolId],
@@ -186,7 +191,7 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                 timezone: school.timezone || "Asia/Kolkata",
                 currency: school.currency || "INR",
                 isActive: school.isActive,
-                smsBalance: school.smsBalance || 0,
+                // Removed smsBalance from form reset to avoid submitting it directly
             });
         }
         if (school && activeTab === "renew" && plans?.length) {
@@ -426,7 +431,7 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                 <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
                                                     <CardContent className="p-5 flex flex-col gap-2">
                                                         <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">SMS Credits</p>
-                                                        <p className="text-2xl font-bold tracking-tight text-foreground">{school.smsBalance || 0}</p>
+                                                        <p className="text-2xl font-bold tracking-tight text-foreground">{school.smsBalance?.toLocaleString() || 0}</p>
                                                     </CardContent>
                                                 </Card>
                                                 <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
@@ -636,27 +641,44 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                     </div>
                                                 </div>
 
-                                                <div className="bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-900/50 p-6 space-y-6">
-                                                    <h3 className="text-lg font-bold tracking-tight text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-900/50 pb-3">Danger Zone & Quotas</h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                                                        <div className="space-y-2">
-                                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Allocate SMS Credits</Label>
-                                                            <Input className="h-11 shadow-sm border-red-200 dark:border-red-900/50 bg-white dark:bg-background" type="number" {...editForm.register("smsBalance", { valueAsNumber: true })} />
+                                                {/* FIXED: Professional SMS Package Allocation Section */}
+                                                <div className="bg-background rounded-xl border shadow-sm overflow-hidden">
+                                                    <div className="bg-muted/30 px-6 py-4 border-b">
+                                                        <h3 className="text-lg font-bold flex items-center gap-2">
+                                                            <MessageSquare className="h-5 w-5 text-primary" /> Communication Quota
+                                                        </h3>
+                                                        <p className="text-sm text-muted-foreground">Manage transactional SMS packages and current balance.</p>
+                                                    </div>
+                                                    <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Available SMS Credits</p>
+                                                            <p className="text-4xl font-black text-foreground">{school.smsBalance?.toLocaleString() || 0}</p>
                                                         </div>
-                                                        <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-900/50 rounded-xl bg-white dark:bg-background shadow-sm">
-                                                            <div className="space-y-1">
-                                                                <Label className="font-bold text-foreground">Workspace Status</Label>
-                                                                <p className="text-xs text-muted-foreground">Disable workspace access instantly.</p>
-                                                            </div>
-                                                            <Switch
-                                                                checked={editForm.watch("isActive")}
-                                                                onCheckedChange={(val) => editForm.setValue("isActive", val, { shouldDirty: true })}
-                                                            />
-                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => setIsAssignSmsModalOpen(true)}
+                                                            className="h-12 px-6 font-bold shadow-md hover:scale-[1.02] transition-transform"
+                                                        >
+                                                            <Send className="mr-2 h-4 w-4" /> Assign SMS Package
+                                                        </Button>
                                                     </div>
                                                 </div>
 
-                                                <div className="fixed bottom-0 right-0 w-full max-w-[1000px] bg-background/90 backdrop-blur-xl border-t p-5 z-50 flex justify-end shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+                                                <div className="bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-200 dark:border-red-900/50 p-6 space-y-6">
+                                                    <h3 className="text-lg font-bold tracking-tight text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-900/50 pb-3">Danger Zone</h3>
+                                                    <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-900/50 rounded-xl bg-white dark:bg-background shadow-sm">
+                                                        <div className="space-y-1">
+                                                            <Label className="font-bold text-foreground">Workspace Status</Label>
+                                                            <p className="text-xs text-muted-foreground">Disable workspace access instantly. Users will not be able to log in.</p>
+                                                        </div>
+                                                        <Switch
+                                                            checked={editForm.watch("isActive")}
+                                                            onCheckedChange={(val) => editForm.setValue("isActive", val, { shouldDirty: true })}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="fixed bottom-0 right-0 w-full max-w-[1000px] bg-background/90 backdrop-blur-xl border-t p-5 z-40 flex justify-end shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
                                                     <Button type="submit" size="lg" className="h-12 px-10 font-bold shadow-lg" disabled={updateMutation.isPending}>
                                                         {updateMutation.isPending && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                                                         Save All Changes
@@ -809,9 +831,19 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                 </SheetContent>
             </Sheet>
 
+            {/* NEW: External SMS Assignment Modal */}
+            {school && (
+                <AssignSmsModal
+                    isOpen={isAssignSmsModalOpen}
+                    onClose={() => setIsAssignSmsModalOpen(false)}
+                    schoolId={school.id}
+                    schoolName={school.name}
+                />
+            )}
+
             {/* CROP MODAL DIALOG */}
             <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px] z-[60]">
                     <DialogHeader>
                         <DialogTitle>Adjust Profile Image</DialogTitle>
                         <DialogDescription>
