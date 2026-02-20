@@ -1,9 +1,8 @@
-/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -21,6 +20,7 @@ import { StudentService } from "@/services/student.service";
 import { AcademicService } from "@/services/academic.service";
 import api from "@/lib/axios";
 import { studentSchema, StudentFormValues } from "./schema";
+import { ImageCropperModal } from "@/components/ui/image-cropper";
 
 interface EditStudentModalProps {
     studentId: string | null;
@@ -28,11 +28,26 @@ interface EditStudentModalProps {
     onOpenChange: (open: boolean) => void;
 }
 
+const safeDate = (dateVal: any) => {
+    if (!dateVal) return "";
+    try {
+        const d = new Date(dateVal);
+        if (isNaN(d.getTime())) return "";
+        return d.toISOString().split('T')[0];
+    } catch {
+        return "";
+    }
+};
+
 export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentModalProps) {
     const queryClient = useQueryClient();
 
     const [activeTab, setActiveTab] = useState("academic");
     const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
+
+    const [cropModalOpen, setCropModalOpen] = useState(false);
+    const [imageToCrop, setImageToCrop] = useState<string>("");
+    const [activeImageField, setActiveImageField] = useState<keyof StudentFormValues | null>(null);
 
     const fileRefs = {
         profileImage: useRef<HTMLInputElement>(null),
@@ -41,10 +56,10 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
     };
 
     const form = useForm<StudentFormValues>({
-        resolver: zodResolver(studentSchema),
+        resolver: zodResolver(studentSchema) as any,
     });
 
-    const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
+    const { register, handleSubmit, setValue, watch, reset, control, formState: { errors } } = form;
     const watchClassId = watch("classId");
 
     const { data: student, isLoading: isStudentLoading } = useQuery({
@@ -71,20 +86,24 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
         enabled: !!watchClassId && open,
     });
 
+    // Determine if core data is still loading
+    const isCoreDataLoading = isStudentLoading || isLoadingYears || isLoadingClasses;
+
     useEffect(() => {
-        if (student && open) {
+        // Run reset ONLY when student, years, and classes are successfully loaded
+        if (student && open && !isCoreDataLoading) {
             reset({
                 academicYearId: student.academicYearId || "",
                 classId: student.classId || "",
                 sectionId: student.sectionId || "",
                 rollNumber: student.rollNumber || "",
                 admissionNumber: student.admissionNumber || "",
-                admissionDate: student.admissionDate ? new Date(student.admissionDate).toISOString().split('T')[0] : "",
+                admissionDate: safeDate(student.admissionDate),
 
                 firstName: student.firstName || "",
                 lastName: student.lastName || "",
                 gender: student.gender || "MALE",
-                dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : "",
+                dateOfBirth: safeDate(student.dateOfBirth),
                 bloodGroup: student.bloodGroup || "",
                 religion: student.religion || "",
                 caste: student.caste || "GENERAL",
@@ -114,7 +133,7 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
             });
             setActiveTab("academic");
         }
-    }, [student, open, reset]);
+    }, [student, open, isCoreDataLoading, reset]);
 
     const mutation = useMutation({
         mutationFn: async (data: StudentFormValues) => {
@@ -130,25 +149,48 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
         onError: (error: any) => toast.error(error.response?.data?.message || "Update failed"),
     });
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof StudentFormValues) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const uploadFile = async (file: File | Blob, fieldName: keyof StudentFormValues) => {
         try {
             setIsUploading(prev => ({ ...prev, [fieldName]: true }));
             const formData = new FormData();
-            formData.append("file", file);
+            formData.append("file", file as File);
 
             const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
 
             if (res.data.success) {
                 setValue(fieldName, res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                toast.success("Document updated successfully");
+                toast.success("File uploaded successfully");
             }
         } catch (error: any) {
             toast.error("File upload failed");
         } finally {
             setIsUploading(prev => ({ ...prev, [fieldName]: false }));
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof StudentFormValues) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (fieldName === "profileImage") {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setImageToCrop(reader.result as string);
+                setActiveImageField(fieldName);
+                setCropModalOpen(true);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            uploadFile(file, fieldName);
+        }
+        e.target.value = "";
+    };
+
+    const handleCropComplete = async (croppedBlob: Blob) => {
+        setCropModalOpen(false);
+        if (activeImageField) {
+            const file = new File([croppedBlob], "profile-crop.png", { type: "image/png" });
+            await uploadFile(file, activeImageField);
         }
     };
 
@@ -178,8 +220,12 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                     </SheetHeader>
                 </div>
 
-                {isStudentLoading ? (
-                    <div className="flex-1 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                {/* SHOW LOADER UNTIL CORE DATA & STUDENT DATA ARE FULLY LOADED */}
+                {isCoreDataLoading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <p className="text-sm font-medium text-muted-foreground">Loading student records...</p>
+                    </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto p-8">
                         <form id="edit-student-form" onSubmit={handleSubmit(onSubmit, onError)}>
@@ -191,21 +237,26 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                     <TabsTrigger value="documents" className="rounded-lg font-bold"><FileBadge className="w-4 h-4 mr-2" /> Docs</TabsTrigger>
                                 </TabsList>
 
-                                {/* TAB 1: ACADEMIC */}
                                 <TabsContent value="academic" className="space-y-6 animate-in fade-in duration-500">
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Academic Year *</Label>
-                                            <Select value={watch("academicYearId")} onValueChange={(val) => setValue("academicYearId", val, { shouldValidate: true })}>
-                                                <SelectTrigger className={`h-11 shadow-sm ${errors.academicYearId ? 'border-red-500' : 'bg-muted/10'}`}>
-                                                    <SelectValue placeholder={isLoadingYears ? "Loading..." : "Select Academic Year"} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {academicYears?.map((year: any) => (
-                                                        <SelectItem key={year.id} value={year.id}>{year.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name="academicYearId"
+                                                render={({ field }) => (
+                                                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                                                        <SelectTrigger className={`h-11 shadow-sm ${errors.academicYearId ? 'border-red-500' : 'bg-muted/10'}`}>
+                                                            <SelectValue placeholder="Select Academic Year" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {academicYears?.map((year: any) => (
+                                                                <SelectItem key={year.id} value={year.id}>{year.name}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Admission Date</Label>
@@ -215,28 +266,44 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                     <div className="grid grid-cols-3 gap-6">
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Class *</Label>
-                                            <Select value={watch("classId")} onValueChange={(val) => {
-                                                setValue("classId", val, { shouldValidate: true });
-                                                if (val !== student?.classId) setValue("sectionId", "", { shouldValidate: true });
-                                            }}>
-                                                <SelectTrigger className={`h-11 shadow-sm ${errors.classId ? 'border-red-500' : 'bg-muted/10'}`}>
-                                                    <SelectValue placeholder={isLoadingClasses ? "Loading..." : "Select Class"} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {classes?.map((cls: any) => (<SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name="classId"
+                                                render={({ field }) => (
+                                                    <Select value={field.value || ""} onValueChange={(val) => {
+                                                        field.onChange(val);
+                                                        if (val !== student?.classId) setValue("sectionId", "", { shouldValidate: true });
+                                                    }}>
+                                                        <SelectTrigger className={`h-11 shadow-sm ${errors.classId ? 'border-red-500' : 'bg-muted/10'}`}>
+                                                            <SelectValue placeholder="Select Class" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {classes?.map((cls: any) => (<SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Section *</Label>
-                                            <Select disabled={!watchClassId || isLoadingSections} value={watch("sectionId")} onValueChange={(val) => setValue("sectionId", val, { shouldValidate: true })}>
-                                                <SelectTrigger className={`h-11 shadow-sm ${errors.sectionId ? 'border-red-500' : 'bg-muted/10'}`}>
-                                                    <SelectValue placeholder={isLoadingSections ? "Loading..." : "Select Section"} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {sections?.map((sec: any) => (<SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name="sectionId"
+                                                render={({ field }) => (
+                                                    <Select
+                                                        disabled={!watchClassId || isLoadingSections}
+                                                        value={field.value || ""}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <SelectTrigger className={`h-11 shadow-sm ${errors.sectionId ? 'border-red-500' : 'bg-muted/10'}`}>
+                                                            <SelectValue placeholder={isLoadingSections ? "Loading..." : "Select Section"} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {sections?.map((sec: any) => (<SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Roll Number *</Label>
@@ -255,7 +322,6 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                     </div>
                                 </TabsContent>
 
-                                {/* TAB 2: PERSONAL */}
                                 <TabsContent value="personal" className="space-y-6 animate-in fade-in duration-500">
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-2">
@@ -270,12 +336,18 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                     <div className="grid grid-cols-3 gap-6">
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gender *</Label>
-                                            <Select value={watch("gender")} onValueChange={(val) => setValue("gender", val as any, { shouldValidate: true })}>
-                                                <SelectTrigger className="h-11 bg-muted/10"><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="MALE">Male</SelectItem><SelectItem value="FEMALE">Female</SelectItem><SelectItem value="OTHER">Other</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name="gender"
+                                                render={({ field }) => (
+                                                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                                                        <SelectTrigger className="h-11 bg-muted/10"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="MALE">Male</SelectItem><SelectItem value="FEMALE">Female</SelectItem><SelectItem value="OTHER">Other</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date of Birth</Label>
@@ -283,25 +355,37 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Blood Group</Label>
-                                            <Select value={watch("bloodGroup") || undefined} onValueChange={(val) => setValue("bloodGroup", val as any)}>
-                                                <SelectTrigger className="h-11 bg-muted/10"><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {["A_POS", "A_NEG", "B_POS", "B_NEG", "O_POS", "O_NEG", "AB_POS", "AB_NEG"].map(bg => (
-                                                        <SelectItem key={bg} value={bg}>{bg.replace("_", "")}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name="bloodGroup"
+                                                render={({ field }) => (
+                                                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                                                        <SelectTrigger className="h-11 bg-muted/10"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {["A_POS", "A_NEG", "B_POS", "B_NEG", "O_POS", "O_NEG", "AB_POS", "AB_NEG"].map(bg => (
+                                                                <SelectItem key={bg} value={bg}>{bg.replace("_", "")}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-6">
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Caste / Category</Label>
-                                            <Select value={watch("caste")} onValueChange={(val) => setValue("caste", val as any)}>
-                                                <SelectTrigger className="h-11 bg-muted/10"><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="GENERAL">General</SelectItem><SelectItem value="OBC">OBC</SelectItem><SelectItem value="SC">SC</SelectItem><SelectItem value="ST">ST</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Controller
+                                                control={control}
+                                                name="caste"
+                                                render={({ field }) => (
+                                                    <Select value={field.value || ""} onValueChange={field.onChange}>
+                                                        <SelectTrigger className="h-11 bg-muted/10"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="GENERAL">General</SelectItem><SelectItem value="OBC">OBC</SelectItem><SelectItem value="SC">SC</SelectItem><SelectItem value="ST">ST</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Religion</Label>
@@ -318,10 +402,9 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                     </div>
                                 </TabsContent>
 
-                                {/* TAB 3: PARENTS */}
                                 <TabsContent value="parents" className="space-y-6 animate-in fade-in duration-500">
                                     <div className="p-5 border rounded-xl bg-muted/5 space-y-4">
-                                        <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Father's Details</h4>
+                                        <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Father&apos;s Details</h4>
                                         <div className="grid grid-cols-3 gap-6">
                                             <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Name</Label><Input className="h-11 bg-background" {...register("fatherName")} /></div>
                                             <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Phone</Label><Input className="h-11 bg-background" {...register("fatherPhone")} /></div>
@@ -329,7 +412,7 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                         </div>
                                     </div>
                                     <div className="p-5 border rounded-xl bg-muted/5 space-y-4">
-                                        <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Mother's Details</h4>
+                                        <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Mother&apos;s Details</h4>
                                         <div className="grid grid-cols-3 gap-6">
                                             <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Name</Label><Input className="h-11 bg-background" {...register("motherName")} /></div>
                                             <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Phone</Label><Input className="h-11 bg-background" {...register("motherPhone")} /></div>
@@ -338,7 +421,6 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                     </div>
                                 </TabsContent>
 
-                                {/* TAB 4: DOCS & HEALTH */}
                                 <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-500">
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-2">
@@ -356,7 +438,7 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                             <Avatar className="h-16 w-16 border-2"><AvatarImage src={watch("profileImage")} className="object-cover" /><AvatarFallback><User /></AvatarFallback></Avatar>
                                             <div className="space-y-1 flex-1">
                                                 <p className="font-bold text-sm">Student Photo</p>
-                                                <input type="file" ref={fileRefs.profileImage} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'profileImage')} />
+                                                <input type="file" ref={fileRefs.profileImage} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'profileImage')} />
                                                 <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.profileImage.current?.click()} disabled={isUploading.profileImage}>
                                                     {isUploading.profileImage ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} Update
                                                 </Button>
@@ -367,7 +449,7 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
                                             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary"><FileBadge className="h-6 w-6" /></div>
                                             <div className="space-y-1 flex-1">
                                                 <p className="font-bold text-sm">Birth Certificate</p>
-                                                <input type="file" ref={fileRefs.birthCertificateUrl} className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => handleFileUpload(e, 'birthCertificateUrl')} />
+                                                <input type="file" ref={fileRefs.birthCertificateUrl} className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => handleFileSelect(e, 'birthCertificateUrl')} />
                                                 <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.birthCertificateUrl.current?.click()} disabled={isUploading.birthCertificateUrl}>
                                                     {isUploading.birthCertificateUrl ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} {watch("birthCertificateUrl") ? "Update File" : "Upload File"}
                                                 </Button>
@@ -382,11 +464,18 @@ export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentM
 
                 <div className="p-6 border-t bg-background/90 backdrop-blur shrink-0 flex justify-between">
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button type="submit" form="edit-student-form" className="font-bold px-8" disabled={mutation.isPending || isStudentLoading}>
+                    <Button type="submit" form="edit-student-form" className="font-bold px-8" disabled={mutation.isPending || isCoreDataLoading || Object.values(isUploading).some(Boolean)}>
                         {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Changes
                     </Button>
                 </div>
             </SheetContent>
+
+            <ImageCropperModal
+                open={cropModalOpen}
+                imageSrc={imageToCrop}
+                onClose={() => setCropModalOpen(false)}
+                onCropComplete={handleCropComplete}
+            />
         </Sheet>
     );
 }
