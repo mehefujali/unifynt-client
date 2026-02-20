@@ -12,7 +12,8 @@ import {
   Globe,
   Gem,
   Receipt,
-  MessageSquare, // Added for SMS module
+  MessageSquare,
+  PackagePlus,
 } from "lucide-react";
 
 export const navItems = {
@@ -23,6 +24,12 @@ export const navItems = {
       href: "/super-admin/plans",
       icon: Gem,
       color: "text-blue-500",
+    },
+    {
+      title: "SMS Packages",
+      href: "/super-admin/sms-packages",
+      icon: PackagePlus,
+      color: "text-amber-500",
     },
     { title: "Schools", href: "/super-admin/schools", icon: School },
     { title: "Users", href: "/super-admin/users", icon: Users },
