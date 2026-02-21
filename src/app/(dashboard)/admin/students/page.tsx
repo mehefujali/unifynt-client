@@ -1,3 +1,4 @@
+// src/app/(dashboard)/admin/students/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -13,22 +14,27 @@ export default function StudentsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+    // Advanced Filter State
+    const [selectedClassId, setSelectedClassId] = useState<string>("");
+    const [selectedSectionId, setSelectedSectionId] = useState<string>("");
+
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 10,
     });
 
     const { data: response, isLoading, isError, isFetching } = useQuery({
-        queryKey: ["students", pagination.pageIndex, pagination.pageSize, debouncedSearchTerm],
+        queryKey: ["students", pagination.pageIndex, pagination.pageSize, debouncedSearchTerm, selectedClassId, selectedSectionId],
         queryFn: () => StudentService.getAllStudents({
             page: pagination.pageIndex + 1,
             limit: pagination.pageSize,
             searchTerm: debouncedSearchTerm || undefined,
+            classId: selectedClassId || undefined,
+            sectionId: selectedSectionId || undefined,
         }),
-        placeholderData: keepPreviousData, // <--- MAGIC FIX
+        placeholderData: keepPreviousData,
     });
 
-    // Show full page loader ONLY on the very first load
     if (isLoading && !response) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
@@ -66,7 +72,6 @@ export default function StudentsPage() {
             </div>
 
             <div className="bg-background rounded-xl border shadow-sm p-0 overflow-hidden relative">
-                {/* Subtle Top Loader during search/pagination */}
                 {isFetching && (
                     <div className="absolute top-0 left-0 w-full h-1 bg-primary/10 z-50 overflow-hidden">
                         <div className="h-full bg-primary/60 animate-pulse w-1/2 rounded-full"></div>
@@ -81,6 +86,10 @@ export default function StudentsPage() {
                     onPaginationChange={setPagination}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
+                    selectedClassId={selectedClassId}
+                    setSelectedClassId={setSelectedClassId}
+                    selectedSectionId={selectedSectionId}
+                    setSelectedSectionId={setSelectedSectionId}
                 />
             </div>
         </div>

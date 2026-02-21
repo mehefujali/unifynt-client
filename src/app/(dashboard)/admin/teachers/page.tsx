@@ -13,22 +13,36 @@ export default function TeachersPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+    const [selectedGender, setSelectedGender] = useState<string>("");
+    const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+    const [selectedEmploymentType, setSelectedEmploymentType] = useState<string>("");
+
     const [pagination, setPagination] = useState({
         pageIndex: 0,
         pageSize: 10,
     });
 
     const { data: response, isLoading, isError, isFetching } = useQuery({
-        queryKey: ["teachers", pagination.pageIndex, pagination.pageSize, debouncedSearchTerm],
+        queryKey: [
+            "teachers",
+            pagination.pageIndex,
+            pagination.pageSize,
+            debouncedSearchTerm,
+            selectedGender,
+            selectedDepartment,
+            selectedEmploymentType
+        ],
         queryFn: () => TeacherService.getAllTeachers({
             page: pagination.pageIndex + 1,
             limit: pagination.pageSize,
             searchTerm: debouncedSearchTerm || undefined,
+            gender: selectedGender || undefined,
+            department: selectedDepartment || undefined,
+            employmentType: selectedEmploymentType || undefined,
         }),
-        placeholderData: keepPreviousData, // <--- MAGIC FIX: Prevents table from disappearing
+        placeholderData: keepPreviousData,
     });
 
-    // Show full page loader ONLY on the very first load
     if (isLoading && !response) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
@@ -56,7 +70,7 @@ export default function TeachersPage() {
                     <div>
                         <h1 className="text-2xl font-extrabold tracking-tight">Teacher Management</h1>
                         <p className="text-muted-foreground text-sm font-medium mt-1">
-                            Manage records, credentials, and access for all educators.
+                            Manage records, credentials, payroll, and access for all educators.
                         </p>
                     </div>
                 </div>
@@ -66,7 +80,6 @@ export default function TeachersPage() {
             </div>
 
             <div className="bg-background rounded-xl border shadow-sm p-0 overflow-hidden relative">
-                {/* Subtle Top Loader during search/pagination */}
                 {isFetching && (
                     <div className="absolute top-0 left-0 w-full h-1 bg-primary/10 z-50 overflow-hidden">
                         <div className="h-full bg-primary/60 animate-pulse w-1/2 rounded-full"></div>
@@ -81,6 +94,12 @@ export default function TeachersPage() {
                     onPaginationChange={setPagination}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
+                    selectedGender={selectedGender}
+                    setSelectedGender={setSelectedGender}
+                    selectedDepartment={selectedDepartment}
+                    setSelectedDepartment={setSelectedDepartment}
+                    selectedEmploymentType={selectedEmploymentType}
+                    setSelectedEmploymentType={setSelectedEmploymentType}
                 />
             </div>
         </div>

@@ -54,8 +54,9 @@ const TeacherActions = ({ teacher }: { teacher: any }) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* FIXED: Passing teacherId instead of teacher object */}
       <ViewTeacherModal
-        teacher={teacher}
+        teacherId={teacher.id}
         open={isViewModalOpen}
         onOpenChange={setIsViewModalOpen}
       />

@@ -14,6 +14,7 @@ import {
   Receipt,
   MessageSquare,
   PackagePlus,
+  Banknote,
 } from "lucide-react";
 
 export const navItems = {
@@ -43,7 +44,8 @@ export const navItems = {
     { title: "Academics", href: "/admin/academics", icon: BookOpen },
     { title: "Routine", href: "/admin/routine", icon: CalendarDays },
     { title: "Fees", href: "/admin/fees", icon: CreditCard },
-    { title: "SMS Center", href: "/admin/sms", icon: MessageSquare }, // Added SMS Module
+    { title: "Payroll", href: "/admin/payroll", icon: Banknote }, // Added Payroll Module
+    { title: "SMS Center", href: "/admin/sms", icon: MessageSquare },
     { title: "Billing & Subscription", href: "/admin/billing", icon: Receipt },
     { title: "Website Settings", href: "/admin/settings", icon: Globe },
   ],
@@ -51,6 +53,7 @@ export const navItems = {
     { title: "Dashboard", href: "/teacher", icon: LayoutDashboard },
     { title: "My Classes", href: "/teacher/classes", icon: BookOpen },
     { title: "Attendance", href: "/teacher/attendance", icon: UserCheck },
+    { title: "My Payroll", href: "/teacher/payroll", icon: Banknote }, // Teachers can view their own slips
   ],
   STUDENT: [
     { title: "Dashboard", href: "/student", icon: LayoutDashboard },
