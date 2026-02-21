@@ -24,6 +24,12 @@ export const addTeacherSchema = z.object({
   resumeUrl: z.string().optional().or(z.literal("")),
   emergencyContactName: z.string().optional().or(z.literal("")),
   emergencyContactPhone: z.string().optional().or(z.literal("")),
+
+  basicSalary: z.coerce.number().optional(),
+  bankName: z.string().optional().or(z.literal("")),
+  accountNumber: z.string().optional().or(z.literal("")),
+  ifscCode: z.string().optional().or(z.literal("")),
+  panNumber: z.string().optional().or(z.literal("")),
 });
 
 export type AddTeacherFormValues = z.infer<typeof addTeacherSchema>;
@@ -50,6 +56,12 @@ export const editTeacherSchema = z.object({
   resumeUrl: z.string().optional().or(z.literal("")),
   emergencyContactName: z.string().optional().or(z.literal("")),
   emergencyContactPhone: z.string().optional().or(z.literal("")),
+
+  basicSalary: z.coerce.number().optional(),
+  bankName: z.string().optional().or(z.literal("")),
+  accountNumber: z.string().optional().or(z.literal("")),
+  ifscCode: z.string().optional().or(z.literal("")),
+  panNumber: z.string().optional().or(z.literal("")),
 });
 
 export type EditTeacherFormValues = z.infer<typeof editTeacherSchema>;
