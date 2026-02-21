@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   LayoutDashboard,
   School,
@@ -5,32 +6,33 @@ import {
   BookOpen,
   CalendarDays,
   Settings,
-  CreditCard,
   UserCheck,
   GraduationCap,
-  FileText,
-  Globe,
   Gem,
-  Receipt,
-  MessageSquare,
-  PackagePlus,
   Banknote,
 } from "lucide-react";
 
-export const navItems = {
+export type SubItem = { title: string; href: string };
+export type NavItem = {
+  title: string;
+  href: string;
+  icon: any;
+  color?: string;
+  subItems?: SubItem[];
+};
+
+export const navItems: Record<string, NavItem[]> = {
   SUPER_ADMIN: [
     { title: "Dashboard", href: "/super-admin", icon: LayoutDashboard },
     {
-      title: "Subscription Plans",
-      href: "/super-admin/plans",
+      title: "Subscriptions",
+      href: "#",
       icon: Gem,
       color: "text-blue-500",
-    },
-    {
-      title: "SMS Packages",
-      href: "/super-admin/sms-packages",
-      icon: PackagePlus,
-      color: "text-amber-500",
+      subItems: [
+        { title: "Plans", href: "/super-admin/plans" },
+        { title: "SMS Packages", href: "/super-admin/sms-packages" },
+      ],
     },
     { title: "Schools", href: "/super-admin/schools", icon: School },
     { title: "Users", href: "/super-admin/users", icon: Users },
@@ -38,26 +40,54 @@ export const navItems = {
   ],
   SCHOOL_ADMIN: [
     { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { title: "Admission", href: "/admin/admission/settings", icon: FileText },
-    { title: "Teachers", href: "/admin/teachers", icon: UserCheck },
-    { title: "Students", href: "/admin/students", icon: GraduationCap },
-    { title: "Academics", href: "/admin/academics", icon: BookOpen },
-    { title: "Routine", href: "/admin/routine", icon: CalendarDays },
-    { title: "Fees", href: "/admin/fees", icon: CreditCard },
-    { title: "Payroll", href: "/admin/payroll", icon: Banknote }, // Added Payroll Module
-    { title: "SMS Center", href: "/admin/sms", icon: MessageSquare },
-    { title: "Billing & Subscription", href: "/admin/billing", icon: Receipt },
-    { title: "Website Settings", href: "/admin/settings", icon: Globe },
+    {
+      title: "People",
+      href: "#",
+      icon: Users,
+      subItems: [
+        { title: "Teachers", href: "/admin/teachers" },
+        { title: "Students", href: "/admin/students" },
+      ],
+    },
+    {
+      title: "Academics",
+      href: "#",
+      icon: BookOpen,
+      subItems: [
+        { title: "Academics overview", href: "/admin/academics" },
+        { title: "Routine", href: "/admin/routine" },
+      ],
+    },
+    {
+      title: "Finance",
+      href: "#",
+      icon: Banknote,
+      subItems: [
+        { title: "Fees", href: "/admin/fees" },
+        { title: "Payroll", href: "/admin/payroll" },
+      ],
+    },
+    {
+      title: "Administration",
+      href: "#",
+      icon: Settings,
+      subItems: [
+        { title: "Admission Setup", href: "/admin/admission/settings" },
+        { title: "SMS Center", href: "/admin/sms" },
+        { title: "Billing & Sub", href: "/admin/billing" },
+        { title: "Website Settings", href: "/admin/settings" },
+      ],
+    },
   ],
   TEACHER: [
     { title: "Dashboard", href: "/teacher", icon: LayoutDashboard },
     { title: "My Classes", href: "/teacher/classes", icon: BookOpen },
     { title: "Attendance", href: "/teacher/attendance", icon: UserCheck },
-    { title: "My Payroll", href: "/teacher/payroll", icon: Banknote }, // Teachers can view their own slips
+    { title: "My Payroll", href: "/teacher/payroll", icon: Banknote },
   ],
   STUDENT: [
     { title: "Dashboard", href: "/student", icon: LayoutDashboard },
     { title: "Routine", href: "/student/routine", icon: CalendarDays },
-    { title: "Result", href: "/student/result", icon: BookOpen },
+    { title: "Result", href: "/student/result", icon: GraduationCap },
   ],
 };
