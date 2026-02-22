@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -6,8 +8,9 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, UploadCloud, FileText, User, Briefcase, FileBadge, Save, Banknote } from "lucide-react";
+import { Loader2, UploadCloud, FileText, User, Briefcase, FileBadge, Save, Banknote, Check, ChevronsUpDown, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,8 +18,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 
 import { TeacherService } from "@/services/teacher.service";
+import { SubjectService } from "@/services/subject.service";
 import api from "@/lib/axios";
 import { editTeacherSchema, EditTeacherFormValues } from "./schema";
 import { ImageCropperModal } from "@/components/ui/image-cropper";
@@ -28,7 +35,6 @@ const safeDate = (dateVal: any) => {
     try { const d = new Date(dateVal); if (isNaN(d.getTime())) return ""; return d.toISOString().split('T')[0]; } catch { return ""; }
 };
 
-// 1. Parent Component: Handles Fetching and Modal State
 export function EditTeacherModal({ teacherId, open, onOpenChange }: EditTeacherModalProps) {
     const { data: teacher, isLoading } = useQuery({
         queryKey: ["teacher", teacherId],
@@ -38,7 +44,7 @@ export function EditTeacherModal({ teacherId, open, onOpenChange }: EditTeacherM
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[750px] overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
+            <SheetContent className="sm:max-w-187.5 overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
                 <div className="p-8 pb-4 bg-muted/20 border-b shrink-0">
                     <SheetHeader>
                         <SheetTitle className="text-2xl font-extrabold tracking-tight text-primary">Edit Teacher Profile</SheetTitle>
@@ -52,16 +58,14 @@ export function EditTeacherModal({ teacherId, open, onOpenChange }: EditTeacherM
                         <p className="text-sm font-medium text-muted-foreground">Loading full records...</p>
                     </div>
                 ) : (
-                    // 2. Child Component: Mounts ONLY when full data is available
-                    <EditTeacherForm teacherId={teacherId as string} teacher={teacher} onOpenChange={onOpenChange} />
+                    <EditTeacherForm teacherId={teacherId as string} teacher={teacher?.data || teacher} onOpenChange={onOpenChange} open={open} />
                 )}
             </SheetContent>
         </Sheet>
     );
 }
 
-// 3. Child Component: Contains Form Logic and Initial Values
-function EditTeacherForm({ teacherId, teacher, onOpenChange }: { teacherId: string, teacher: any, onOpenChange: (open: boolean) => void }) {
+function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId: string, teacher: any, onOpenChange: (open: boolean) => void, open: boolean }) {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState("personal");
     const [isUploadingImg, setIsUploadingImg] = useState(false);
@@ -71,6 +75,14 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange }: { teacherId: stri
 
     const imgInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
+
+    const { data: subjectsData } = useQuery({
+        queryKey: ["subjects"],
+        queryFn: () => SubjectService.getAllSubjects({ limit: 1000 }),
+        enabled: open,
+    });
+
+    const subjectsList = Array.isArray(subjectsData?.data) ? subjectsData.data : subjectsData?.data?.data || [];
 
     const form = useForm<EditTeacherFormValues>({
         resolver: zodResolver(editTeacherSchema) as any,
@@ -84,7 +96,8 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange }: { teacherId: stri
             resumeUrl: teacher.resumeUrl || "", emergencyContactName: teacher.emergencyContactName || "",
             emergencyContactPhone: teacher.emergencyContactPhone || "",
             basicSalary: teacher.basicSalary || 0, bankName: teacher.bankName || "", accountNumber: teacher.accountNumber || "",
-            ifscCode: teacher.ifscCode || "", panNumber: teacher.panNumber || ""
+            ifscCode: teacher.ifscCode || "", panNumber: teacher.panNumber || "",
+            subjectIds: teacher.subjects?.map((s: any) => s.id) || []
         }
     });
 
@@ -142,7 +155,7 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange }: { teacherId: stri
     const onError = (formErrors: any) => {
         const errorKeys = Object.keys(formErrors);
         if (errorKeys.some(key => ['firstName', 'lastName', 'email', 'phone', 'gender', 'dateOfBirth'].includes(key))) setActiveTab("personal");
-        else if (errorKeys.some(key => ['designation', 'qualification', 'joiningDate'].includes(key))) setActiveTab("professional");
+        else if (errorKeys.some(key => ['designation', 'qualification', 'joiningDate', 'subjectIds'].includes(key))) setActiveTab("professional");
         else if (errorKeys.some(key => ['basicSalary'].includes(key))) setActiveTab("payroll");
         else setActiveTab("documents");
         toast.error("Please fill in all mandatory fields correctly.");
@@ -185,6 +198,56 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange }: { teacherId: stri
                         </TabsContent>
 
                         <TabsContent value="professional" className="space-y-6">
+                            <div className="space-y-2">
+                                <Label>Assigned Subjects (Multi-select)</Label>
+                                <Controller
+                                    control={control}
+                                    name="subjectIds"
+                                    render={({ field }) => (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" className={cn("w-full justify-between font-normal min-h-10 h-auto py-2", (!field.value || field.value.length === 0) && "text-muted-foreground")}>
+                                                    {field.value && field.value.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {field.value.map((id) => {
+                                                                const subject = subjectsList.find((s: any) => s.id === id);
+                                                                return subject ? (
+                                                                    <Badge key={id} variant="secondary" className="flex items-center gap-1">
+                                                                        {subject.name}
+                                                                        <span className="cursor-pointer hover:bg-muted-foreground/20 rounded-full p-0.5" onClick={(e) => { e.stopPropagation(); field.onChange(field.value?.filter((val: string) => val !== id)); }}>
+                                                                            <X className="h-3 w-3" />
+                                                                        </span>
+                                                                    </Badge>
+                                                                ) : null;
+                                                            })}
+                                                        </div>
+                                                    ) : "Search and select subjects..."}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search subject..." className="h-9" />
+                                                    <CommandList>
+                                                        <CommandEmpty>No subject found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {subjectsList.map((subject: any) => {
+                                                                const isSelected = (field.value || []).includes(subject.id);
+                                                                return (
+                                                                    <CommandItem key={subject.id} value={subject.name} onSelect={() => { const currentValues = field.value || []; const newValues = isSelected ? currentValues.filter((val: string) => val !== subject.id) : [...currentValues, subject.id]; field.onChange(newValues); }}>
+                                                                        <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100 text-primary" : "opacity-0")} />
+                                                                        {subject.name} <span className="text-xs text-muted-foreground ml-2">({subject.code})</span>
+                                                                    </CommandItem>
+                                                                );
+                                                            })}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                />
+                            </div>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2"><Label>Department</Label><Input {...register("department")} /></div>
                                 <div className="space-y-2"><Label>Designation *</Label><Input className={errors.designation ? 'border-red-500' : ''} {...register("designation")} /></div>

@@ -1,4 +1,4 @@
-import * as z from "zod";
+import * as z from "zod/v3";
 
 export const addTeacherSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -30,6 +30,8 @@ export const addTeacherSchema = z.object({
   accountNumber: z.string().optional().or(z.literal("")),
   ifscCode: z.string().optional().or(z.literal("")),
   panNumber: z.string().optional().or(z.literal("")),
+
+  subjectIds: z.array(z.string()).optional(),
 });
 
 export type AddTeacherFormValues = z.infer<typeof addTeacherSchema>;
@@ -62,6 +64,8 @@ export const editTeacherSchema = z.object({
   accountNumber: z.string().optional().or(z.literal("")),
   ifscCode: z.string().optional().or(z.literal("")),
   panNumber: z.string().optional().or(z.literal("")),
+
+  subjectIds: z.array(z.string()).optional(),
 });
 
 export type EditTeacherFormValues = z.infer<typeof editTeacherSchema>;
