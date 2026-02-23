@@ -1,191 +1,241 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, UploadCloud } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdmissionService } from "@/services/admission.service";
 
-// টাইপ ডেফিনিশন (Backend এর সাথে মিল রেখে)
-interface FieldConfig {
-    name: string;
-    label: string;
-    type: "TEXT" | "NUMBER" | "TEXTAREA" | "DROPDOWN" | "DATE" | "FILE";
-    placeholder?: string;
-    required: boolean;
-    options?: string[]; // Dropdown এর জন্য
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, CheckCircle2, AlertCircle, FileUp, School } from "lucide-react";
 
-interface DynamicFormProps {
-    schoolId: string;
-    config: {
-        fields: FieldConfig[];
-        school: { name: string; logo?: string };
-    };
-}
+export default function DynamicAdmissionForm({ schoolId }: { schoolId: string }) {
+    const [isSubmitted, setIsSubmitted] = useState(false);
 
-export default function DynamicAdmissionForm({ schoolId, config }: DynamicFormProps) {
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
+    const { data: publicDataRes, isLoading } = useQuery({
+        queryKey: ["publicAdmissionData", schoolId],
+        queryFn: () => AdmissionService.getPublicData(schoolId),
+        enabled: !!schoolId,
+    });
 
-    // React Hook Form ইনিশিয়ালাইজেশন
-    const {
-        register,
-        handleSubmit,
-        setValue,
-        watch,
-        formState: { errors },
-    } = useForm();
+    const form = useForm();
+    const { register, handleSubmit, control, formState: { errors } } = form;
 
-    // ফাইল হ্যান্ডলার স্টেট
-    const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
-
-    const onFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedFiles((prev) => ({
-                ...prev,
-                [fieldName]: e.target.files![0],
-            }));
-        }
-    };
-
-    const onSubmit = async (data: any) => {
-        try {
-            setLoading(true);
-
-
-            const textData = { ...data };
-
-
-            await AdmissionService.submitApplication(schoolId, textData, selectedFiles);
-
+    const submitMutation = useMutation({
+        mutationFn: (formData: FormData) => AdmissionService.submitApplication(schoolId, formData),
+        onSuccess: () => {
+            setIsSubmitted(true);
             toast.success("Application submitted successfully!");
-            router.push("/admission/success");
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Something went wrong!");
-        } finally {
-            setLoading(false);
+        },
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.message || "Failed to submit application");
         }
+    });
+
+    const onSubmit = (data: any) => {
+        const formData = new FormData();
+        const { profileImage, birthCertificateUrl, nationalIdDocumentUrl, tcDocumentUrl, previousMarksheetUrl, casteCertificateUrl, medicalCertificateUrl, incomeCertificateUrl, fatherPhotoUrl, motherPhotoUrl, guardianPhotoUrl, ...textData } = data;
+
+        formData.append("data", JSON.stringify(textData));
+
+        const fileKeys = [
+            "profileImage", "birthCertificateUrl", "nationalIdDocumentUrl", "tcDocumentUrl", 
+            "previousMarksheetUrl", "casteCertificateUrl", "medicalCertificateUrl", 
+            "incomeCertificateUrl", "fatherPhotoUrl", "motherPhotoUrl", "guardianPhotoUrl"
+        ];
+
+        fileKeys.forEach(key => {
+            if (data[key] && data[key].length > 0) {
+                formData.append(key, data[key][0]);
+            }
+        });
+
+        submitMutation.mutate(formData);
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col h-[60vh] items-center justify-center gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-muted-foreground font-medium animate-pulse">Loading admission form...</p>
+            </div>
+        );
+    }
+
+    const config = publicDataRes?.data?.config;
+    const classes = publicDataRes?.data?.classes || [];
+    const academicYears = publicDataRes?.data?.academicYears || [];
+
+    if (!config || !config.isActive) {
+        return (
+            <Card className="max-w-md mx-auto mt-20 text-center shadow-none border-dashed border-2">
+                <CardContent className="pt-10 pb-10 flex flex-col items-center">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                    <h2 className="text-xl font-bold text-foreground mb-2">Admissions Closed</h2>
+                    <p className="text-sm text-muted-foreground">We are not accepting any new applications at this moment.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    let parsedFields: any[] = [];
+    try {
+        parsedFields = typeof config.fields === "string" ? JSON.parse(config.fields) : config.fields || [];
+    } catch (e) {
+        parsedFields = [];
+    }
+
+    if (isSubmitted) {
+        return (
+            <Card className="max-w-lg mx-auto mt-20 text-center border-none shadow-xl bg-gradient-to-b from-card to-emerald-50/30 dark:to-emerald-950/10">
+                <CardContent className="pt-16 pb-16 flex flex-col items-center">
+                    <div className="h-20 w-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6">
+                        <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-500" />
+                    </div>
+                    <h2 className="text-2xl font-extrabold text-foreground tracking-tight mb-2">Application Received!</h2>
+                    <p className="text-muted-foreground max-w-[300px] mb-8">We will review your application and contact you shortly.</p>
+                    <Button onClick={() => window.location.reload()} variant="outline">Submit Another</Button>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
-        <Card className="w-full max-w-3xl mx-auto shadow-lg border-t-4 border-t-primary">
-            <CardHeader className="text-center border-b bg-secondary/10">
-                <CardTitle className="text-2xl font-bold text-primary">
-                    {config.school.name} Admission Form
-                </CardTitle>
-                <p className="text-muted-foreground text-sm">
-                    Please fill out the form carefully using English letters.
-                </p>
-            </CardHeader>
+        <div className="max-w-4xl mx-auto py-10 px-4 md:px-0">
+            <div className="text-center mb-10">
+                <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-4">
+                    <School className="h-8 w-8 text-primary" />
+                </div>
+                <h1 className="text-3xl font-extrabold tracking-tight text-foreground mb-2">Student Admission</h1>
+                <p className="text-muted-foreground">Accurate information ensures faster processing.</p>
+            </div>
 
-            <CardContent className="p-8">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {config.fields.map((field) => {
-                            // ফাইল ফিল্ডের জন্য স্পেশাল রেন্ডারিং
-                            if (field.type === "FILE") {
-                                return (
-                                    <div key={field.name} className="col-span-full">
-                                        <Label className="mb-2 block font-medium">
-                                            {field.label} {field.required && <span className="text-red-500">*</span>}
-                                        </Label>
-                                        <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer relative">
-                                            <Input
-                                                type="file"
-                                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                                onChange={(e) => onFileChange(e, field.name)}
-                                                required={field.required}
-                                            />
-                                            <UploadCloud className="h-8 w-8 text-muted-foreground mb-2" />
-                                            <p className="text-sm font-medium">
-                                                {selectedFiles[field.name]
-                                                    ? selectedFiles[field.name].name
-                                                    : "Click to upload or drag and drop"}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Supported: JPG, PNG, PDF (Max 5MB)
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            }
-
-                            // অন্যান্য ফিল্ড রেন্ডারিং
-                            return (
-                                <div
-                                    key={field.name}
-                                    className={field.type === "TEXTAREA" ? "col-span-full" : "col-span-1"}
-                                >
-                                    <Label htmlFor={field.name} className="mb-2 block font-medium">
-                                        {field.label} {field.required && <span className="text-red-500">*</span>}
-                                    </Label>
-
-                                    {field.type === "DROPDOWN" ? (
-                                        <Select
-                                            onValueChange={(val) => setValue(field.name, val)}
-                                            required={field.required}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={`Select ${field.label}`} />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                <Card className="shadow-sm border-border overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b pb-4">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2">Basic Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">First Name *</Label>
+                                <Input {...register("firstName", { required: true })} placeholder="John" className="h-10 bg-background" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Last Name *</Label>
+                                <Input {...register("lastName", { required: true })} placeholder="Doe" className="h-10 bg-background" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Email *</Label>
+                                <Input type="email" {...register("email", { required: true })} placeholder="john@example.com" className="h-10 bg-background" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Phone *</Label>
+                                <Input type="tel" {...register("phone", { required: true })} placeholder="+1234567890" className="h-10 bg-background" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Admission Class *</Label>
+                                <Controller
+                                    control={control}
+                                    name="classId"
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <SelectTrigger className="h-10 bg-background">
+                                                <SelectValue placeholder="Select Class" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {field.options?.map((option) => (
-                                                    <SelectItem key={option} value={option}>
-                                                        {option}
-                                                    </SelectItem>
+                                                {classes.map((cls: any) => (
+                                                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                    ) : field.type === "TEXTAREA" ? (
-                                        <Textarea
-                                            {...register(field.name, { required: field.required })}
-                                            placeholder={field.placeholder}
-                                            className="resize-none h-32"
-                                        />
-                                    ) : (
-                                        <Input
-                                            type={field.type === "NUMBER" ? "number" : field.type === "DATE" ? "date" : "text"}
-                                            {...register(field.name, { required: field.required })}
-                                            placeholder={field.placeholder}
-                                        />
                                     )}
-
-                                    {errors[field.name] && (
-                                        <p className="text-red-500 text-xs mt-1">This field is required</p>
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Academic Year (Session) *</Label>
+                                <Controller
+                                    control={control}
+                                    name="academicYearId"
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <SelectTrigger className="h-10 bg-background">
+                                                <SelectValue placeholder="Select Session" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {academicYears.map((year: any) => (
+                                                    <SelectItem key={year.id} value={year.id}>{year.name || year.year}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                                />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <div className="pt-6 border-t mt-6">
-                        <Button type="submit" className="w-full text-lg py-6" disabled={loading}>
-                            {loading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting...
-                                </>
-                            ) : (
-                                "Submit Application"
-                            )}
-                        </Button>
-                    </div>
-                </form>
-            </CardContent>
-        </Card>
+                {parsedFields.length > 0 && (
+                    <Card className="shadow-sm border-border overflow-hidden">
+                        <CardHeader className="bg-muted/30 border-b pb-4">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">Additional Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {parsedFields.map((field) => (
+                                    <div key={field.name} className={`space-y-2 ${field.type === 'FILE' ? 'md:col-span-2' : ''}`}>
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                            {field.label} {field.required && <span className="text-destructive">*</span>}
+                                        </Label>
+                                        
+                                        {field.type === "TEXT" && <Input {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
+                                        {field.type === "NUMBER" && <Input type="number" {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
+                                        {field.type === "DATE" && <Input type="date" {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
+                                        {field.type === "DROPDOWN" && (
+                                            <Controller
+                                                control={control}
+                                                name={field.name}
+                                                rules={{ required: field.required }}
+                                                render={({ field: selectField }) => (
+                                                    <Select onValueChange={selectField.onChange} value={selectField.value}>
+                                                        <SelectTrigger className="h-10 bg-background">
+                                                            <SelectValue placeholder={`Select ${field.label}`} />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {field.options?.map((opt: string) => (
+                                                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
+                                        )}
+                                        {field.type === "FILE" && (
+                                            <div className="relative border-2 border-dashed rounded-xl p-6 hover:bg-muted/30 transition-colors bg-background flex flex-col items-center justify-center text-center">
+                                                <FileUp className="h-8 w-8 text-muted-foreground mb-2" />
+                                                <div className="text-sm font-semibold">Click to upload document</div>
+                                                <input type="file" {...register(field.name, { required: field.required })} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                <div className="flex justify-end pt-4">
+                    <Button type="submit" size="lg" disabled={submitMutation.isPending} className="w-full md:w-auto px-10 h-12 font-bold shadow-md">
+                        {submitMutation.isPending ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Submitting...</> : "Submit Admission Form"}
+                    </Button>
+                </div>
+            </form>
+        </div>
     );
 }

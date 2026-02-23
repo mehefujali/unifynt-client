@@ -1,42 +1,56 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import instance from "@/lib/axios";
+import axiosInstance from "@/lib/axios";
 
 export const AdmissionService = {
-  updateConfig: async (data: any) => {
-    const response = await instance.post("/admission/config", data);
-    return response.data;
+  getPublicData: async (schoolId: string) => {
+    const res = await axiosInstance.get(`/admission/public-config/${schoolId}`);
+    return res.data;
   },
 
-  getMySchoolConfig: async () => {
-    const response = await instance.get("/admission/config");
-    return response.data;
-  },
-
-  getPublicConfig: async (schoolId: string) => {
-    const response = await instance.get(`/admission/public-config/${schoolId}`);
-    return response.data;
-  },
-
-  submitApplication: async (
-    schoolId: string,
-    payload: any,
-    files: Record<string, File>,
-  ) => {
-    const formData = new FormData();
-    formData.append("data", JSON.stringify(payload));
-    Object.keys(files).forEach((key) => {
-      formData.append(key, files[key]);
-    });
-
-    const response = await instance.post(
+  submitApplication: async (schoolId: string, formData: FormData) => {
+    const res = await axiosInstance.post(
       `/admission/submit/${schoolId}`,
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      },
+      }
     );
-    return response.data;
+    return res.data;
+  },
+
+  getApplications: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
+    const res = await axiosInstance.get(`/admission/applications`, {
+      params,
+    });
+    return res.data;
+  },
+
+  getApplicationById: async (id: string) => {
+    const res = await axiosInstance.get(`/admission/applications/${id}`);
+    return res.data;
+  },
+
+  approveApplication: async (data: { id: string; sectionId: string }) => {
+    const res = await axiosInstance.patch(`/admission/approve/${data.id}`, {
+      sectionId: data.sectionId,
+    });
+    return res.data;
+  },
+
+  getConfig: async () => {
+    const res = await axiosInstance.get(`/admission/config`);
+    return res.data;
+  },
+
+  updateConfig: async (data: any) => {
+    const res = await axiosInstance.post(`/admission/config`, data);
+    return res.data;
   },
 };

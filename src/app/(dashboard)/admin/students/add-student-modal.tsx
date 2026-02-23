@@ -1,438 +1,235 @@
-/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, UploadCloud, User, GraduationCap, Users, FileBadge } from "lucide-react";
-
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import { StudentService } from "@/services/student.service";
 import { AcademicService } from "@/services/academic.service";
-import api from "@/lib/axios";
-import { studentSchema, StudentFormValues } from "./schema";
+import { AdmissionService } from "@/services/admission.service";
 
-export function AddStudentModal() {
-    const [open, setOpen] = useState(false);
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, UserPlus, FileUp } from "lucide-react";
+
+interface Props {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+const extractData = (res: any) => {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.data)) return res.data;
+    if (res.data && Array.isArray(res.data.data)) return res.data.data;
+    return [];
+};
+
+export default function AddStudentModal({ isOpen, onClose }: Props) {
     const queryClient = useQueryClient();
+    const { register, handleSubmit, control, formState: { errors }, watch, reset, setValue } = useForm();
+    const [activeTab, setActiveTab] = useState("core");
 
-    const [activeTab, setActiveTab] = useState("academic");
-    const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
+    const { data: configRes } = useQuery({ queryKey: ["admissionConfig"], queryFn: AdmissionService.getConfig });
+    const { data: classesRes } = useQuery({ queryKey: ["classes"], queryFn: () => AcademicService.getAllClasses() });
+    const { data: yearsRes } = useQuery({ queryKey: ["academicYears"], queryFn: () => AcademicService.getAllAcademicYears() });
+    const { data: sectionsRes } = useQuery({ queryKey: ["allSections"], queryFn: () => AcademicService.getAllSections({}) });
 
-    const fileRefs = {
-        profileImage: useRef<HTMLInputElement>(null),
-        birthCertificateUrl: useRef<HTMLInputElement>(null),
-        tcDocumentUrl: useRef<HTMLInputElement>(null),
-    };
+    const selectedClassId = watch("classId");
 
-    const form = useForm<StudentFormValues>({
-        resolver: zodResolver(studentSchema),
-        defaultValues: { caste: "GENERAL", admissionDate: new Date().toISOString().split('T')[0] }
-    });
-
-    const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = form;
-
-    const watchClassId = watch("classId");
-
-    // --- FETCH ACADEMIC DATA ---
-    const { data: academicYears, isLoading: isLoadingYears } = useQuery({
-        queryKey: ["academicYears"],
-        queryFn: AcademicService.getAllAcademicYears,
-        enabled: open,
-    });
-
-    const { data: classes, isLoading: isLoadingClasses } = useQuery({
-        queryKey: ["classes"],
-        queryFn: AcademicService.getAllClasses,
-        enabled: open,
-    });
-
-    const { data: sections, isLoading: isLoadingSections } = useQuery({
-        queryKey: ["sections", watchClassId],
-        queryFn: () => AcademicService.getAllSections(watchClassId),
-        enabled: !!watchClassId && open,
-    });
-
-    const mutation = useMutation({
-        mutationFn: StudentService.createStudent,
+    const createMutation = useMutation({
+        mutationFn: (formData: FormData) => StudentService.createStudent(formData),
         onSuccess: () => {
-            toast.success("Student enrolled successfully");
+            toast.success("Student added successfully!");
             queryClient.invalidateQueries({ queryKey: ["students"] });
-            setOpen(false);
             reset();
-            setActiveTab("academic");
+            onClose();
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || "Failed to enroll student");
-        },
+            toast.error(error?.response?.data?.message || "Failed to add student");
+        }
     });
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof StudentFormValues) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        try {
-            setIsUploading(prev => ({ ...prev, [fieldName]: true }));
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
-
-            if (res.data.success) {
-                setValue(fieldName, res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                toast.success("Document uploaded successfully");
+    const onSubmit = (data: any) => {
+        const formData = new FormData();
+        const fileKeys = parsedFields.filter((f: any) => f.type === "FILE").map((f: any) => f.name);
+        
+        const textData = { ...data };
+        fileKeys.forEach((k: string) => delete textData[k]);
+        
+        formData.append("data", JSON.stringify(textData));
+        
+        fileKeys.forEach((key: string) => {
+            if (data[key] && data[key].length > 0) {
+                formData.append(key, data[key][0]);
             }
-        } catch (error: any) {
-            toast.error("File upload failed");
-        } finally {
-            setIsUploading(prev => ({ ...prev, [fieldName]: false }));
-        }
+        });
+
+        createMutation.mutate(formData);
     };
 
-    const onSubmit = (data: StudentFormValues) => {
-        mutation.mutate(data);
-    };
+    let parsedFields: any[] = [];
+    try {
+        parsedFields = typeof configRes?.data?.fields === "string" ? JSON.parse(configRes.data.fields) : configRes?.data?.fields || [];
+    } catch (e) {}
 
-    // --- SMART ERROR HANDLING (AUTO TAB SWITCHING) ---
-    const onError = (formErrors: any) => {
-        const errorKeys = Object.keys(formErrors);
+    const classList = extractData(classesRes);
+    const yearList = extractData(yearsRes);
+    const allSections = extractData(sectionsRes);
 
-        const academicFields = ['academicYearId', 'classId', 'sectionId', 'rollNumber', 'admissionNumber', 'admissionDate', 'previousSchoolName'];
-        const personalFields = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'bloodGroup', 'religion', 'caste', 'nationalId', 'address', 'phone', 'email'];
-        const parentFields = ['fatherName', 'fatherPhone', 'fatherOccupation', 'motherName', 'motherPhone', 'motherOccupation', 'localGuardianName', 'localGuardianPhone', 'localGuardianRelation'];
-
-        if (errorKeys.some(key => academicFields.includes(key))) {
-            setActiveTab("academic");
-        } else if (errorKeys.some(key => personalFields.includes(key))) {
-            setActiveTab("personal");
-        } else if (errorKeys.some(key => parentFields.includes(key))) {
-            setActiveTab("parents");
-        } else {
-            setActiveTab("documents");
-        }
-
-        toast.error("Please fill in all mandatory fields correctly.");
-    };
+    const filteredSections = allSections.filter((sec: any) => sec.classId === selectedClassId);
 
     return (
-        <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-                <Button size="lg" className="px-6 font-bold shadow-md">
-                    <Plus className="mr-2 h-5 w-5" /> Enroll Student
-                </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-[850px] overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
-                <div className="p-8 pb-4 bg-muted/20 border-b shrink-0">
-                    <SheetHeader>
-                        <SheetTitle className="text-2xl font-extrabold tracking-tight text-primary">New Student Enrollment</SheetTitle>
-                        <SheetDescription className="text-sm font-medium">
-                            Complete the admission form. Ensure all mandatory academic and personal fields are filled.
-                        </SheetDescription>
-                    </SheetHeader>
-                </div>
+        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <SheetContent side="right" className="w-full sm:max-w-[500px] md:max-w-[700px] lg:max-w-[800px] p-0 flex flex-col h-full bg-background border-l shadow-2xl overflow-hidden">
+                <SheetHeader className="p-4 sm:p-6 border-b bg-muted/10 shrink-0">
+                    <SheetTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                        <UserPlus className="h-5 w-5 text-primary" /> Admit New Student
+                    </SheetTitle>
+                    <SheetDescription className="text-xs sm:text-sm">Manually enter student details and assign them to a class.</SheetDescription>
+                </SheetHeader>
 
-                <div className="flex-1 overflow-y-auto p-8">
-                    <form id="add-student-form" onSubmit={handleSubmit(onSubmit, onError)}>
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/40 p-1 rounded-xl">
-                                <TabsTrigger value="academic" className="rounded-lg font-bold"><GraduationCap className="w-4 h-4 mr-2" /> Academic</TabsTrigger>
-                                <TabsTrigger value="personal" className="rounded-lg font-bold"><User className="w-4 h-4 mr-2" /> Personal</TabsTrigger>
-                                <TabsTrigger value="parents" className="rounded-lg font-bold"><Users className="w-4 h-4 mr-2" /> Parents</TabsTrigger>
-                                <TabsTrigger value="documents" className="rounded-lg font-bold"><FileBadge className="w-4 h-4 mr-2" /> Docs & Health</TabsTrigger>
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 w-full">
+                        <div className="w-full border-b bg-muted/5 shrink-0 overflow-x-auto no-scrollbar">
+                            <TabsList className="h-12 bg-transparent flex w-max min-w-full justify-start space-x-2 px-4">
+                                <TabsTrigger value="core" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 font-semibold whitespace-nowrap">Core Information</TabsTrigger>
+                                {parsedFields.length > 0 && (
+                                    <TabsTrigger value="additional" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 font-semibold whitespace-nowrap">Additional Details</TabsTrigger>
+                                )}
                             </TabsList>
+                        </div>
 
-                            {/* TAB 1: ACADEMIC */}
-                            <TabsContent value="academic" className="space-y-6 animate-in fade-in duration-500">
-                                <div className="grid grid-cols-2 gap-6">
+                        <ScrollArea className="flex-1 p-4 sm:p-6 scroll-smooth">
+                            <TabsContent value="core" className="m-0 space-y-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Academic Year *</Label>
-                                        <Select onValueChange={(val) => setValue("academicYearId", val, { shouldValidate: true })}>
-                                            <SelectTrigger className={`h-11 shadow-sm ${errors.academicYearId ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`}>
-                                                <SelectValue placeholder={isLoadingYears ? "Loading..." : "Select Academic Year"} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {academicYears?.map((year: any) => (
-                                                    <SelectItem key={year.id} value={year.id}>
-                                                        {year.name} {year.isCurrent && "(Active)"}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors.academicYearId && <p className="text-xs font-semibold text-red-500">{errors.academicYearId.message}</p>}
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">First Name *</Label>
+                                        <Input {...register("firstName", { required: true })} className="h-10 bg-background" />
+                                        {errors.firstName && <span className="text-[10px] text-destructive font-semibold">Required</span>}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Admission Date</Label>
-                                        <Input type="date" className="h-11 shadow-sm bg-muted/10" {...register("admissionDate")} />
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Last Name</Label>
+                                        <Input {...register("lastName")} className="h-10 bg-background" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Email</Label>
+                                        <Input type="email" {...register("email")} className="h-10 bg-background" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Phone</Label>
+                                        <Input type="tel" {...register("phone")} className="h-10 bg-background" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Session *</Label>
+                                        <Controller
+                                            control={control} name="academicYearId" rules={{ required: true }}
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                    <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Select Session" /></SelectTrigger>
+                                                    <SelectContent position="popper">
+                                                        {yearList.map((year: any) => <SelectItem key={year.id} value={year.id}>{year.name || year.year}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                        {errors.academicYearId && <span className="text-[10px] text-destructive font-semibold">Required</span>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Class *</Label>
+                                        <Controller
+                                            control={control} name="classId" rules={{ required: true }}
+                                            render={({ field }) => (
+                                                <Select 
+                                                    onValueChange={(val) => {
+                                                        field.onChange(val);
+                                                        setValue("sectionId", "");
+                                                    }} 
+                                                    value={field.value || undefined}
+                                                >
+                                                    <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Select Class" /></SelectTrigger>
+                                                    <SelectContent position="popper">
+                                                        {classList.map((cls: any) => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                        {errors.classId && <span className="text-[10px] text-destructive font-semibold">Required</span>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase text-muted-foreground">Section</Label>
+                                        <Controller
+                                            control={control} name="sectionId"
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} value={field.value || undefined} disabled={!selectedClassId || filteredSections.length === 0}>
+                                                    <SelectTrigger className="h-10 bg-background">
+                                                        <SelectValue placeholder={!selectedClassId ? "Select Class First" : filteredSections.length === 0 ? "No Sections Found" : "Select Section"} />
+                                                    </SelectTrigger>
+                                                    <SelectContent position="popper">
+                                                        {filteredSections.map((sec: any) => <SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
                                     </div>
                                 </div>
-
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Class *</Label>
-                                        <Select onValueChange={(val) => {
-                                            setValue("classId", val, { shouldValidate: true });
-                                            setValue("sectionId", "", { shouldValidate: true });
-                                        }}>
-                                            <SelectTrigger className={`h-11 shadow-sm ${errors.classId ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`}>
-                                                <SelectValue placeholder={isLoadingClasses ? "Loading..." : "Select Class"} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {classes?.map((cls: any) => (
-                                                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors.classId && <p className="text-xs font-semibold text-red-500">{errors.classId.message}</p>}
+                                {parsedFields.length > 0 && (
+                                    <div className="pt-4 flex justify-end">
+                                        <Button type="button" variant="outline" onClick={() => setActiveTab("additional")}>Next: Additional Details</Button>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Section *</Label>
-                                        <Select
-                                            disabled={!watchClassId || isLoadingSections}
-                                            value={watch("sectionId")}
-                                            onValueChange={(val) => setValue("sectionId", val, { shouldValidate: true })}
-                                        >
-                                            <SelectTrigger className={`h-11 shadow-sm ${errors.sectionId ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`}>
-                                                <SelectValue placeholder={!watchClassId ? "Select Class First" : (isLoadingSections ? "Loading..." : "Select Section")} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {sections?.map((sec: any) => (
-                                                    <SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>
-                                                ))}
-                                                {sections?.length === 0 && <div className="p-2 text-sm text-muted-foreground">No sections found</div>}
-                                            </SelectContent>
-                                        </Select>
-                                        {errors.sectionId && <p className="text-xs font-semibold text-red-500">{errors.sectionId.message}</p>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Roll Number *</Label>
-                                        <Input className={`h-11 shadow-sm ${errors.rollNumber ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`} {...register("rollNumber")} />
-                                        {errors.rollNumber && <p className="text-xs font-semibold text-red-500">{errors.rollNumber.message}</p>}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Admission/Reg. No</Label>
-                                        <Input className="h-11 shadow-sm bg-muted/10 font-mono placeholder:text-muted-foreground/50" placeholder="Auto-generated if empty" {...register("admissionNumber")} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Previous School</Label>
-                                        <Input className="h-11 shadow-sm bg-muted/10" {...register("previousSchoolName")} />
-                                    </div>
-                                </div>
-                                <div className="flex justify-end pt-4"><Button type="button" onClick={() => setActiveTab("personal")}>Next: Personal Details</Button></div>
+                                )}
                             </TabsContent>
 
-                            {/* TAB 2: PERSONAL */}
-                            <TabsContent value="personal" className="space-y-6 animate-in fade-in duration-500">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">First Name *</Label>
-                                        <Input className={`h-11 shadow-sm ${errors.firstName ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`} {...register("firstName")} />
-                                        {errors.firstName && <p className="text-xs font-semibold text-red-500">{errors.firstName.message}</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Last Name *</Label>
-                                        <Input className={`h-11 shadow-sm ${errors.lastName ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`} {...register("lastName")} />
-                                        {errors.lastName && <p className="text-xs font-semibold text-red-500">{errors.lastName.message}</p>}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gender *</Label>
-                                        <Select onValueChange={(val) => setValue("gender", val as any, { shouldValidate: true })}>
-                                            <SelectTrigger className={`h-11 shadow-sm ${errors.gender ? 'border-red-500 bg-red-50/50' : 'bg-muted/10'}`}>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="MALE">Male</SelectItem>
-                                                <SelectItem value="FEMALE">Female</SelectItem>
-                                                <SelectItem value="OTHER">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {errors.gender && <p className="text-xs font-semibold text-red-500">{errors.gender.message}</p>}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date of Birth</Label>
-                                        <Input type="date" className="h-11 shadow-sm bg-muted/10" {...register("dateOfBirth")} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Blood Group</Label>
-                                        <Select onValueChange={(val) => setValue("bloodGroup", val as any)}>
-                                            <SelectTrigger className="h-11 bg-muted/10"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                {["A_POS", "A_NEG", "B_POS", "B_NEG", "O_POS", "O_NEG", "AB_POS", "AB_NEG"].map(bg => (
-                                                    <SelectItem key={bg} value={bg}>{bg.replace("_", "")}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Caste / Category</Label>
-                                        <Select defaultValue="GENERAL" onValueChange={(val) => setValue("caste", val as any)}>
-                                            <SelectTrigger className="h-11 bg-muted/10"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="GENERAL">General</SelectItem>
-                                                <SelectItem value="OBC">OBC</SelectItem>
-                                                <SelectItem value="SC">SC</SelectItem>
-                                                <SelectItem value="ST">ST</SelectItem>
-                                                <SelectItem value="OTHER">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Religion</Label>
-                                        <Input className="h-11 shadow-sm bg-muted/10" {...register("religion")} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">National ID / Aadhar</Label>
-                                        <Input className="h-11 shadow-sm bg-muted/10" {...register("nationalId")} />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Full Address</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("address")} />
-                                </div>
-                                <div className="flex justify-between pt-4">
-                                    <Button type="button" variant="outline" onClick={() => setActiveTab("academic")}>Back</Button>
-                                    <Button type="button" onClick={() => setActiveTab("parents")}>Next: Parents</Button>
+                            <TabsContent value="additional" className="m-0 space-y-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                    {parsedFields.map((field: any) => (
+                                        <div key={field.name} className={`space-y-2 ${field.type === 'FILE' ? 'sm:col-span-2' : ''}`}>
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                                {field.label} {field.required && <span className="text-destructive">*</span>}
+                                            </Label>
+                                            {field.type === "TEXT" && <Input {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
+                                            {field.type === "NUMBER" && <Input type="number" {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
+                                            {field.type === "DATE" && <Input type="date" {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
+                                            {field.type === "DROPDOWN" && (
+                                                <Controller
+                                                    control={control} name={field.name} rules={{ required: field.required }}
+                                                    render={({ field: selectField }) => (
+                                                        <Select onValueChange={selectField.onChange} value={selectField.value || undefined}>
+                                                            <SelectTrigger className="h-10 bg-background"><SelectValue placeholder={`Select ${field.label}`} /></SelectTrigger>
+                                                            <SelectContent position="popper">
+                                                                {field.options?.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                />
+                                            )}
+                                            {field.type === "FILE" && (
+                                                <div className="relative border-2 border-dashed rounded-xl p-6 hover:bg-muted/30 transition-colors bg-background flex flex-col items-center justify-center text-center">
+                                                    <FileUp className="h-6 w-6 text-muted-foreground mb-2" />
+                                                    <div className="text-sm font-semibold">Upload {field.label}</div>
+                                                    <input type="file" {...register(field.name, { required: field.required })} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </TabsContent>
+                        </ScrollArea>
 
-                            {/* TAB 3: PARENTS */}
-                            <TabsContent value="parents" className="space-y-6 animate-in fade-in duration-500">
-                                <div className="p-5 border rounded-xl bg-muted/5 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Father's Details</h4>
-                                    <div className="grid grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Name</Label>
-                                            <Input className="h-11 bg-background" {...register("fatherName")} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Phone</Label>
-                                            <Input className="h-11 bg-background" {...register("fatherPhone")} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Occupation</Label>
-                                            <Input className="h-11 bg-background" {...register("fatherOccupation")} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-5 border rounded-xl bg-muted/5 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Mother's Details</h4>
-                                    <div className="grid grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Name</Label>
-                                            <Input className="h-11 bg-background" {...register("motherName")} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Phone</Label>
-                                            <Input className="h-11 bg-background" {...register("motherPhone")} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Occupation</Label>
-                                            <Input className="h-11 bg-background" {...register("motherOccupation")} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-5 border rounded-xl bg-muted/5 space-y-4 border-dashed border-primary/30">
-                                    <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2 text-primary">Local Guardian (If Any)</h4>
-                                    <div className="grid grid-cols-3 gap-6">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Name</Label>
-                                            <Input className="h-11 bg-background" {...register("localGuardianName")} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Phone</Label>
-                                            <Input className="h-11 bg-background" {...register("localGuardianPhone")} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-muted-foreground">Relation</Label>
-                                            <Input className="h-11 bg-background" {...register("localGuardianRelation")} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex justify-between pt-4">
-                                    <Button type="button" variant="outline" onClick={() => setActiveTab("personal")}>Back</Button>
-                                    <Button type="button" onClick={() => setActiveTab("documents")}>Next: Docs & Health</Button>
-                                </div>
-                            </TabsContent>
-
-                            {/* TAB 4: DOCS & HEALTH */}
-                            <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-500">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Medical Conditions / Allergies</Label>
-                                        <Input className="h-11 shadow-sm bg-muted/10" placeholder="e.g. Dust allergy, Asthma" {...register("medicalConditions")} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transport Route (If Appliable)</Label>
-                                        <Input className="h-11 shadow-sm bg-muted/10" placeholder="e.g. Route A - City Center" {...register("transportRoute")} />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                    <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/5">
-                                        <Avatar className="h-16 w-16 border-2">
-                                            <AvatarImage src={watch("profileImage")} className="object-cover" />
-                                            <AvatarFallback><User /></AvatarFallback>
-                                        </Avatar>
-                                        <div className="space-y-1 flex-1">
-                                            <p className="font-bold text-sm">Student Photo</p>
-                                            <input type="file" ref={fileRefs.profileImage} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'profileImage')} />
-                                            <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.profileImage.current?.click()} disabled={isUploading.profileImage}>
-                                                {isUploading.profileImage ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} Upload
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/5">
-                                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary"><FileBadge className="h-6 w-6" /></div>
-                                        <div className="space-y-1 flex-1">
-                                            <p className="font-bold text-sm">Birth Certificate</p>
-                                            <input type="file" ref={fileRefs.birthCertificateUrl} className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => handleFileUpload(e, 'birthCertificateUrl')} />
-                                            <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.birthCertificateUrl.current?.click()} disabled={isUploading.birthCertificateUrl}>
-                                                {isUploading.birthCertificateUrl ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} {watch("birthCertificateUrl") ? "Uploaded" : "Upload File"}
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/5">
-                                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary"><FileBadge className="h-6 w-6" /></div>
-                                        <div className="space-y-1 flex-1">
-                                            <p className="font-bold text-sm">Transfer Certificate (TC)</p>
-                                            <input type="file" ref={fileRefs.tcDocumentUrl} className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => handleFileUpload(e, 'tcDocumentUrl')} />
-                                            <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.tcDocumentUrl.current?.click()} disabled={isUploading.tcDocumentUrl}>
-                                                {isUploading.tcDocumentUrl ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} {watch("tcDocumentUrl") ? "Uploaded" : "Upload File"}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </TabsContent>
-                        </Tabs>
-                    </form>
-                </div>
-
-                <div className="p-6 border-t bg-background/90 backdrop-blur shrink-0 flex justify-between">
-                    <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="add-student-form" className="font-bold px-8" disabled={mutation.isPending}>
-                        {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save & Enroll Student
-                    </Button>
-                </div>
+                        <div className="p-4 sm:p-6 border-t bg-muted/10 shrink-0 flex justify-end gap-3">
+                            <Button type="button" variant="outline" onClick={onClose} disabled={createMutation.isPending}>Cancel</Button>
+                            <Button type="submit" disabled={createMutation.isPending} className="font-bold shadow-sm px-8">
+                                {createMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : "Save Student"}
+                            </Button>
+                        </div>
+                    </Tabs>
+                </form>
             </SheetContent>
         </Sheet>
     );
