@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
     Plus, Edit, Trash2, Search, Clock, MapPin,
     User, BookOpen, Layers, FilterX, ChevronLeft,
-    ChevronRight, Phone, CalendarDays
+    ChevronRight, Phone, CalendarDays, ChevronsLeft, ChevronsRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", 
 
 export default function RoutinePage() {
     const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedClassId, setSelectedClassId] = useState<string>("all");
     const [selectedSectionId, setSelectedSectionId] = useState<string>("all");
@@ -45,10 +46,10 @@ export default function RoutinePage() {
     });
 
     const { data: serverResponse, isLoading: isRoutinesLoading } = useQuery({
-        queryKey: ["routines", currentPage, selectedClassId, selectedSectionId, selectedDay, selectedTime, searchTerm],
+        queryKey: ["routines", currentPage, limit, selectedClassId, selectedSectionId, selectedDay, selectedTime, searchTerm],
         queryFn: () => RoutineService.getAllRoutines({
             page: currentPage,
-            limit: 10,
+            limit: limit,
             classId: selectedClassId === "all" ? undefined : selectedClassId,
             sectionId: selectedSectionId === "all" ? undefined : selectedSectionId,
             day: selectedDay === "all" ? undefined : selectedDay,
@@ -57,10 +58,8 @@ export default function RoutinePage() {
         }),
     });
 
-    // ✅ এপিআই রেসপন্স অনুযায়ী ডাটা ডিকনস্ট্রাকশন
-    // আপনার এপিআই "data" অবজেক্টের ভেতর "data" অ্যারে এবং "meta" পাঠাচ্ছে
-    const routines = serverResponse?.data?.data || [];
-    const meta = serverResponse?.data?.meta;
+    const routines = serverResponse?.data || [];
+    const meta = serverResponse?.meta;
     const availableTimes = meta?.availableTimes || [];
 
     const handleFilterChange = (setter: any, value: any) => {
@@ -69,8 +68,13 @@ export default function RoutinePage() {
     };
 
     const clearFilters = () => {
-        setSearchTerm(""); setSelectedClassId("all"); setSelectedSectionId("all");
-        setSelectedDay("all"); setSelectedTime("all"); setCurrentPage(1);
+        setSearchTerm("");
+        setSelectedClassId("all");
+        setSelectedSectionId("all");
+        setSelectedDay("all");
+        setSelectedTime("all");
+        setCurrentPage(1);
+        setLimit(10);
     };
 
     return (
@@ -226,33 +230,71 @@ export default function RoutinePage() {
                         </Table>
                     </div>
 
-                    {/* Pagination */}
-                    {meta && meta.totalPage > 1 && (
-                        <div className="flex items-center justify-between px-6 py-4 border-t border-border/40">
-                            <p className="text-xs text-muted-foreground font-medium">Total {meta.total} records</p>
-                            <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-border/40 bg-muted/10 gap-4 sm:gap-0">
+                        <div className="flex-1 text-sm text-muted-foreground text-center sm:text-left">
+                            Showing {routines.length > 0 ? (currentPage - 1) * limit + 1 : 0} to {Math.min(currentPage * limit, meta?.total || 0)} of {meta?.total || 0} entries
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 lg:space-x-8">
+                            <div className="flex items-center space-x-2">
+                                <p className="text-sm font-medium">Rows per page</p>
+                                <Select
+                                    value={`${limit}`}
+                                    onValueChange={(value) => {
+                                        setLimit(Number(value));
+                                        setCurrentPage(1);
+                                    }}
+                                >
+                                    <SelectTrigger className="h-8 w-[70px]">
+                                        <SelectValue placeholder={limit} />
+                                    </SelectTrigger>
+                                    <SelectContent side="top">
+                                        {[10, 20, 30, 40, 50].map((pageSize) => (
+                                            <SelectItem key={pageSize} value={`${pageSize}`}>
+                                                {pageSize}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                                Page {currentPage} of {meta?.totalPage || 1}
+                            </div>
+                            <div className="flex items-center space-x-2">
                                 <Button
-                                    variant="outline" size="sm"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    variant="outline"
+                                    className="hidden h-8 w-8 p-0 lg:flex"
+                                    onClick={() => setCurrentPage(1)}
                                     disabled={currentPage === 1}
+                                >
+                                    <ChevronsLeft className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     className="h-8 w-8 p-0"
+                                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
-                                <div className="flex items-center px-3 text-xs font-bold border rounded-md bg-background">
-                                    {currentPage} / {meta.totalPage}
-                                </div>
                                 <Button
-                                    variant="outline" size="sm"
-                                    onClick={() => setCurrentPage(p => Math.min(meta.totalPage, p + 1))}
-                                    disabled={currentPage === meta.totalPage}
+                                    variant="outline"
                                     className="h-8 w-8 p-0"
+                                    onClick={() => setCurrentPage((prev) => Math.min(meta?.totalPage || 1, prev + 1))}
+                                    disabled={currentPage === (meta?.totalPage || 1) || (meta?.totalPage || 0) === 0}
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
+                                <Button
+                                    variant="outline"
+                                    className="hidden h-8 w-8 p-0 lg:flex"
+                                    onClick={() => setCurrentPage(meta?.totalPage || 1)}
+                                    disabled={currentPage === (meta?.totalPage || 1) || (meta?.totalPage || 0) === 0}
+                                >
+                                    <ChevronsRight className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </CardContent>
             </Card>
 

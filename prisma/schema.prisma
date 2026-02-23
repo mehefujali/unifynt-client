@@ -1,0 +1,54 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../generated/prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model School {
+    id           String   @id @default(uuid())
+    name         String
+    slug         String   @unique
+    subdomain    String?  @unique
+    customDomain String?  @unique
+    logo         String?
+    isActive     Boolean  @default(true)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    admissionConfig AdmissionFormConfig?
+    applications    AdmissionApplication[]
+}
+
+model AdmissionFormConfig {
+    id        String   @id @default(uuid())
+    schoolId  String   @unique
+    fields    Json
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    school School @relation(fields: [schoolId], references: [id])
+}
+
+model AdmissionApplication {
+    id             String            @id @default(uuid())
+    schoolId       String
+    applicantName  String
+    applicantEmail String
+    submissionData Json
+    status         ApplicationStatus @default(PENDING)
+    studentId      String?           @unique
+    createdAt      DateTime          @default(now())
+    updatedAt      DateTime          @updatedAt
+
+    school School @relation(fields: [schoolId], references: [id])
+}
+
+enum ApplicationStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}

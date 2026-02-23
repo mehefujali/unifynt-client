@@ -1,305 +1,209 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, User, GraduationCap, Users, HeartPulse, FileText, Calendar, Printer, QrCode, Loader2 } from "lucide-react";
-import { format } from "date-fns";
 import { StudentService } from "@/services/student.service";
+import { format } from "date-fns";
 
-interface ViewStudentModalProps {
-    student: any | null;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Loader2, Mail, Phone, GraduationCap, CalendarDays, UserSquare2, Link as LinkIcon, AlertCircle } from "lucide-react";
+
+interface Props {
+    studentId: string | null;
+    isOpen: boolean;
+    onClose: () => void;
 }
 
-export function ViewStudentModal({ student, open, onOpenChange }: ViewStudentModalProps) {
-    const idCardRef = useRef<HTMLDivElement>(null);
+const formatKeyLabel = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+const isImageUrl = (url: string) => /\.(jpg|jpeg|png|webp|avif|gif)$/.test(url.toLowerCase());
 
-    const { data: fullStudent, isLoading } = useQuery({
-        queryKey: ["student", student?.id],
-        queryFn: () => StudentService.getSingleStudent(student?.id as string),
-        enabled: !!student?.id && open,
+export default function ViewStudentModal({ studentId, isOpen, onClose }: Props) {
+    const { data: res, isLoading } = useQuery({
+        queryKey: ["student", studentId],
+        queryFn: () => StudentService.getStudentById(studentId!),
+        enabled: !!studentId && isOpen,
     });
 
-    const displayData = fullStudent || student;
+    const student = res?.data;
+    const admissionData = student?.admissionApplication;
 
-    const handlePrintID = () => {
-        const printContent = idCardRef.current;
-        if (printContent) {
-            const originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContent.innerHTML;
-            window.print();
-            document.body.innerHTML = originalContents;
-            window.location.reload();
-        }
+    const renderDynamicFields = (dataObj: any, excludeKeys: string[] = []) => {
+        if (!dataObj) return null;
+        const validEntries = Object.entries(dataObj).filter(([key, value]) => 
+            !excludeKeys.includes(key) && value !== null && value !== undefined && value !== "" && value !== "null"
+        );
+
+        if (validEntries.length === 0) return <div className="text-sm text-muted-foreground flex items-center gap-2"><AlertCircle className="h-4 w-4"/> No data available.</div>;
+
+        return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {validEntries.map(([key, value]) => {
+                    const strValue = String(value);
+                    const isLink = strValue.startsWith("http");
+
+                    return (
+                        <div key={key} className="space-y-1.5 p-3 sm:p-3.5 bg-muted/20 rounded-xl border border-border/50">
+                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">{formatKeyLabel(key)}</Label>
+                            {isLink ? (
+                                isImageUrl(strValue) ? (
+                                    <a href={strValue} target="_blank" rel="noreferrer" className="block hover:opacity-80 transition-opacity">
+                                        <img src={strValue} alt={key} className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border shadow-sm" />
+                                    </a>
+                                ) : (
+                                    <a href={strValue} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline break-all">
+                                        <LinkIcon className="h-4 w-4 shrink-0" /> <span className="line-clamp-1">View Document</span>
+                                    </a>
+                                )
+                            ) : (
+                                <p className="text-sm font-semibold text-foreground break-words">
+                                    {key.toLowerCase().includes("date") && !isNaN(Date.parse(strValue)) ? format(new Date(strValue), "dd MMM yyyy") : strValue}
+                                </p>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
-    if (!student) return null;
-
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[750px] w-full  p-0 flex flex-col h-full bg-white dark:bg-slate-950/50 border-l-0 shadow-2xl">
-                <div className="bg-background border-b px-8 py-8 relative overflow-hidden shrink-0">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
-                    <SheetHeader>
-                        <div className="flex items-start gap-6">
-                            <div className="h-24 w-24 rounded-xl overflow-hidden border-4 border-background shadow-lg shrink-0 bg-muted/30 flex items-center justify-center">
-                                {displayData.profileImage ? (
-                                    <img
-                                        src={displayData.profileImage}
-                                        alt="Profile"
-                                        className="h-full w-full object-cover aspect-square"
-                                    />
-                                ) : (
-                                    <User className="h-10 w-10 text-muted-foreground/50" />
-                                )}
+        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <SheetContent side="right" className="w-full max-w-[100vw] sm:max-w-[500px] md:max-w-[700px] lg:max-w-[800px] p-0 flex flex-col h-[100dvh] bg-background border-l shadow-2xl">
+                {isLoading ? (
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        <p className="text-sm font-medium text-muted-foreground animate-pulse">Loading comprehensive profile...</p>
+                    </div>
+                ) : student ? (
+                    <>
+                        <SheetHeader className="p-4 sm:p-6 border-b bg-gradient-to-br from-muted/50 to-background shrink-0 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none hidden sm:block">
+                                <UserSquare2 className="h-40 w-40" />
                             </div>
-                            <div className="space-y-2 mt-2">
-                                <div className="flex items-center gap-3">
-                                    <SheetTitle className="text-3xl font-extrabold tracking-tight">
-                                        {displayData.firstName} {displayData.lastName}
-                                    </SheetTitle>
-                                    <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 shadow-sm border-0">
-                                        {displayData.user?.status || "ACTIVE"}
-                                    </Badge>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm font-bold text-muted-foreground">
-                                    <span className="flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                                        Class: {displayData.class?.name} - {displayData.section?.name}
-                                    </span>
-                                    <span>•</span>
-                                    <span>Roll: {displayData.rollNumber}</span>
-                                    <span>•</span>
-                                    <span>ID: {displayData.studentId || "N/A"}</span>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 relative z-10">
+                                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg shrink-0">
+                                    <AvatarImage src={student.profilePicture} className="object-cover" />
+                                    <AvatarFallback className="text-3xl bg-primary/10 text-primary font-bold">
+                                        {student.firstName?.charAt(0)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 space-y-2 pt-1">
+                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+                                        <div>
+                                            <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">{student.firstName} {student.lastName}</h2>
+                                            <div className="flex flex-wrap items-center gap-2 mt-1 text-sm font-medium text-muted-foreground">
+                                                <Badge variant="secondary" className="font-mono text-xs px-2.5 py-0.5 bg-primary/10 text-primary border-primary/20">{student.studentId}</Badge>
+                                                <span className="flex items-center gap-1.5"><GraduationCap className="h-4 w-4"/> Class {student.class?.name} - {student.section?.name} (Roll: {student.rollNumber})</span>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className={`w-fit ${student.user?.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-red-50 text-red-600 border-red-200"}`}>
+                                            {student.user?.status}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 mt-3 text-xs sm:text-sm font-medium text-foreground">
+                                        <span className="flex items-center gap-1.5 sm:gap-2 break-all"><Mail className="h-4 w-4 text-muted-foreground shrink-0"/> {student.email}</span>
+                                        <span className="flex items-center gap-1.5 sm:gap-2"><Phone className="h-4 w-4 text-muted-foreground shrink-0"/> {student.phone || "N/A"}</span>
+                                        <span className="flex items-center gap-1.5 sm:gap-2"><CalendarDays className="h-4 w-4 text-muted-foreground shrink-0"/> {student.academicYear?.name || "Current Session"}</span>
+                                    </div>
                                 </div>
                             </div>
+                        </SheetHeader>
+
+                        {/* Flex container for tabs to manage scroll perfectly */}
+                        <div className="flex-1 flex flex-col min-h-0">
+                            <Tabs defaultValue="overview" className="flex-1 flex flex-col w-full h-full">
+                                <div className="w-full border-b bg-muted/5 shrink-0 overflow-x-auto no-scrollbar">
+                                    <TabsList className="h-12 bg-transparent flex w-max min-w-full justify-start space-x-2 px-4">
+                                        <TabsTrigger value="overview" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 font-semibold whitespace-nowrap">Overview</TabsTrigger>
+                                        <TabsTrigger value="guardian" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 font-semibold whitespace-nowrap">Parents & Guardian</TabsTrigger>
+                                        <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 font-semibold whitespace-nowrap">Academic History</TabsTrigger>
+                                        <TabsTrigger value="documents" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 font-semibold whitespace-nowrap">Docs & Custom Data</TabsTrigger>
+                                    </TabsList>
+                                </div>
+
+                                {/* Main scrollable area for content */}
+                                <div className="flex-1 overflow-y-auto p-4 sm:p-6 scroll-smooth">
+                                    <TabsContent value="overview" className="m-0 space-y-6 animate-in fade-in">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground border-b pb-2 mb-4 uppercase tracking-wide">Personal Information</h3>
+                                            {renderDynamicFields(admissionData, [
+                                                "id", "schoolId", "studentId", "classId", "academicYearId", "createdAt", "updatedAt", "status", "customData",
+                                                "fatherName", "fatherPhone", "fatherEmail", "fatherOccupation", "fatherEducation", "fatherIncome", "fatherNationalId", "fatherPhotoUrl",
+                                                "motherName", "motherPhone", "motherEmail", "motherOccupation", "motherEducation", "motherIncome", "motherNationalId", "motherPhotoUrl",
+                                                "localGuardianName", "localGuardianPhone", "localGuardianRelation", "guardianEmail", "guardianOccupation", "guardianAddress", "guardianPhotoUrl",
+                                                "birthCertificateUrl", "nationalIdDocumentUrl", "tcDocumentUrl", "previousMarksheetUrl", "casteCertificateUrl", "medicalCertificateUrl", "incomeCertificateUrl"
+                                            ])}
+                                        </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="guardian" className="m-0 space-y-8 animate-in fade-in">
+                                        {["Father", "Mother", "Guardian"].map((type) => {
+                                            const prefix = type === "Guardian" ? "localGuardian" : type.toLowerCase();
+                                            const hasData = admissionData && Object.keys(admissionData).some(k => k.startsWith(prefix) && admissionData[k]);
+                                            
+                                            if (!hasData && type !== "Father") return null;
+
+                                            return (
+                                                <div key={type}>
+                                                    <h3 className="text-sm font-bold text-foreground border-b pb-2 mb-4 uppercase tracking-wide">{type} Details</h3>
+                                                    {renderDynamicFields(
+                                                        Object.fromEntries(Object.entries(admissionData || {}).filter(([k]) => k.toLowerCase().includes(type.toLowerCase()))),
+                                                        []
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </TabsContent>
+
+                                    <TabsContent value="history" className="m-0 animate-in fade-in">
+                                        <h3 className="text-sm font-bold text-foreground border-b pb-2 mb-4 uppercase tracking-wide">Promotion History</h3>
+                                        {student.academicHistories && student.academicHistories.length > 0 ? (
+                                            <div className="space-y-4">
+                                                {student.academicHistories.map((history: any) => (
+                                                    <div key={history.id} className="p-4 rounded-xl border bg-card flex flex-col sm:flex-row justify-between gap-4 shadow-sm">
+                                                        <div>
+                                                            <h4 className="font-bold text-foreground">{history.academicYear?.name}</h4>
+                                                            <p className="text-sm text-muted-foreground mt-1">Class {history.class?.name} - {history.section?.name} (Roll: {history.rollNumber})</p>
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
+                                                            {history.totalMarks && <Badge variant="secondary">Marks: {history.totalMarks}</Badge>}
+                                                            {history.percentage && <Badge variant="secondary">{history.percentage}%</Badge>}
+                                                            {history.grade && <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shadow-none border-emerald-200">Grade {history.grade}</Badge>}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-10 border-2 border-dashed rounded-xl bg-muted/10">
+                                                <GraduationCap className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
+                                                <p className="text-sm font-medium text-muted-foreground">No academic history found for this student.</p>
+                                            </div>
+                                        )}
+                                    </TabsContent>
+
+                                    <TabsContent value="documents" className="m-0 space-y-8 animate-in fade-in">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-foreground border-b pb-2 mb-4 uppercase tracking-wide">Uploaded Documents</h3>
+                                            {renderDynamicFields(admissionData, Object.keys(admissionData || {}).filter(k => !k.toLowerCase().includes("url")))}
+                                        </div>
+                                        
+                                        {admissionData?.customData && Object.keys(admissionData.customData).length > 0 && (
+                                            <div>
+                                                <h3 className="text-sm font-bold text-foreground border-b pb-2 mb-4 uppercase tracking-wide">Custom Form Fields</h3>
+                                                {renderDynamicFields(admissionData.customData, ["schoolId", "studentId", "classId", "academicYearId", "id"])}
+                                            </div>
+                                        )}
+                                    </TabsContent>
+                                </div>
+                            </Tabs>
                         </div>
-                    </SheetHeader>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-8 relative">
-                    {isLoading ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-slate-950/50 z-10 backdrop-blur-sm">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : null}
-
-                    <Tabs defaultValue="overview" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/50 p-1 rounded-xl shadow-inner shrink-0">
-                            <TabsTrigger value="overview" className="rounded-lg font-bold">Overview</TabsTrigger>
-                            <TabsTrigger value="idcard" className="rounded-lg font-bold">ID Card</TabsTrigger>
-                            <TabsTrigger value="parents" className="rounded-lg font-bold">Parents</TabsTrigger>
-                            <TabsTrigger value="health" className="rounded-lg font-bold">Health & Docs</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="idcard" className="space-y-6">
-                            <div className="flex justify-end mb-4">
-                                <Button onClick={handlePrintID} variant="outline" className="shadow-sm font-bold">
-                                    <Printer className="w-4 h-4 mr-2" /> Print ID Card
-                                </Button>
-                            </div>
-                            <div className="flex justify-center items-center py-6">
-                                <div ref={idCardRef} className="w-[320px] h-[480px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.07)] border border-slate-100 overflow-hidden relative flex flex-col print:shadow-none print:border-slate-300">
-                                    <div className="h-28 bg-primary w-full absolute top-0 left-0" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 75%, 0% 100%)' }}></div>
-
-                                    <div className="relative z-10 flex flex-col items-center pt-6 px-6">
-                                        <h2 className="text-white font-black text-lg tracking-wider uppercase text-center drop-shadow-md">
-                                            {displayData.school?.name || "STUDENT ID CARD"}
-                                        </h2>
-
-                                        <div className="mt-6 p-1 bg-white rounded-xl shadow-sm border border-slate-100">
-                                            <div className="h-28 w-28 overflow-hidden rounded-lg bg-slate-50 flex items-center justify-center">
-                                                {displayData.profileImage ? (
-                                                    <img
-                                                        src={displayData.profileImage}
-                                                        alt="Profile"
-                                                        className="h-full w-full object-cover aspect-square"
-                                                    />
-                                                ) : (
-                                                    <User className="h-12 w-12 text-slate-300" />
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="text-center mt-4 w-full">
-                                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">{displayData.firstName} {displayData.lastName}</h3>
-                                            <p className="text-primary font-bold text-sm tracking-widest mt-1 uppercase bg-primary/10 inline-block px-3 py-1 rounded-md">
-                                                ID: {displayData.studentId || displayData.admissionNumber}
-                                            </p>
-                                        </div>
-
-                                        <div className="w-full mt-6 space-y-2.5">
-                                            <div className="grid grid-cols-3 text-xs font-semibold border-b border-slate-100 pb-2">
-                                                <div className="text-slate-500 uppercase">Class</div>
-                                                <div className="col-span-2 text-slate-800 text-right">{displayData.class?.name} - {displayData.section?.name}</div>
-                                            </div>
-                                            <div className="grid grid-cols-3 text-xs font-semibold border-b border-slate-100 pb-2">
-                                                <div className="text-slate-500 uppercase">DOB</div>
-                                                <div className="col-span-2 text-slate-800 text-right">
-                                                    {displayData.dateOfBirth ? format(new Date(displayData.dateOfBirth), "dd/MM/yyyy") : "N/A"}
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-3 text-xs font-semibold border-b border-slate-100 pb-2">
-                                                <div className="text-slate-500 uppercase">Blood</div>
-                                                <div className="col-span-2 text-red-500 font-bold text-right">
-                                                    {displayData.bloodGroup ? displayData.bloodGroup.replace("_", "") : "N/A"}
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-3 text-xs font-semibold">
-                                                <div className="text-slate-500 uppercase">Contact</div>
-                                                <div className="col-span-2 text-slate-800 text-right">
-                                                    {displayData.fatherPhone || displayData.localGuardianPhone || "N/A"}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-auto bg-slate-50 p-4 border-t border-slate-100 flex justify-between items-center relative z-10">
-                                        <QrCode className="text-slate-400 h-10 w-10" />
-                                        <div className="text-center">
-                                            <div className="w-20 h-0.5 bg-slate-800 mx-auto mb-1"></div>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Principal</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="overview" className="space-y-6">
-                            <Card className="shadow-sm border-border/60">
-                                <CardContent className="p-6 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2">
-                                        <User className="w-4 h-4" /> Personal Info
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-6 pt-2">
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Gender & DOB</p>
-                                            <p className="text-sm font-semibold capitalize">
-                                                {displayData.gender?.toLowerCase()} • {displayData.dateOfBirth ? format(new Date(displayData.dateOfBirth), "dd MMM yyyy") : "N/A"}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Demographics</p>
-                                            <p className="text-sm font-semibold">{displayData.religion || "N/A"} • {displayData.caste || "GENERAL"}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Phone</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2">
-                                                <Phone className="w-3.5 h-3.5" /> {displayData.phone || "N/A"}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Email</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2">
-                                                <Mail className="w-3.5 h-3.5" /> {displayData.user?.email || displayData.email || "N/A"}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1 col-span-2">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Address</p>
-                                            <p className="text-sm font-semibold flex items-start gap-2">
-                                                <MapPin className="w-3.5 h-3.5 mt-0.5" /> {displayData.address || "N/A"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <Card className="shadow-sm border-border/60">
-                                <CardContent className="p-6 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2">
-                                        <GraduationCap className="w-4 h-4" /> Academic Details
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-6 pt-2">
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Admission Date</p>
-                                            <p className="text-sm font-semibold flex items-center gap-2">
-                                                <Calendar className="w-3.5 h-3.5" /> {displayData.admissionDate ? format(new Date(displayData.admissionDate), "dd MMM yyyy") : "N/A"}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Previous School</p>
-                                            <p className="text-sm font-semibold">{displayData.previousSchoolName || "N/A"}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase">Academic Year</p>
-                                            <p className="text-sm font-semibold">{displayData.academicYear?.name || "Current"}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="parents" className="space-y-6">
-                            <Card className="shadow-sm border-border/60 bg-muted/5">
-                                <CardContent className="p-6 space-y-4">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-2 flex items-center gap-2">
-                                        <Users className="w-4 h-4" /> Guardian Records
-                                    </h4>
-                                    <div className="space-y-6 pt-2">
-                                        <div className="grid grid-cols-3 gap-4 bg-background p-4 rounded-lg border shadow-sm">
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Father&apos;s Name</p><p className="text-sm font-semibold">{displayData.fatherName || "N/A"}</p></div>
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{displayData.fatherPhone || "N/A"}</p></div>
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Occupation</p><p className="text-sm font-semibold">{displayData.fatherOccupation || "N/A"}</p></div>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-4 bg-background p-4 rounded-lg border shadow-sm">
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Mother&apos;s Name</p><p className="text-sm font-semibold">{displayData.motherName || "N/A"}</p></div>
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{displayData.motherPhone || "N/A"}</p></div>
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Occupation</p><p className="text-sm font-semibold">{displayData.motherOccupation || "N/A"}</p></div>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-4 bg-background p-4 rounded-lg border border-dashed border-primary/30 shadow-sm">
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Local Guardian</p><p className="text-sm font-semibold">{displayData.localGuardianName || "N/A"}</p></div>
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Phone</p><p className="text-sm font-semibold">{displayData.localGuardianPhone || "N/A"}</p></div>
-                                            <div className="space-y-1"><p className="text-xs font-bold text-muted-foreground uppercase">Relation</p><p className="text-sm font-semibold">{displayData.localGuardianRelation || "N/A"}</p></div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="health" className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <Card className="shadow-sm border-border/60">
-                                    <CardContent className="p-5 flex flex-col gap-2">
-                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><HeartPulse className="w-3.5 h-3.5 text-red-500" /> Blood Group</p>
-                                        <p className="text-lg font-black text-primary">{displayData.bloodGroup ? displayData.bloodGroup.replace("_", "") : "Unknown"}</p>
-                                    </CardContent>
-                                </Card>
-                                <Card className="shadow-sm border-border/60">
-                                    <CardContent className="p-5 flex flex-col gap-2">
-                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Medical Conditions</p>
-                                        <p className="text-sm font-semibold text-destructive">{displayData.medicalConditions || "None reported"}</p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                            <Card className="shadow-sm border-border/60">
-                                <CardContent className="p-6">
-                                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary border-b pb-4 mb-4 flex items-center gap-2">
-                                        <FileText className="w-4 h-4" /> Digital Locker
-                                    </h4>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/10">
-                                            <p className="font-bold text-sm">Birth Certificate</p>
-                                            {displayData.birthCertificateUrl ? <a href={displayData.birthCertificateUrl} target="_blank" className="text-xs font-bold text-primary hover:underline">View File</a> : <span className="text-xs text-muted-foreground">Not uploaded</span>}
-                                        </div>
-                                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/10">
-                                            <p className="font-bold text-sm">Transfer Certificate</p>
-                                            {displayData.tcDocumentUrl ? <a href={displayData.tcDocumentUrl} target="_blank" className="text-xs font-bold text-primary hover:underline">View File</a> : <span className="text-xs text-muted-foreground">Not uploaded</span>}
-                                        </div>
-                                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/10">
-                                            <p className="font-bold text-sm">National ID Document</p>
-                                            {displayData.nationalIdDocumentUrl ? <a href={displayData.nationalIdDocumentUrl} target="_blank" className="text-xs font-bold text-primary hover:underline">View File</a> : <span className="text-xs text-muted-foreground">Not uploaded</span>}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </div>
+                    </>
+                ) : null}
             </SheetContent>
         </Sheet>
     );

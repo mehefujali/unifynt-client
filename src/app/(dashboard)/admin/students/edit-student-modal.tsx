@@ -1,483 +1,332 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useRef } from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, UploadCloud, User, GraduationCap, Users, FileBadge, Save } from "lucide-react";
-
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import { StudentService } from "@/services/student.service";
 import { AcademicService } from "@/services/academic.service";
-import api from "@/lib/axios";
-import { studentSchema, StudentFormValues } from "./schema";
-import { ImageCropperModal } from "@/components/ui/image-cropper";
+import { AdmissionService } from "@/services/admission.service";
 
-interface EditStudentModalProps {
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2, Edit3, FileUp, Link as LinkIcon } from "lucide-react";
+
+interface Props {
     studentId: string | null;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
+    isOpen: boolean;
+    onClose: () => void;
 }
 
-const safeDate = (dateVal: any) => {
-    if (!dateVal) return "";
-    try {
-        const d = new Date(dateVal);
-        if (isNaN(d.getTime())) return "";
-        return d.toISOString().split('T')[0];
-    } catch {
-        return "";
-    }
+const extractData = (res: any) => {
+    if (!res) return [];
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.data)) return res.data;
+    if (res.data && Array.isArray(res.data.data)) return res.data.data;
+    return [];
 };
 
-// 1. Parent Component: Handles Fetching and Modal State
-export function EditStudentModal({ studentId, open, onOpenChange }: EditStudentModalProps) {
-    const { data: studentRes, isFetching: isStudentFetching } = useQuery({
+const formatDate = (dateStr: any) => {
+    if (!dateStr) return "";
+    try { return new Date(dateStr).toISOString().split('T')[0]; }
+    catch (e) { return ""; }
+};
+
+export default function EditStudentModal({ studentId, isOpen, onClose }: Props) {
+    const queryClient = useQueryClient();
+    const { register, handleSubmit, control, formState: { errors }, watch, reset, setValue } = useForm();
+    
+    const [activeTab, setActiveTab] = useState("core");
+    const [initializedId, setInitializedId] = useState<string | null>(null);
+
+    const { data: studentRes, isLoading: loadingStudent } = useQuery({
         queryKey: ["student", studentId],
-        queryFn: () => StudentService.getSingleStudent(studentId as string),
-        enabled: !!studentId && open,
+        queryFn: () => StudentService.getStudentById(studentId!),
+        enabled: !!studentId && isOpen,
     });
 
-    const studentData: any = studentRes?.data?.id ? studentRes.data : studentRes?.id ? studentRes : null;
-    const isCoreDataLoading = isStudentFetching || (!studentData && open);
+    const { data: configRes } = useQuery({ queryKey: ["admissionConfig"], queryFn: AdmissionService.getConfig });
+    
+    const { data: classesRes, isLoading: loadingClasses } = useQuery({ 
+        queryKey: ["classes"], 
+        queryFn: () => AcademicService.getAllClasses() 
+    });
+    
+    const { data: yearsRes, isLoading: loadingYears } = useQuery({ 
+        queryKey: ["academicYears"], 
+        queryFn: () => AcademicService.getAllAcademicYears() 
+    });
+
+    const student = studentRes?.data;
+    const selectedClassId = watch("classId");
+    const effectiveClassId = selectedClassId || student?.classId;
+
+    const { data: sectionsRes, isLoading: loadingSections } = useQuery({
+        queryKey: ["sections", effectiveClassId],
+        queryFn: () => AcademicService.getAllSections({ classId: effectiveClassId }),
+        enabled: !!effectiveClassId,
+    });
+
+    useEffect(() => {
+        if (!isOpen) {
+            setInitializedId(null);
+            reset({});
+            setActiveTab("core");
+            return;
+        }
+
+        const isAllDropdownDataReady = !loadingClasses && classesRes && !loadingYears && yearsRes;
+
+        if (isOpen && student && student.id !== initializedId && isAllDropdownDataReady) {
+            const app = student.admissionApplication || {};
+            const custom = app.customData || {};
+            
+            const coreValues: any = {
+                firstName: student.firstName || "",
+                lastName: student.lastName || "",
+                email: student.email || "",
+                phone: student.phone || "",
+                classId: student.classId || "",
+                sectionId: student.sectionId || "",
+                academicYearId: student.academicYearId || "",
+            };
+
+            const defaultValues: any = { ...coreValues };
+
+            Object.keys(app).forEach(key => {
+                if (!(key in coreValues)) { 
+                    if (key.toLowerCase().includes("date") && app[key]) {
+                        defaultValues[key] = formatDate(app[key]);
+                    } else if (typeof app[key] !== "object") {
+                        defaultValues[key] = app[key] || "";
+                    }
+                }
+            });
+
+            Object.keys(custom).forEach(key => {
+                if (!(key in coreValues)) {
+                    if (key.toLowerCase().includes("date") && custom[key]) {
+                        defaultValues[key] = formatDate(custom[key]);
+                    } else {
+                        defaultValues[key] = custom[key] || "";
+                    }
+                }
+            });
+
+            reset(defaultValues);
+            setInitializedId(student.id);
+        }
+    }, [isOpen, student, initializedId, loadingClasses, classesRes, loadingYears, yearsRes, reset]);
+
+    const updateMutation = useMutation({
+        mutationFn: (formData: FormData) => StudentService.updateStudent(studentId!, formData),
+        onSuccess: () => {
+            toast.success("Student updated successfully!");
+            queryClient.invalidateQueries({ queryKey: ["students"] });
+            queryClient.invalidateQueries({ queryKey: ["student", studentId] });
+            onClose();
+        },
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.message || "Failed to update student");
+        }
+    });
+
+    const onSubmit = (data: any) => {
+        const formData = new FormData();
+        const fileKeys = parsedFields.filter((f: any) => f.type === "FILE").map((f: any) => f.name);
+        
+        const textData = { ...data };
+        fileKeys.forEach((k: string) => delete textData[k]); 
+        
+        fileKeys.forEach((key: string) => {
+            const fileValue = data[key];
+            if (fileValue && typeof fileValue !== "string" && fileValue.length > 0) {
+                // If it is an actual new uploaded file (FileList object)
+                formData.append(key, fileValue[0]);
+            } else if (typeof fileValue === "string" && fileValue.trim() !== "") {
+                // If it is an existing image URL string, restore it to textData
+                textData[key] = fileValue;
+            }
+        });
+
+        formData.append("data", JSON.stringify(textData));
+
+        updateMutation.mutate(formData);
+    };
+
+    let parsedFields: any[] = [];
+    try {
+        parsedFields = typeof configRes?.data?.fields === "string" ? JSON.parse(configRes.data.fields) : configRes?.data?.fields || [];
+    } catch (e) {}
+
+    const classList = extractData(classesRes);
+    const yearList = extractData(yearsRes);
+    const allSections = extractData(sectionsRes);
+    const filteredSections = allSections.filter((sec: any) => sec.classId === effectiveClassId);
+
+    const isFormReadyToRender = student && initializedId === student.id;
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[850px] overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
-                <div className="p-8 pb-4 bg-muted/20 border-b shrink-0">
-                    <SheetHeader>
-                        <SheetTitle className="text-2xl font-extrabold tracking-tight text-primary">Edit Student Profile</SheetTitle>
-                        <SheetDescription className="text-sm font-medium">Update academic, personal, or guardian records.</SheetDescription>
-                    </SheetHeader>
-                </div>
+        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <SheetContent side="right" className="w-full max-w-[100vw] sm:max-w-[500px] md:max-w-[700px] lg:max-w-[800px] p-0 flex flex-col h-[100dvh] bg-background border-l shadow-2xl overflow-hidden">
+                <SheetHeader className="p-4 sm:p-6 border-b bg-muted/10 shrink-0">
+                    <SheetTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                        <Edit3 className="h-5 w-5 text-amber-500" /> Edit Student Record
+                    </SheetTitle>
+                    <SheetDescription className="text-xs sm:text-sm">Update personal, academic, and custom details.</SheetDescription>
+                </SheetHeader>
 
-                {isCoreDataLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                {(!isFormReadyToRender || loadingStudent || loadingClasses || loadingYears) ? (
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-4">
                         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-sm font-medium text-muted-foreground">Loading student records...</p>
+                        <p className="text-sm font-medium text-muted-foreground animate-pulse">Loading data securely...</p>
                     </div>
-                ) : studentData ? (
-                    // 2. We only render the form when the data is 100% available
-                    <EditStudentForm
-                        key={studentId}
-                        studentId={studentId as string}
-                        studentData={studentData}
-                        onOpenChange={onOpenChange}
-                    />
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center">
-                        <p className="text-sm font-medium text-muted-foreground">Student data not found.</p>
-                    </div>
+                    <form key={student.id} onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 w-full">
+                            <div className="w-full border-b bg-muted/5 shrink-0 overflow-x-auto no-scrollbar">
+                                <TabsList className="h-12 bg-transparent flex w-max min-w-full justify-start space-x-2 px-4">
+                                    <TabsTrigger value="core" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none px-4 font-semibold whitespace-nowrap">Core Information</TabsTrigger>
+                                    {parsedFields.length > 0 && (
+                                        <TabsTrigger value="additional" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none px-4 font-semibold whitespace-nowrap">Additional Details</TabsTrigger>
+                                    )}
+                                </TabsList>
+                            </div>
+
+                            <ScrollArea className="flex-1 p-4 sm:p-6 scroll-smooth">
+                                <TabsContent value="core" className="m-0 space-y-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">First Name *</Label>
+                                            <Input {...register("firstName", { required: true })} className="h-10 bg-background" />
+                                            {errors.firstName && <span className="text-[10px] text-destructive font-semibold">Required</span>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">Last Name</Label>
+                                            <Input {...register("lastName")} className="h-10 bg-background" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">Email</Label>
+                                            <Input type="email" {...register("email")} className="h-10 bg-background" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">Phone</Label>
+                                            <Input type="tel" {...register("phone")} className="h-10 bg-background" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">Session *</Label>
+                                            <Controller
+                                                control={control} name="academicYearId" rules={{ required: true }}
+                                                render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Select Session" /></SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {yearList.map((year: any) => <SelectItem key={year.id} value={year.id}>{year.name || year.year}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
+                                            {errors.academicYearId && <span className="text-[10px] text-destructive font-semibold">Required</span>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">Class *</Label>
+                                            <Controller
+                                                control={control} name="classId" rules={{ required: true }}
+                                                render={({ field }) => (
+                                                    <Select 
+                                                        onValueChange={(val) => {
+                                                            field.onChange(val);
+                                                            if (val !== student?.classId) {
+                                                                setValue("sectionId", "");
+                                                            }
+                                                        }} 
+                                                        value={field.value || undefined}
+                                                    >
+                                                        <SelectTrigger className="h-10 bg-background"><SelectValue placeholder="Select Class" /></SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {classList.map((cls: any) => <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
+                                            {errors.classId && <span className="text-[10px] text-destructive font-semibold">Required</span>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">Section</Label>
+                                            <Controller
+                                                control={control} name="sectionId"
+                                                render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} value={field.value || undefined} disabled={!effectiveClassId || loadingSections}>
+                                                        <SelectTrigger className="h-10 bg-background">
+                                                            <SelectValue placeholder={!effectiveClassId ? "Select Class First" : (loadingSections ? "Loading..." : "Select Section")} />
+                                                        </SelectTrigger>
+                                                        <SelectContent position="popper">
+                                                            {filteredSections.map((sec: any) => <SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="additional" className="m-0 space-y-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                        {parsedFields.map((field: any) => (
+                                            <div key={field.name} className={`space-y-2 ${field.type === 'FILE' ? 'sm:col-span-2' : ''}`}>
+                                                <Label className="text-xs font-bold uppercase text-muted-foreground">{field.label}</Label>
+                                                {field.type === "TEXT" && <Input {...register(field.name)} className="h-10 bg-background" />}
+                                                {field.type === "NUMBER" && <Input type="number" {...register(field.name)} className="h-10 bg-background" />}
+                                                {field.type === "DATE" && <Input type="date" {...register(field.name)} className="h-10 bg-background" />}
+                                                {field.type === "DROPDOWN" && (
+                                                    <Controller
+                                                        control={control} name={field.name}
+                                                        render={({ field: selectField }) => (
+                                                            <Select onValueChange={selectField.onChange} value={selectField.value || undefined}>
+                                                                <SelectTrigger className="h-10 bg-background"><SelectValue placeholder={`Select ${field.label}`} /></SelectTrigger>
+                                                                <SelectContent position="popper">
+                                                                    {field.options?.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
+                                                    />
+                                                )}
+                                                {field.type === "FILE" && (
+                                                    <div className="space-y-3">
+                                                        {watch(field.name) && typeof watch(field.name) === 'string' && (
+                                                            <a href={watch(field.name)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-md hover:underline">
+                                                                <LinkIcon className="h-4 w-4"/> View Existing File
+                                                            </a>
+                                                        )}
+                                                        <div className="relative border-2 border-dashed rounded-xl p-4 hover:bg-muted/30 transition-colors bg-background flex flex-col items-center justify-center text-center">
+                                                            <FileUp className="h-5 w-5 text-muted-foreground mb-1" />
+                                                            <div className="text-xs font-semibold">Upload new file to replace</div>
+                                                            <input type="file" {...register(field.name)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </TabsContent>
+                            </ScrollArea>
+
+                            <div className="p-4 sm:p-6 border-t bg-muted/10 shrink-0 flex justify-end gap-3">
+                                <Button type="button" variant="outline" onClick={onClose} disabled={updateMutation.isPending}>Cancel</Button>
+                                <Button type="submit" disabled={updateMutation.isPending} className="font-bold shadow-sm px-8 bg-amber-500 hover:bg-amber-600 text-white">
+                                    {updateMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : "Update Details"}
+                                </Button>
+                            </div>
+                        </Tabs>
+                    </form>
                 )}
             </SheetContent>
         </Sheet>
-    );
-}
-
-// 3. Child Component: Contains Form Logic (Mounts ONLY when data is ready)
-function EditStudentForm({ studentId, studentData, onOpenChange }: { studentId: string; studentData: any; onOpenChange: (open: boolean) => void; }) {
-    const queryClient = useQueryClient();
-
-    const [activeTab, setActiveTab] = useState("academic");
-    const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
-    const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [imageToCrop, setImageToCrop] = useState<string>("");
-    const [activeImageField, setActiveImageField] = useState<keyof StudentFormValues | null>(null);
-
-    const fileRefs = {
-        profileImage: useRef<HTMLInputElement>(null),
-        birthCertificateUrl: useRef<HTMLInputElement>(null),
-        tcDocumentUrl: useRef<HTMLInputElement>(null),
-    };
-
-    const metadata = studentData?.metadata || {};
-    const yearsList: any[] = metadata.academicYears || [];
-    const classesList: any[] = metadata.classes || [];
-
-    // Since this component mounts AFTER data arrives, defaultValues will perfectly initialize
-    const form = useForm<StudentFormValues>({
-        resolver: zodResolver(studentSchema) as any,
-        defaultValues: {
-            academicYearId: studentData.academicYearId || "",
-            classId: studentData.classId || "",
-            sectionId: studentData.sectionId || "",
-            rollNumber: studentData.rollNumber || "",
-            admissionNumber: studentData.admissionNumber || "",
-            admissionDate: safeDate(studentData.admissionDate),
-            firstName: studentData.firstName || "",
-            lastName: studentData.lastName || "",
-            gender: studentData.gender || "MALE",
-            dateOfBirth: safeDate(studentData.dateOfBirth),
-            bloodGroup: studentData.bloodGroup || "",
-            religion: studentData.religion || "",
-            caste: studentData.caste || "GENERAL",
-            nationalId: studentData.nationalId || "",
-            address: studentData.address || "",
-            phone: studentData.phone || "",
-            email: studentData.user?.email || studentData.email || "",
-            fatherName: studentData.fatherName || "",
-            fatherPhone: studentData.fatherPhone || "",
-            fatherOccupation: studentData.fatherOccupation || "",
-            motherName: studentData.motherName || "",
-            motherPhone: studentData.motherPhone || "",
-            motherOccupation: studentData.motherOccupation || "",
-            localGuardianName: studentData.localGuardianName || "",
-            localGuardianPhone: studentData.localGuardianPhone || "",
-            localGuardianRelation: studentData.localGuardianRelation || "",
-            previousSchoolName: studentData.previousSchoolName || "",
-            transferCertificateNo: studentData.transferCertificateNo || "",
-            medicalConditions: studentData.medicalConditions || "",
-            transportRoute: studentData.transportRoute || "",
-            profileImage: studentData.profileImage || "",
-            birthCertificateUrl: studentData.birthCertificateUrl || "",
-            tcDocumentUrl: studentData.tcDocumentUrl || "",
-        }
-    });
-
-    const { register, handleSubmit, setValue, watch, control, formState: { errors } } = form;
-
-    const watchClassId = watch("classId");
-
-    const { data: dynamicSectionsRes, isFetching: isSectionsFetching } = useQuery({
-        queryKey: ["sections", watchClassId],
-        queryFn: () => AcademicService.getAllSections(watchClassId),
-        enabled: !!watchClassId && watchClassId !== studentData?.classId,
-    });
-
-    const sectionsList: any[] = (watchClassId === studentData?.classId)
-        ? (metadata.sections || [])
-        : (Array.isArray(dynamicSectionsRes?.data) ? dynamicSectionsRes.data : Array.isArray(dynamicSectionsRes) ? dynamicSectionsRes : []);
-
-    const mutation = useMutation({
-        mutationFn: async (data: StudentFormValues) => {
-            return await StudentService.updateStudent(studentId, data);
-        },
-        onSuccess: () => {
-            toast.success("Student profile updated successfully");
-            queryClient.invalidateQueries({ queryKey: ["students"] });
-            queryClient.invalidateQueries({ queryKey: ["student", studentId] });
-            onOpenChange(false);
-        },
-        onError: (error: any) => toast.error(error.response?.data?.message || "Update failed"),
-    });
-
-    const uploadFile = async (file: File | Blob, fieldName: keyof StudentFormValues) => {
-        try {
-            setIsUploading(prev => ({ ...prev, [fieldName]: true }));
-            const formData = new FormData();
-            formData.append("file", file as File);
-
-            const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
-
-            if (res.data.success) {
-                setValue(fieldName, res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                toast.success("File uploaded successfully");
-            }
-        } catch (error: any) {
-            toast.error("File upload failed");
-        } finally {
-            setIsUploading(prev => ({ ...prev, [fieldName]: false }));
-        }
-    };
-
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof StudentFormValues) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (fieldName === "profileImage") {
-            const reader = new FileReader();
-            reader.onload = () => {
-                setImageToCrop(reader.result as string);
-                setActiveImageField(fieldName);
-                setCropModalOpen(true);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            uploadFile(file, fieldName);
-        }
-        e.target.value = "";
-    };
-
-    const handleCropComplete = async (croppedBlob: Blob) => {
-        setCropModalOpen(false);
-        if (activeImageField) {
-            const file = new File([croppedBlob], "profile-crop.png", { type: "image/png" });
-            await uploadFile(file, activeImageField);
-        }
-    };
-
-    const onSubmit = (data: StudentFormValues) => mutation.mutate(data);
-
-    const onError = (formErrors: any) => {
-        const errorKeys = Object.keys(formErrors);
-        const academicFields = ['academicYearId', 'classId', 'sectionId', 'rollNumber', 'admissionNumber', 'admissionDate'];
-        const personalFields = ['firstName', 'lastName', 'gender', 'dateOfBirth', 'bloodGroup', 'religion', 'caste', 'nationalId', 'address', 'phone', 'email'];
-        const parentFields = ['fatherName', 'fatherPhone', 'fatherOccupation', 'motherName', 'motherPhone', 'motherOccupation', 'localGuardianName', 'localGuardianPhone', 'localGuardianRelation'];
-
-        if (errorKeys.some(key => academicFields.includes(key))) setActiveTab("academic");
-        else if (errorKeys.some(key => personalFields.includes(key))) setActiveTab("personal");
-        else if (errorKeys.some(key => parentFields.includes(key))) setActiveTab("parents");
-        else setActiveTab("documents");
-
-        toast.error("Please fill in all mandatory fields correctly.");
-    };
-
-    return (
-        <>
-            <div className="flex-1 overflow-y-auto p-8">
-                <form id="edit-student-form" onSubmit={handleSubmit(onSubmit, onError)}>
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/40 p-1 rounded-xl">
-                            <TabsTrigger value="academic" className="rounded-lg font-bold"><GraduationCap className="w-4 h-4 mr-2" /> Academic</TabsTrigger>
-                            <TabsTrigger value="personal" className="rounded-lg font-bold"><User className="w-4 h-4 mr-2" /> Personal</TabsTrigger>
-                            <TabsTrigger value="parents" className="rounded-lg font-bold"><Users className="w-4 h-4 mr-2" /> Parents</TabsTrigger>
-                            <TabsTrigger value="documents" className="rounded-lg font-bold"><FileBadge className="w-4 h-4 mr-2" /> Docs</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="academic" className="space-y-6 animate-in fade-in duration-500">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Academic Year *</Label>
-                                    <Controller
-                                        control={control}
-                                        name="academicYearId"
-                                        render={({ field }) => (
-                                            <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
-                                                <SelectTrigger className={`h-11 shadow-sm ${errors.academicYearId ? 'border-red-500' : 'bg-muted/10'}`}>
-                                                    <SelectValue placeholder="Select Academic Year" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {yearsList.map((year: any) => (
-                                                        <SelectItem key={year.id} value={String(year.id)}>{year.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Admission Date</Label>
-                                    <Input type="date" className="h-11 shadow-sm bg-muted/10" {...register("admissionDate")} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Class *</Label>
-                                    <Controller
-                                        control={control}
-                                        name="classId"
-                                        render={({ field }) => (
-                                            <Select value={field.value ? String(field.value) : undefined} onValueChange={(val) => {
-                                                field.onChange(val);
-                                                setValue("sectionId", "", { shouldValidate: true });
-                                            }}>
-                                                <SelectTrigger className={`h-11 shadow-sm ${errors.classId ? 'border-red-500' : 'bg-muted/10'}`}>
-                                                    <SelectValue placeholder="Select Class" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {classesList.map((cls: any) => (<SelectItem key={cls.id} value={String(cls.id)}>{cls.name}</SelectItem>))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Section *</Label>
-                                    <Controller
-                                        control={control}
-                                        name="sectionId"
-                                        render={({ field }) => (
-                                            <Select
-                                                disabled={!watchClassId || isSectionsFetching}
-                                                value={field.value ? String(field.value) : undefined}
-                                                onValueChange={field.onChange}
-                                            >
-                                                <SelectTrigger className={`h-11 shadow-sm ${errors.sectionId ? 'border-red-500' : 'bg-muted/10'}`}>
-                                                    <SelectValue placeholder={isSectionsFetching ? "Loading..." : "Select Section"} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {sectionsList.map((sec: any) => (<SelectItem key={sec.id} value={String(sec.id)}>{sec.name}</SelectItem>))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Roll Number *</Label>
-                                    <Input className={`h-11 shadow-sm ${errors.rollNumber ? 'border-red-500' : 'bg-muted/10'}`} {...register("rollNumber")} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Admission/Reg. No</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10 font-mono" {...register("admissionNumber")} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Previous School</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("previousSchoolName")} />
-                                </div>
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="personal" className="space-y-6 animate-in fade-in duration-500">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">First Name *</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("firstName")} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Last Name *</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("lastName")} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gender *</Label>
-                                    <Controller
-                                        control={control}
-                                        name="gender"
-                                        render={({ field }) => (
-                                            <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
-                                                <SelectTrigger className="h-11 bg-muted/10"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="MALE">Male</SelectItem><SelectItem value="FEMALE">Female</SelectItem><SelectItem value="OTHER">Other</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Date of Birth</Label>
-                                    <Input type="date" className="h-11 shadow-sm bg-muted/10" {...register("dateOfBirth")} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Blood Group</Label>
-                                    <Controller
-                                        control={control}
-                                        name="bloodGroup"
-                                        render={({ field }) => (
-                                            <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
-                                                <SelectTrigger className="h-11 bg-muted/10"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                <SelectContent>
-                                                    {["A_POS", "A_NEG", "B_POS", "B_NEG", "O_POS", "O_NEG", "AB_POS", "AB_NEG"].map(bg => (
-                                                        <SelectItem key={bg} value={bg}>{bg.replace("_", "")}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Caste / Category</Label>
-                                    <Controller
-                                        control={control}
-                                        name="caste"
-                                        render={({ field }) => (
-                                            <Select value={field.value ? String(field.value) : undefined} onValueChange={field.onChange}>
-                                                <SelectTrigger className="h-11 bg-muted/10"><SelectValue placeholder="Select" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="GENERAL">General</SelectItem><SelectItem value="OBC">OBC</SelectItem><SelectItem value="SC">SC</SelectItem><SelectItem value="ST">ST</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Religion</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("religion")} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">National ID / Aadhar</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("nationalId")} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Full Address</Label>
-                                <Input className="h-11 shadow-sm bg-muted/10" {...register("address")} />
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="parents" className="space-y-6 animate-in fade-in duration-500">
-                            <div className="p-5 border rounded-xl bg-muted/5 space-y-4">
-                                <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Father&apos;s Details</h4>
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Name</Label><Input className="h-11 bg-background" {...register("fatherName")} /></div>
-                                    <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Phone</Label><Input className="h-11 bg-background" {...register("fatherPhone")} /></div>
-                                    <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Occupation</Label><Input className="h-11 bg-background" {...register("fatherOccupation")} /></div>
-                                </div>
-                            </div>
-                            <div className="p-5 border rounded-xl bg-muted/5 space-y-4">
-                                <h4 className="font-bold text-sm uppercase tracking-wider border-b pb-2">Mother&apos;s Details</h4>
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Name</Label><Input className="h-11 bg-background" {...register("motherName")} /></div>
-                                    <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Phone</Label><Input className="h-11 bg-background" {...register("motherPhone")} /></div>
-                                    <div className="space-y-2"><Label className="text-xs font-bold text-muted-foreground">Occupation</Label><Input className="h-11 bg-background" {...register("motherOccupation")} /></div>
-                                </div>
-                            </div>
-                        </TabsContent>
-
-                        <TabsContent value="documents" className="space-y-6 animate-in fade-in duration-500">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Medical Conditions / Allergies</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("medicalConditions")} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transport Route</Label>
-                                    <Input className="h-11 shadow-sm bg-muted/10" {...register("transportRoute")} />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/5">
-                                    <Avatar className="h-16 w-16 border-2"><AvatarImage src={watch("profileImage")} className="object-cover" /><AvatarFallback><User /></AvatarFallback></Avatar>
-                                    <div className="space-y-1 flex-1">
-                                        <p className="font-bold text-sm">Student Photo</p>
-                                        <input type="file" ref={fileRefs.profileImage} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'profileImage')} />
-                                        <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.profileImage.current?.click()} disabled={isUploading.profileImage}>
-                                            {isUploading.profileImage ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} Update
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/5">
-                                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary"><FileBadge className="h-6 w-6" /></div>
-                                    <div className="space-y-1 flex-1">
-                                        <p className="font-bold text-sm">Birth Certificate</p>
-                                        <input type="file" ref={fileRefs.birthCertificateUrl} className="hidden" accept=".pdf,.jpg,.png" onChange={(e) => handleFileSelect(e, 'birthCertificateUrl')} />
-                                        <Button type="button" variant="outline" size="sm" onClick={() => fileRefs.birthCertificateUrl.current?.click()} disabled={isUploading.birthCertificateUrl}>
-                                            {isUploading.birthCertificateUrl ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <UploadCloud className="mr-2 h-3 w-3" />} {watch("birthCertificateUrl") ? "Update File" : "Upload File"}
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
-                </form>
-            </div>
-
-            <div className="p-6 border-t bg-background/90 backdrop-blur shrink-0 flex justify-between">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" form="edit-student-form" className="font-bold px-8" disabled={mutation.isPending || Object.values(isUploading).some(Boolean)}>
-                    {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Changes
-                </Button>
-            </div>
-
-            <ImageCropperModal
-                open={cropModalOpen}
-                imageSrc={imageToCrop}
-                onClose={() => setCropModalOpen(false)}
-                onCropComplete={handleCropComplete}
-            />
-        </>
     );
 }

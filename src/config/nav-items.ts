@@ -10,6 +10,7 @@ import {
   GraduationCap,
   Gem,
   Banknote,
+  UserPlus,
 } from "lucide-react";
 
 export type SubItem = { title: string; href: string };
@@ -40,6 +41,15 @@ export const navItems: Record<string, NavItem[]> = {
   ],
   SCHOOL_ADMIN: [
     { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    {
+      title: "Admissions",
+      href: "#",
+      icon: UserPlus,
+      subItems: [
+        { title: "Applications", href: "/admin/admission/applications" },
+        { title: "Form Settings", href: "/admin/admission/settings" },
+      ],
+    },
     {
       title: "People",
       href: "#",
@@ -72,7 +82,6 @@ export const navItems: Record<string, NavItem[]> = {
       href: "#",
       icon: Settings,
       subItems: [
-        { title: "Admission Setup", href: "/admin/admission/settings" },
         { title: "SMS Center", href: "/admin/sms" },
         { title: "Billing & Sub", href: "/admin/billing" },
         { title: "Website Settings", href: "/admin/settings" },
