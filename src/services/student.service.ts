@@ -44,4 +44,8 @@ export const StudentService = {
     const response = await axiosInstance.delete(`/students/${id}`);
     return response.data;
   },
+  exportStudents: async (params?: any) => {
+    const response = await axiosInstance.get("/students/export", { params });
+    return response.data;
+  },
 };

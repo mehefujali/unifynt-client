@@ -25,6 +25,7 @@ export const AdmissionService = {
     limit?: number;
     search?: string;
     status?: string;
+    classId?: string;
   }) => {
     const res = await axiosInstance.get(`/admission/applications`, {
       params,
@@ -51,6 +52,17 @@ export const AdmissionService = {
 
   updateConfig: async (data: any) => {
     const res = await axiosInstance.post(`/admission/config`, data);
+    return res.data;
+  },
+
+  exportApplications: async (params?: {
+    status?: string;
+    search?: string;
+    classId?: string;
+  }) => {
+    const res = await axiosInstance.get(`/admission/applications/export`, {
+      params,
+    });
     return res.data;
   },
 };

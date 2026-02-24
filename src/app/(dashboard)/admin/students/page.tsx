@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
 import { StudentService } from "@/services/student.service";
 import { AcademicService } from "@/services/academic.service";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -12,8 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Eye, Inbox, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit } from "lucide-react";
+import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download } from "lucide-react";
 
 import ViewStudentModal from "./view-student-modal";
 import AddStudentModal from "./add-student-modal";
@@ -34,31 +38,70 @@ export default function StudentsPage() {
     const [sectionId, setSectionId] = useState<string>("ALL");
     const [page, setPage] = useState(1);
     const limit = 10;
-    
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
 
-    const { data: classesRes } = useQuery({ 
-        queryKey: ["classes"], 
-        queryFn: () => AcademicService.getAllClasses() 
+    const { data: classesRes } = useQuery({
+        queryKey: ["classes"],
+        queryFn: () => AcademicService.getAllClasses()
     });
 
-    const { data: sectionsRes } = useQuery({ 
-        queryKey: ["sections", classId], 
+    const { data: sectionsRes } = useQuery({
+        queryKey: ["sections", classId],
         queryFn: () => AcademicService.getAllSections({ classId: classId === "ALL" ? undefined : classId }),
         enabled: classId !== "ALL"
     });
 
     const { data: studentsRes, isLoading } = useQuery({
         queryKey: ["students", page, debouncedSearch, classId, sectionId],
-        queryFn: () => StudentService.getAllStudents({ 
-            page, limit, 
-            searchTerm: debouncedSearch, 
+        queryFn: () => StudentService.getAllStudents({
+            page, limit,
+            searchTerm: debouncedSearch,
             classId: classId === "ALL" ? undefined : classId,
             sectionId: sectionId === "ALL" ? undefined : sectionId
         }),
     });
+
+    const handleExport = async (format: 'excel' | 'csv') => {
+        try {
+            setIsExporting(true);
+            toast.loading("Preparing export data...", { id: "export-toast" });
+
+            const queryParams = {
+                searchTerm: debouncedSearch || undefined,
+                classId: classId === "ALL" ? undefined : classId,
+                sectionId: sectionId === "ALL" ? undefined : sectionId,
+            };
+
+            const res = await StudentService.exportStudents(queryParams);
+            const data = res.data;
+
+            if (!data || data.length === 0) {
+                toast.error("No data found to export", { id: "export-toast" });
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Students Data");
+
+            const fileName = `Students_Export_${new Date().toISOString().split('T')[0]}`;
+            if (format === 'excel') {
+                XLSX.writeFile(workbook, `${fileName}.xlsx`);
+            } else {
+                XLSX.writeFile(workbook, `${fileName}.csv`);
+            }
+
+            toast.success(`Exported successfully as ${format.toUpperCase()}`, { id: "export-toast" });
+        } catch (error) {
+            toast.error("Failed to export data", { id: "export-toast" });
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     const students = studentsRes?.data || [];
     const meta = studentsRes?.meta || { total: 0, page: 1, limit, totalPage: 1 };
@@ -73,9 +116,27 @@ export default function StudentsPage() {
                     <h2 className="text-2xl font-bold tracking-tight text-foreground">Student Directory</h2>
                     <p className="text-sm text-muted-foreground mt-1">Manage and view all enrolled students across the institution.</p>
                 </div>
-                <Button onClick={() => setIsAddModalOpen(true)} className="font-bold shadow-sm h-11 px-6">
-                    <Plus className="h-4 w-4 mr-2" /> Add Student
-                </Button>
+                <div className="flex items-center gap-3">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" disabled={isExporting} className="h-11 shadow-sm">
+                                {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                                Export
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleExport('excel')} className="font-medium cursor-pointer">
+                                Export as Excel (.xlsx)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleExport('csv')} className="font-medium cursor-pointer">
+                                Export as CSV (.csv)
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={() => setIsAddModalOpen(true)} className="font-bold shadow-sm h-11 px-6">
+                        <Plus className="h-4 w-4 mr-2" /> Add Student
+                    </Button>
+                </div>
             </div>
 
             <Card className="shadow-sm border-border">
@@ -83,8 +144,8 @@ export default function StudentsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                         <div className="relative sm:col-span-6 lg:col-span-4">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search by name, ID or guardian..." 
+                            <Input
+                                placeholder="Search by name, ID or guardian..."
                                 value={search}
                                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                                 className="pl-9 h-10 bg-background"
@@ -174,7 +235,7 @@ export default function StudentsPage() {
                                         <TableCell>
                                             <Badge variant="outline" className={
                                                 std.user?.status === "ACTIVE" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
-                                                "bg-red-50 text-red-600 border-red-200"
+                                                    "bg-red-50 text-red-600 border-red-200"
                                             }>
                                                 {std.user?.status || "UNKNOWN"}
                                             </Badge>
