@@ -23,19 +23,31 @@ export default function SectionsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
-    const { data: classes = [] } = useQuery({
+    // ক্লাসের ডেটা ফেচ করার সময় সেফটি চেক
+    const { data: classRawData } = useQuery({
         queryKey: ["classes"],
-        queryFn: async () => (await api.get("/academic/classes")).data.data,
+        queryFn: async () => {
+            const res = await api.get("/academic/classes");
+            const responseData = res.data?.data;
+            return Array.isArray(responseData) ? responseData : (responseData?.data || []);
+        },
     });
+    const classes = Array.isArray(classRawData) ? classRawData : [];
 
-    const { data: sections = [], isLoading } = useQuery({
+    // সেকশনের ডেটা ফেচ করার সময় সেফটি চেক
+    const { data: sectionRawData, isLoading } = useQuery({
         queryKey: ["sections"],
-        queryFn: async () => (await api.get("/academic/sections")).data.data,
+        queryFn: async () => {
+            const res = await api.get("/academic/sections");
+            const responseData = res.data?.data;
+            return Array.isArray(responseData) ? responseData : (responseData?.data || []);
+        },
     });
+    const sections = Array.isArray(sectionRawData) ? sectionRawData : [];
 
     const filteredSections = sections.filter((sec: any) =>
-        sec.name.toLowerCase().includes(search.toLowerCase()) ||
-        sec.class?.name.toLowerCase().includes(search.toLowerCase())
+        sec.name?.toLowerCase().includes(search.toLowerCase()) ||
+        sec.class?.name?.toLowerCase().includes(search.toLowerCase())
     );
     const totalPages = Math.ceil(filteredSections.length / itemsPerPage);
     const paginatedSections = filteredSections.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);

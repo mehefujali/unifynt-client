@@ -23,13 +23,21 @@ export default function ClassesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
-    const { data: classes = [], isLoading } = useQuery({
+    const { data: rawData, isLoading } = useQuery({
         queryKey: ["classes"],
-        queryFn: async () => (await api.get("/academic/classes")).data.data,
+        queryFn: async () => {
+            const res = await api.get("/academic/classes");
+            // API রেসপন্স চেক করে সঠিক Array টি বের করে আনা হচ্ছে
+            const responseData = res.data?.data;
+            return Array.isArray(responseData) ? responseData : (responseData?.data || []);
+        },
     });
 
+    // নিশ্চিত করা হচ্ছে যে classes সবসময় একটি Array হবে
+    const classes = Array.isArray(rawData) ? rawData : [];
+
     const filteredClasses = classes.filter((cls: any) =>
-        cls.name.toLowerCase().includes(search.toLowerCase())
+        cls.name?.toLowerCase().includes(search.toLowerCase())
     );
     const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
     const paginatedClasses = filteredClasses.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);

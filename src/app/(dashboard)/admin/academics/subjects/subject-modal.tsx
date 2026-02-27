@@ -41,6 +41,9 @@ export function SubjectModal({ isOpen, onClose, initialData }: SubjectModalProps
         enabled: isOpen,
     });
 
+   
+    const classesList = Array.isArray(classData) ? classData : (classData?.data || []);
+
     const form = useForm<SubjectFormValues>({
         resolver: zodResolver(subjectSchema),
         defaultValues: {
@@ -81,7 +84,6 @@ export function SubjectModal({ isOpen, onClose, initialData }: SubjectModalProps
 
     const mutation = useMutation({
         mutationFn: (data: SubjectFormValues) => {
-
             if (isEdit && initialData?.id) {
                 return SubjectService.updateSubject(initialData.id, data);
             }
@@ -138,7 +140,8 @@ export function SubjectModal({ isOpen, onClose, initialData }: SubjectModalProps
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {Array.isArray(classData) && classData.map((c: { id: string; name: string }) => (
+                                                {/* আপডেট করা classesList ব্যবহার করা হচ্ছে */}
+                                                {classesList.map((c: { id: string; name: string }) => (
                                                     <SelectItem key={c.id} value={c.id}>
                                                         {c.name}
                                                     </SelectItem>
