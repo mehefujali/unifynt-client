@@ -19,6 +19,8 @@ export interface ISchoolSiteConfig {
   content?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data:any
 }
 
 export interface IUpdateSiteConfigPayload {

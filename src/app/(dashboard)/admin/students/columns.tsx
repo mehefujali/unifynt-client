@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ViewStudentModal } from "./view-student-modal";
-import { EditStudentModal } from "./edit-student-modal";
+
 import { DeleteStudentModal } from "./delete-student-modal";
+import ViewStudentModal from "./view-student-modal";
+import EditStudentModal from "./edit-student-modal";
 
 const StudentActions = ({ student }: { student: any }) => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -54,18 +55,21 @@ const StudentActions = ({ student }: { student: any }) => {
                 </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* FIXED: Passed student.id, and used isOpen/onClose */}
             <ViewStudentModal
-                student={student}
-                open={isViewModalOpen}
-                onOpenChange={setIsViewModalOpen}
+                studentId={student.id}
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
             />
 
+            {/* FIXED: Used isOpen/onClose */}
             <EditStudentModal
                 studentId={student.id}
-                open={isEditModalOpen}
-                onOpenChange={setIsEditModalOpen}
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
             />
 
+            {/* Delete Modal uses open/onOpenChange natively */}
             <DeleteStudentModal
                 student={student}
                 open={isDeleteModalOpen}
@@ -77,6 +81,8 @@ const StudentActions = ({ student }: { student: any }) => {
 
 export const columns: ColumnDef<any>[] = [
     {
+        // FIXED: Added accessorFn to avoid Typescript errors from Tanstack Table
+        accessorFn: (row) => `${row.firstName} ${row.lastName}`,
         id: "profile",
         header: "Student Info",
         cell: ({ row }) => {
@@ -85,8 +91,9 @@ export const columns: ColumnDef<any>[] = [
                 <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10 border shadow-sm">
                         <AvatarImage src={student.profileImage} className="object-cover" />
+                        {/* FIXED: Added fallback string to avoid crash if name is null */}
                         <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                            {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
+                            {student.firstName?.charAt(0) || "U"}{student.lastName?.charAt(0) || "N"}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
@@ -111,6 +118,7 @@ export const columns: ColumnDef<any>[] = [
         ),
     },
     {
+        accessorFn: (row) => `${row.class?.name || ""} ${row.section?.name || ""}`,
         id: "academic",
         header: "Class & Section",
         cell: ({ row }) => {
@@ -125,6 +133,7 @@ export const columns: ColumnDef<any>[] = [
         }
     },
     {
+        accessorFn: (row) => row.fatherName || row.localGuardianName || "N/A",
         id: "guardian",
         header: "Guardian",
         cell: ({ row }) => {
@@ -139,6 +148,7 @@ export const columns: ColumnDef<any>[] = [
         }
     },
     {
+        accessorFn: (row) => row.user?.status,
         id: "status",
         header: "Status",
         cell: ({ row }) => {
