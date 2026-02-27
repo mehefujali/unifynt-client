@@ -10,6 +10,7 @@ export default async function SchoolLandingPage({ params }: { params: { schoolId
     try {
         const res = await SiteConfigService.getPublicConfig(params.schoolId);
         config = res.data;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
         return notFound();
     }

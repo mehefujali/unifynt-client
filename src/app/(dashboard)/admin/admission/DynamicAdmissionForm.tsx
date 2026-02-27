@@ -25,7 +25,7 @@ export function DynamicAdmissionForm({ schoolId }: DynamicAdmissionFormProps) {
 
     const { data: publicDataRes, isLoading: isConfigLoading } = useQuery({
         queryKey: ["publicAdmissionData", schoolId],
-        queryFn: () => AdmissionService.getPublicConfig(schoolId),
+        queryFn: () => AdmissionService.getPublicData(schoolId),
     });
 
     const submitMutation = useMutation({

@@ -33,14 +33,12 @@ const SidebarItemNode = ({
     const Icon = item.icon;
     const hasSubItems = !!item.subItems && item.subItems.length > 0;
 
-    // Check if any sub-item is currently active
     const isChildActive = hasSubItems
         ? item.subItems!.some(
             (sub) => pathname === sub.href || pathname.startsWith(`${sub.href}/`)
         )
         : false;
 
-    // ✅ Dashboard Bug Fix: Dashboard should only match exact path, not startsWith
     const isDashboardRoute =
         item.href === "/admin" ||
         item.href === "/super-admin" ||
@@ -50,8 +48,8 @@ const SidebarItemNode = ({
     const isActive = hasSubItems
         ? isChildActive
         : isDashboardRoute
-            ? pathname === item.href // Exact match for dashboard
-            : pathname === item.href || pathname.startsWith(`${item.href}/`); // Partial match for other routes
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
     const [isOpen, setIsOpen] = useState(isChildActive);
 
@@ -74,35 +72,34 @@ const SidebarItemNode = ({
                 onClick={handleGroupClick}
                 title={isCollapsed ? item.title : undefined}
                 className={cn(
-                    "group relative flex items-center rounded-xl transition-all duration-300 ease-in-out font-medium text-[14px] overflow-hidden cursor-pointer",
+                    "group relative flex items-center rounded-xl transition-all duration-300 ease-out font-medium text-[14px] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
                     isCollapsed
-                        ? "justify-center h-12 w-12 mx-auto"
-                        : "justify-between px-3 py-2.5",
+                        ? "justify-center h-[46px] w-[46px] mx-auto"
+                        : "justify-between px-3.5 py-3",
+                    // --- Ultra Premium Active State ---
                     isActive && !hasSubItems
-                        ? "bg-primary/10 text-primary font-bold"
+                        ? "bg-white dark:bg-white/10 text-primary font-bold shadow-[0_4px_16px_-4px_rgba(0,0,0,0.05)] dark:shadow-none ring-1 ring-black/[0.04] dark:ring-white/10"
                         : isActive && hasSubItems
-                            ? "text-primary bg-primary/5"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ? "bg-transparent text-primary font-bold"
+                            : "text-slate-500 hover:bg-slate-200/40 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
                 )}
             >
-                {isActive && !isCollapsed && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                {/* Glowing Active Indicator */}
+                {isActive && !isCollapsed && !hasSubItems && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
                 )}
 
-                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
+                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3.5")}>
                     <Icon
                         className={cn(
-                            "transition-colors duration-300 flex-shrink-0",
-                            isCollapsed ? "h-6 w-6" : "h-5 w-5",
-                            isActive
-                                ? "text-primary drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]"
-                                : cn("text-muted-foreground/70 group-hover:text-foreground", item.color)
+                            "flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-110",
+                            isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
+                            isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                         )}
                         strokeWidth={isActive ? 2.5 : 2}
                     />
-
                     {!isCollapsed && (
-                        <span className={cn("tracking-wide whitespace-nowrap", !isActive && item.color)}>
+                        <span className="tracking-tight whitespace-nowrap">
                             {item.title}
                         </span>
                     )}
@@ -111,22 +108,28 @@ const SidebarItemNode = ({
                 {hasSubItems && !isCollapsed && (
                     <ChevronRight
                         className={cn(
-                            "h-4 w-4 text-muted-foreground transition-transform duration-300",
-                            isOpen && "rotate-90 text-primary"
+                            "h-[14px] w-[14px] transition-transform duration-300 ease-out",
+                            isActive ? "text-primary" : "text-slate-400",
+                            isOpen && "rotate-90"
                         )}
+                        strokeWidth={2.5}
                     />
                 )}
             </Link>
 
+            {/* Beautiful Sub-menu with clean dots instead of harsh lines */}
             {hasSubItems && (
                 <div
                     className={cn(
                         "grid transition-all duration-300 ease-in-out",
-                        isOpen && !isCollapsed ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                        isOpen && !isCollapsed ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
                     )}
                 >
                     <div className="overflow-hidden">
-                        <div className="flex flex-col gap-1 pl-10 pr-3 pt-1 pb-2">
+                        <div className="flex flex-col gap-1 pl-[38px] pr-2 py-1 relative">
+                            {/* Subtle curved left border approach */}
+                            <div className="absolute left-[21px] top-0 bottom-3 w-px bg-gradient-to-b from-slate-200 to-transparent dark:from-slate-800" />
+                            
                             {item.subItems!.map((sub, idx) => {
                                 const isSubActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
                                 return (
@@ -134,18 +137,24 @@ const SidebarItemNode = ({
                                         key={idx}
                                         href={sub.href}
                                         className={cn(
-                                            "relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                                            "relative flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200 group/sub",
                                             isSubActive
-                                                ? "text-primary bg-primary/10 font-bold"
-                                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                                ? "text-primary font-bold bg-primary/5 dark:bg-primary/10"
+                                                : "text-slate-500 font-medium hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/40 dark:hover:bg-slate-800/40"
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                "h-1.5 w-1.5 rounded-full transition-all duration-300",
+                                                "absolute -left-[18.5px] top-1/2 -translate-y-1/2 w-3 h-px transition-all duration-300",
+                                                isSubActive ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"
+                                            )}
+                                        />
+                                        <div
+                                            className={cn(
+                                                "absolute -left-[19.5px] top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full transition-all duration-300 z-10",
                                                 isSubActive
-                                                    ? "bg-primary scale-125 shadow-[0_0_6px_rgba(59,130,246,0.8)]"
-                                                    : "bg-muted-foreground/40"
+                                                    ? "bg-primary scale-125 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
+                                                    : "bg-white dark:bg-[#09090b] border-[1.5px] border-slate-300 dark:border-slate-600 group-hover/sub:border-primary"
                                             )}
                                         />
                                         <span>{sub.title}</span>
@@ -166,14 +175,12 @@ export default function Sidebar() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+    useEffect(() => setIsMounted(true), []);
 
     if (!isMounted || isLoading) {
         return (
-            <div className="hidden h-screen w-[260px] flex-shrink-0 flex-col items-center justify-center border-r border-border/40 bg-background lg:flex z-50">
-                <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
+            <div className="hidden h-screen w-[260px] flex-shrink-0 flex-col items-center justify-center border-r border-slate-200/50 dark:border-slate-800/60 bg-[#fbfcff] dark:bg-[#0c0d12] lg:flex z-50">
+                <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
             </div>
         );
     }
@@ -184,37 +191,39 @@ export default function Sidebar() {
     return (
         <aside
             className={cn(
-                "hidden h-screen flex-col border-r border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 flex-shrink-0 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.02)] relative",
-                isCollapsed ? "w-[80px]" : "w-[260px]"
+                // Premium Ultra-light blue tint in light mode, deep enterprise dark in dark mode
+                "hidden h-screen flex-col border-r border-slate-200/60 dark:border-slate-800/60 bg-[#fbfcff] dark:bg-[#0c0d12] transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 flex-shrink-0",
+                isCollapsed ? "w-[80px]" : "w-[270px]" // Slightly wider for that spacious feel
             )}
         >
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3.5 top-7 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-border/50 bg-background shadow-md transition-all hover:bg-muted hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                className="absolute -right-3.5 top-7 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 hover:scale-110 hover:shadow-md focus:outline-none text-slate-400 hover:text-primary"
             >
                 {isCollapsed ? (
-                    <PanelLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                    <PanelLeft className="h-[14px] w-[14px]" />
                 ) : (
-                    <PanelLeftClose className="h-3.5 w-3.5 text-muted-foreground" />
+                    <PanelLeftClose className="h-[14px] w-[14px]" />
                 )}
             </button>
 
+            {/* Brand Logo Area */}
             <div
                 className={cn(
-                    "h-20 flex items-center border-b border-border/40 transition-all duration-300 flex-shrink-0",
+                    "h-20 flex items-center border-b border-slate-200/60 dark:border-slate-800/60 flex-shrink-0",
                     isCollapsed ? "justify-center px-0" : "px-6"
                 )}
             >
-                <Link href="/" className="flex items-center gap-3 group overflow-hidden">
-                    <div className="flex flex-shrink-0 items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform duration-300 ring-1 ring-primary/20">
+                <Link href="/" className="flex items-center gap-3.5 overflow-hidden group">
+                    <div className="flex flex-shrink-0 items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-b from-primary to-blue-700 text-white shadow-lg shadow-primary/30 group-hover:shadow-primary/50 group-hover:scale-105 transition-all duration-300 ring-1 ring-white/20">
                         <Command className="h-5 w-5" strokeWidth={2.5} />
                     </div>
                     {!isCollapsed && (
-                        <div className="flex flex-col whitespace-nowrap animate-in fade-in duration-300">
-                            <span className="font-extrabold text-xl tracking-tight text-foreground leading-none">
+                        <div className="flex flex-col whitespace-nowrap">
+                            <span className="font-extrabold text-[22px] tracking-tight text-slate-900 dark:text-white leading-none">
                                 Unifynt
                             </span>
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1.5 opacity-90">
                                 Workspace
                             </span>
                         </div>
@@ -222,8 +231,9 @@ export default function Sidebar() {
                 </Link>
             </div>
 
-            <ScrollArea className="flex-1 py-4 custom-scrollbar overflow-hidden">
-                <nav className="flex flex-col px-3">
+            {/* Navigation Menu */}
+            <ScrollArea className="flex-1 py-6 custom-scrollbar overflow-hidden">
+                <nav className="flex flex-col px-4 gap-0.5">
                     {items.length > 0 ? (
                         items.map((item, index) => (
                             <SidebarItemNode
@@ -236,37 +246,36 @@ export default function Sidebar() {
                         ))
                     ) : (
                         <div className="p-4 text-center mt-10">
-                            <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-2">
-                                <Command className="h-5 w-5 text-muted-foreground/50" />
-                            </div>
+                            <Command className="h-6 w-6 text-slate-300 mx-auto opacity-50" />
                         </div>
                     )}
                 </nav>
             </ScrollArea>
 
-            <div className="p-3 border-t border-border/40 flex-shrink-0 bg-muted/5 transition-all duration-300">
+            {/* Premium Profile Widget */}
+            <div className="p-4 flex-shrink-0 transition-all duration-300">
                 <div
                     className={cn(
-                        "flex items-center rounded-xl bg-card border border-border/50 shadow-sm transition-all hover:shadow-md",
-                        isCollapsed ? "justify-center p-2 flex-col gap-2" : "justify-between p-2.5"
+                        "flex items-center rounded-2xl bg-white dark:bg-white/5 p-2 transition-all duration-300 border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] dark:hover:bg-white/10",
+                        isCollapsed ? "justify-center flex-col gap-2" : "justify-between"
                     )}
                 >
                     <div
                         className={cn(
                             "flex items-center overflow-hidden",
-                            isCollapsed ? "justify-center w-full" : "gap-3"
+                            isCollapsed ? "justify-center w-full" : "gap-3.5"
                         )}
                     >
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 ring-1 ring-border shadow-inner">
-                            <UserIcon className="h-4 w-4 text-primary" />
+                        <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-black/5 dark:ring-white/10 group-hover:bg-blue-100 transition-colors">
+                            <UserIcon className="h-[18px] w-[18px] text-primary" />
                         </div>
 
                         {!isCollapsed && (
-                            <div className="flex flex-col whitespace-nowrap animate-in fade-in duration-300">
-                                <span className="text-sm font-extrabold text-foreground truncate max-w-[120px]">
+                            <div className="flex flex-col whitespace-nowrap">
+                                <span className="text-[13.5px] font-bold text-slate-900 dark:text-white truncate max-w-[110px] leading-tight">
                                     {user?.name || "Admin User"}
                                 </span>
-                                <span className="text-[11px] font-semibold text-muted-foreground truncate max-w-[120px]">
+                                <span className="text-[11px] font-medium text-slate-500 truncate max-w-[110px] mt-0.5">
                                     {user?.email || "admin@unifynt.com"}
                                 </span>
                             </div>
@@ -278,12 +287,12 @@ export default function Sidebar() {
                         size="icon"
                         onClick={logout}
                         className={cn(
-                            "text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 transition-colors",
-                            isCollapsed ? "h-9 w-9 rounded-full" : "h-8 w-8 rounded-lg"
+                            "text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0 transition-colors",
+                            isCollapsed ? "h-10 w-10 rounded-xl" : "h-8 w-8 rounded-lg mr-1"
                         )}
+                        title="Logout"
                     >
-                        <LogOut className="h-4 w-4" />
-                        <span className="sr-only">Log out</span>
+                        <LogOut className="h-4 w-4" strokeWidth={2.5} />
                     </Button>
                 </div>
             </div>
