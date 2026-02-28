@@ -72,19 +72,17 @@ const SidebarItemNode = ({
                 onClick={handleGroupClick}
                 title={isCollapsed ? item.title : undefined}
                 className={cn(
-                    "group relative flex items-center rounded-xl transition-all duration-300 ease-out font-medium text-[14px] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                    "group relative flex items-center rounded-xl transition-all duration-300 ease-out font-medium text-[14px] cursor-pointer outline-none",
                     isCollapsed
                         ? "justify-center h-[46px] w-[46px] mx-auto"
                         : "justify-between px-3.5 py-3",
-                    // --- Ultra Premium Active State ---
                     isActive && !hasSubItems
-                        ? "bg-white dark:bg-white/10 text-primary font-bold shadow-[0_4px_16px_-4px_rgba(0,0,0,0.05)] dark:shadow-none ring-1 ring-black/[0.04] dark:ring-white/10"
+                        ? "bg-white/80 dark:bg-white/10 text-primary font-bold shadow-sm border border-white/60 dark:border-white/5 backdrop-blur-md"
                         : isActive && hasSubItems
                             ? "bg-transparent text-primary font-bold"
-                            : "text-slate-500 hover:bg-slate-200/40 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100"
+                            : "text-slate-500 hover:bg-white/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100"
                 )}
             >
-                {/* Glowing Active Indicator */}
                 {isActive && !isCollapsed && !hasSubItems && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
                 )}
@@ -117,7 +115,6 @@ const SidebarItemNode = ({
                 )}
             </Link>
 
-            {/* Beautiful Sub-menu with clean dots instead of harsh lines */}
             {hasSubItems && (
                 <div
                     className={cn(
@@ -127,8 +124,7 @@ const SidebarItemNode = ({
                 >
                     <div className="overflow-hidden">
                         <div className="flex flex-col gap-1 pl-[38px] pr-2 py-1 relative">
-                            {/* Subtle curved left border approach */}
-                            <div className="absolute left-[21px] top-0 bottom-3 w-px bg-gradient-to-b from-slate-200 to-transparent dark:from-slate-800" />
+                            <div className="absolute left-[21px] top-0 bottom-3 w-px bg-gradient-to-b from-black/5 to-transparent dark:from-white/10" />
                             
                             {item.subItems!.map((sub, idx) => {
                                 const isSubActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
@@ -139,14 +135,14 @@ const SidebarItemNode = ({
                                         className={cn(
                                             "relative flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200 group/sub",
                                             isSubActive
-                                                ? "text-primary font-bold bg-primary/5 dark:bg-primary/10"
-                                                : "text-slate-500 font-medium hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/40 dark:hover:bg-slate-800/40"
+                                                ? "text-primary font-bold bg-primary/5 dark:bg-primary/10 backdrop-blur-sm"
+                                                : "text-slate-500 font-medium hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/40 dark:hover:bg-white/5"
                                         )}
                                     >
                                         <div
                                             className={cn(
                                                 "absolute -left-[18.5px] top-1/2 -translate-y-1/2 w-3 h-px transition-all duration-300",
-                                                isSubActive ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"
+                                                isSubActive ? "bg-primary" : "bg-black/10 dark:bg-white/10"
                                             )}
                                         />
                                         <div
@@ -179,7 +175,7 @@ export default function Sidebar() {
 
     if (!isMounted || isLoading) {
         return (
-            <div className="hidden h-screen w-[260px] flex-shrink-0 flex-col items-center justify-center border-r border-slate-200/50 dark:border-slate-800/60 bg-[#fbfcff] dark:bg-[#0c0d12] lg:flex z-50">
+            <div className="hidden h-screen w-65 shrink-0 flex-col items-center justify-center border-r border-white/40 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-2xl lg:flex z-50">
                 <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
             </div>
         );
@@ -191,14 +187,13 @@ export default function Sidebar() {
     return (
         <aside
             className={cn(
-                // Premium Ultra-light blue tint in light mode, deep enterprise dark in dark mode
-                "hidden h-screen flex-col border-r border-slate-200/60 dark:border-slate-800/60 bg-[#fbfcff] dark:bg-[#0c0d12] transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 flex-shrink-0",
-                isCollapsed ? "w-[80px]" : "w-[270px]" // Slightly wider for that spacious feel
+                "hidden h-screen flex-col border-r border-white/40 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-2xl supports-backdrop-filter:bg-white/30 transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none",
+                isCollapsed ? "w-22" : "w-70"
             )}
         >
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3.5 top-7 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm transition-all duration-300 hover:scale-110 hover:shadow-md focus:outline-none text-slate-400 hover:text-primary"
+                className="absolute -right-3.5 top-7 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm transition-all duration-300 hover:scale-110 focus:outline-none text-slate-500 hover:text-primary"
             >
                 {isCollapsed ? (
                     <PanelLeft className="h-[14px] w-[14px]" />
@@ -207,10 +202,9 @@ export default function Sidebar() {
                 )}
             </button>
 
-            {/* Brand Logo Area */}
             <div
                 className={cn(
-                    "h-20 flex items-center border-b border-slate-200/60 dark:border-slate-800/60 flex-shrink-0",
+                    "h-20 flex items-center border-b border-black/5 dark:border-white/5 flex-shrink-0",
                     isCollapsed ? "justify-center px-0" : "px-6"
                 )}
             >
@@ -231,7 +225,6 @@ export default function Sidebar() {
                 </Link>
             </div>
 
-            {/* Navigation Menu */}
             <ScrollArea className="flex-1 py-6 custom-scrollbar overflow-hidden">
                 <nav className="flex flex-col px-4 gap-0.5">
                     {items.length > 0 ? (
@@ -252,11 +245,10 @@ export default function Sidebar() {
                 </nav>
             </ScrollArea>
 
-            {/* Premium Profile Widget */}
-            <div className="p-4 flex-shrink-0 transition-all duration-300">
+            <div className="p-4 flex-shrink-0">
                 <div
                     className={cn(
-                        "flex items-center rounded-2xl bg-white dark:bg-white/5 p-2 transition-all duration-300 border border-slate-200/60 dark:border-slate-800/60 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.1)] dark:hover:bg-white/10",
+                        "flex items-center rounded-2xl bg-white/60 dark:bg-white/5 p-2 border border-white/60 dark:border-white/10 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md",
                         isCollapsed ? "justify-center flex-col gap-2" : "justify-between"
                     )}
                 >
@@ -266,7 +258,7 @@ export default function Sidebar() {
                             isCollapsed ? "justify-center w-full" : "gap-3.5"
                         )}
                     >
-                        <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-black/5 dark:ring-white/10 group-hover:bg-blue-100 transition-colors">
+                        <div className="h-10 w-10 rounded-xl bg-blue-50/50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-black/5 dark:ring-white/10 group-hover:bg-blue-100/50 transition-colors backdrop-blur-sm">
                             <UserIcon className="h-[18px] w-[18px] text-primary" />
                         </div>
 
@@ -287,7 +279,7 @@ export default function Sidebar() {
                         size="icon"
                         onClick={logout}
                         className={cn(
-                            "text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0 transition-colors",
+                            "text-slate-400 hover:text-red-600 hover:bg-red-50/50 dark:hover:bg-red-500/10 shrink-0 transition-colors backdrop-blur-sm",
                             isCollapsed ? "h-10 w-10 rounded-xl" : "h-8 w-8 rounded-lg mr-1"
                         )}
                         title="Logout"

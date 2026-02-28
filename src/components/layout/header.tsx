@@ -2,10 +2,10 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,8 +23,6 @@ import {
     User as UserIcon,
     Settings,
     Command,
-    Building2,
-    ShieldCheck
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { navItems } from "@/config/nav-items";
@@ -32,15 +30,37 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "../ui/badge";
+import { Badge } from "@/components/ui/badge";
+import {
+    CommandDialog,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
 
 export default function Header() {
     const { user, logout } = useAuth();
-    const pathname = usePathname();
     const router = useRouter();
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        const down = (e: KeyboardEvent) => {
+            if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                setOpen((open) => !open);
+            }
+        };
+        document.addEventListener("keydown", down);
+        return () => document.removeEventListener("keydown", down);
+    }, []);
 
     const userRole = user?.role ? (user.role.toUpperCase() as keyof typeof navItems) : null;
-    const items = userRole ? navItems[userRole] : [];
+    const currentNavItems = userRole ? navItems[userRole] : [];
+    
+    const mainItems = currentNavItems.filter(item => !item.subItems || item.subItems.length === 0);
+    const nestedItems = currentNavItems.filter(item => item.subItems && item.subItems.length > 0);
 
     const getInitials = (name: string) => {
         if (!name) return "UN";
@@ -60,17 +80,20 @@ export default function Header() {
 
     const displayName = user?.name || "Administrator";
     const displayEmail = user?.email || "admin@unifynt.com";
-    const workspaceName = isSchoolLevel ? ((user as any)?.school?.name || "School Workspace") : "Global Administration";
 
     const handleLogout = () => {
         logout();
         router.push("/login");
     };
 
-    return (
-        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/70 dark:bg-[#09090b]/70 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 transition-all h-20 flex items-center">
-            <div className="flex h-full w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+    const runCommand = (command: () => void) => {
+        setOpen(false);
+        command();
+    };
 
+    return (
+        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/40 dark:bg-black/20 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/30 border-b border-white/40 dark:border-white/10 transition-all h-[76px] flex items-center shadow-[0_4px_30px_rgba(0,0,0,0.03)] dark:shadow-none">
+            <div className="flex h-full w-full items-center justify-between px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center gap-4 lg:hidden">
                     <Sheet>
                         <SheetTrigger asChild>
@@ -78,16 +101,15 @@ export default function Header() {
                                 <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-[280px] p-0 border-r-0 bg-white dark:bg-[#09090b]">
+                        <SheetContent side="left" className="w-[280px] p-0 border-r-0 bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-2xl">
                             <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
-                             <div className="h-20 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
+                             <div className="h-20 flex items-center px-6 border-b border-black/5 dark:border-white/5">
                                  <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary mr-3">
                                      <Command className="h-5 w-5" />
                                  </div>
                                  <span className="font-bold text-[20px]">Unifynt</span>
                              </div>
                              <ScrollArea className="flex-1 py-4 px-4 custom-scrollbar">
-                                {/* Mobile links mapping logic can be added here if needed */}
                              </ScrollArea>
                         </SheetContent>
                     </Sheet>
@@ -97,20 +119,17 @@ export default function Header() {
                     </div>
                 </div>
 
-                {/* Colorful but Clean Search Bar */}
                 <div className="hidden lg:flex items-center flex-1 max-w-md">
-                    <div className="relative w-full group">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
-                        <Input
-                            placeholder="Search anywhere (Press ⌘K)"
-                            className="pl-10 pr-12 h-10 w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-primary/40 focus-visible:bg-white dark:focus-visible:bg-[#09090b] focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 rounded-full font-medium text-[13px] placeholder:text-slate-400 transition-all shadow-sm"
-                        />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 font-mono text-[10px] font-bold text-slate-500 shadow-sm">
-                                ⌘K
-                            </kbd>
-                        </div>
-                    </div>
+                    <button
+                        onClick={() => setOpen(true)}
+                        className="relative w-full group flex items-center gap-2 px-4 h-10 bg-white/50 dark:bg-black/30 backdrop-blur-md border border-white/60 dark:border-white/10 rounded-full text-[13px] text-slate-500 dark:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-black/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                        <Search className="h-4 w-4 text-slate-400 group-hover:text-primary transition-colors" />
+                        <span className="font-medium">Search menus and pages...</span>
+                        <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-1.5 font-mono text-[10px] font-bold text-slate-500 shadow-sm">
+                            ⌘K
+                        </kbd>
+                    </button>
                 </div>
 
                 <div className="flex items-center gap-3 ml-auto">
@@ -125,13 +144,12 @@ export default function Header() {
                         </span>
                     </Button>
 
-                    <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block mx-2" />
+                    <div className="h-6 w-px bg-slate-200/50 dark:bg-slate-800/50 hidden sm:block mx-2" />
 
-                    {/* Colorful Avatar Border */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 overflow-hidden ring-2 ring-primary/20 hover:ring-primary/50 transition-all focus-visible:ring-primary">
-                                <Avatar className="h-10 w-10 border-2 border-white dark:border-slate-900">
+                                <Avatar className="h-10 w-10 border-2 border-white/50 dark:border-slate-800/50">
                                     <AvatarImage src={profileImage || ""} alt={displayName} className="object-cover" />
                                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                                         {getInitials(displayName)}
@@ -140,8 +158,8 @@ export default function Header() {
                             </Button>
                         </DropdownMenuTrigger>
 
-                        <DropdownMenuContent className="w-72 mt-2 p-1.5 border-slate-200 dark:border-slate-800 shadow-xl rounded-xl bg-white dark:bg-[#09090b]" align="end">
-                            <DropdownMenuLabel className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800/50 mb-1">
+                        <DropdownMenuContent className="w-72 mt-2 p-1.5 border-white/40 dark:border-white/10 shadow-2xl rounded-2xl bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/60" align="end">
+                            <DropdownMenuLabel className="p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-white/60 dark:border-white/5 mb-1">
                                 <div className="flex flex-col space-y-1">
                                     <div className="flex items-center justify-between">
                                         <p className="text-[14px] font-bold leading-none text-slate-900 dark:text-white truncate pr-2">{displayName}</p>
@@ -154,24 +172,59 @@ export default function Header() {
                                     </p>
                                 </div>
                             </DropdownMenuLabel>
-                            <DropdownMenuItem asChild className="cursor-pointer py-2.5 px-3 rounded-md text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-primary/5">
+                            <DropdownMenuItem asChild className="cursor-pointer py-2.5 px-3 rounded-xl text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-colors">
                                 <Link href={isSchoolLevel ? "/admin/profile" : "/super-admin/profile"} className="flex items-center">
                                     <UserIcon className="mr-3 h-4 w-4" /> My Profile
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer py-2.5 px-3 rounded-md text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-primary/5">
+                            <DropdownMenuItem asChild className="cursor-pointer py-2.5 px-3 rounded-xl text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-colors">
                                 <Link href={isSchoolLevel ? "/admin/settings" : "/super-admin/settings"} className="flex items-center">
                                     <Settings className="mr-3 h-4 w-4" /> Workspace Settings
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800 my-1" />
-                            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 px-3 rounded-md text-[13px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                            <DropdownMenuSeparator className="bg-black/5 dark:bg-white/5 my-1" />
+                            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 px-3 rounded-xl text-[13px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                                 <LogOut className="mr-3 h-4 w-4" /> Log out
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
             </div>
+
+            <CommandDialog open={open} onOpenChange={setOpen}>
+                <CommandInput placeholder="Search your workspace menus..." />
+                <CommandList className="custom-scrollbar">
+                    <CommandEmpty>No navigation items found.</CommandEmpty>
+                    
+                    {mainItems.length > 0 && (
+                        <CommandGroup heading="Quick Links">
+                            {mainItems.map((item, index) => {
+                                const Icon = item.icon;
+                                return (
+                                    <CommandItem key={index} onSelect={() => runCommand(() => router.push(item.href))}>
+                                        <Icon className="mr-2 h-4 w-4 text-primary" />
+                                        <span>{item.title}</span>
+                                    </CommandItem>
+                                );
+                            })}
+                        </CommandGroup>
+                    )}
+
+                    {nestedItems.map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                            <CommandGroup key={index} heading={item.title}>
+                                {item.subItems!.map((subItem, subIndex) => (
+                                    <CommandItem key={subIndex} onSelect={() => runCommand(() => router.push(subItem.href))}>
+                                        <Icon className="mr-2 h-4 w-4 text-slate-500" />
+                                        <span>{subItem.title}</span>
+                                    </CommandItem>
+                                ))}
+                            </CommandGroup>
+                        );
+                    })}
+                </CommandList>
+            </CommandDialog>
         </header>
     );
 }

@@ -12,6 +12,7 @@ export const SubjectService = {
     type?: string;
     page?: number;
     limit?: number;
+    classId?:string;
   }) => {
     const res = await api.get("/subjects", { params });
     return res.data;
