@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, BookOpen, User, Info, AlertCircle, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { RoutineService } from "@/services/routine.service";
 import { AcademicService } from "@/services/academic.service";
 import { SubjectService } from "@/services/subject.service";
+import { PeriodService } from "@/services/period.service";
 import api from "@/lib/axios";
 import { routineSchema, RoutineFormValues } from "./schema";
 
@@ -29,11 +30,9 @@ interface RoutineModalProps {
     isOpen: boolean;
     onClose: () => void;
     initialData?: any | null;
-    defaultClassId?: string;
-    defaultSectionId?: string;
 }
 
-export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, defaultSectionId }: RoutineModalProps) {
+export function RoutineModal({ isOpen, onClose, initialData }: RoutineModalProps) {
     const queryClient = useQueryClient();
     const isEdit = !!initialData;
     const [openTeacherSelect, setOpenTeacherSelect] = useState(false);
@@ -41,19 +40,20 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
     const form = useForm<RoutineFormValues>({
         resolver: zodResolver(routineSchema),
         defaultValues: {
-            classId: defaultClassId ? String(defaultClassId) : "",
-            sectionId: defaultSectionId ? String(defaultSectionId) : "",
+            classId: "",
+            sectionId: "",
+            periodId: "",
             subjectId: "",
             teacherId: "none",
             day: "MONDAY",
-            startTime: "",
-            endTime: "",
             roomNo: "",
         },
     });
 
-    const { reset, control, setValue } = form;
+    const { reset, control, setValue, handleSubmit } = form;
     const selectedClassId = useWatch({ control, name: "classId" });
+    const selectedDay = useWatch({ control, name: "day" });
+    const selectedPeriodId = useWatch({ control, name: "periodId" });
     const selectedSubjectId = useWatch({ control, name: "subjectId" });
 
     const { data: classes } = useQuery({
@@ -68,10 +68,16 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
         enabled: isOpen && !!selectedClassId,
     });
 
+    const { data: periodsData } = useQuery({
+        queryKey: ["periods", selectedDay],
+        queryFn: () => PeriodService.getAllPeriods({ day: selectedDay }),
+        enabled: isOpen && !!selectedDay,
+    });
+
     const { data: subjectsData } = useQuery({
-        queryKey: ["subjects", selectedClassId],
-        queryFn: () => SubjectService.getAllSubjects({ limit: 1000, classId: selectedClassId }),
-        enabled: isOpen && !!selectedClassId,
+        queryKey: ["subjects"],
+        queryFn: () => SubjectService.getAllSubjects({ limit: 1000 }),
+        enabled: isOpen,
     });
 
     const { data: teachersData } = useQuery({
@@ -83,24 +89,34 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
         enabled: isOpen,
     });
 
+    const { data: busyTeachersResponse } = useQuery({
+        queryKey: ["busy-teachers", selectedDay, selectedPeriodId],
+        queryFn: async () => {
+            const res = await api.get("/routines", { params: { day: selectedDay, periodId: selectedPeriodId, limit: 1000 } });
+            return res.data;
+        },
+        enabled: isOpen && !!selectedDay && !!selectedPeriodId,
+    });
+
     const classList = classes?.data?.data || classes?.data || (Array.isArray(classes) ? classes : []);
     const sectionList = sections?.data?.data || sections?.data || (Array.isArray(sections) ? sections : []);
-    const subjectList = subjectsData?.data?.data || subjectsData?.data || (Array.isArray(subjectsData) ? subjectsData : []);
+    const periodList = periodsData?.data || (Array.isArray(periodsData) ? periodsData : []);
+    const allSubjects = subjectsData?.data?.data || subjectsData?.data || (Array.isArray(subjectsData) ? subjectsData : []);
     const teachersList = teachersData?.data?.data || teachersData?.data || (Array.isArray(teachersData) ? teachersData : []);
+    const busyRoutines = busyTeachersResponse?.data || [];
 
-    const filteredSubjects = subjectList.filter((s: any) => String(s.classId) === String(selectedClassId));
+    const filteredSubjects = useMemo(() => {
+        return allSubjects.filter((s: any) => String(s.classId) === String(selectedClassId));
+    }, [allSubjects, selectedClassId]);
 
-    const recommendedTeachers = selectedSubjectId
-        ? teachersList.filter((teacher: any) =>
-            teacher.subjects?.some((sub: any) => String(sub.id) === String(selectedSubjectId))
-        )
-        : [];
+    const busyTeacherIds = useMemo(() => {
+        return busyRoutines
+            .filter((r: any) => r.teacherId && r.id !== initialData?.id)
+            .map((r: any) => String(r.teacherId));
+    }, [busyRoutines, initialData]);
 
-    const otherTeachers = selectedSubjectId
-        ? teachersList.filter((teacher: any) =>
-            !teacher.subjects?.some((sub: any) => String(sub.id) === String(selectedSubjectId))
-        )
-        : teachersList;
+    const selectedPeriod = periodList.find((p: any) => p.id === selectedPeriodId);
+    const isBreak = selectedPeriod?.type === "BREAK";
 
     useEffect(() => {
         if (isOpen) {
@@ -108,34 +124,32 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
                 reset({
                     classId: String(initialData.classId),
                     sectionId: String(initialData.sectionId),
-                    subjectId: String(initialData.subjectId),
+                    periodId: String(initialData.periodId),
+                    subjectId: initialData.subjectId ? String(initialData.subjectId) : "",
                     teacherId: initialData.teacherId ? String(initialData.teacherId) : "none",
                     day: initialData.day,
-                    startTime: initialData.startTime,
-                    endTime: initialData.endTime,
                     roomNo: initialData.roomNo || "",
                 });
             } else {
                 reset({
-                    classId: defaultClassId ? String(defaultClassId) : "",
-                    sectionId: defaultSectionId ? String(defaultSectionId) : "",
+                    classId: "",
+                    sectionId: "",
+                    periodId: "",
                     subjectId: "",
                     teacherId: "none",
                     day: "MONDAY",
-                    startTime: "",
-                    endTime: "",
                     roomNo: "",
                 });
             }
         }
-    }, [initialData, reset, isOpen, defaultClassId, defaultSectionId]);
+    }, [initialData, reset, isOpen]);
 
     const mutation = useMutation({
         mutationFn: (data: RoutineFormValues) => {
             const payload = {
                 ...data,
                 teacherId: data.teacherId === "none" ? null : data.teacherId,
-                roomNo: data.roomNo || null,
+                subjectId: data.subjectId === "" ? null : data.subjectId,
             };
             if (isEdit && initialData?.id) {
                 return RoutineService.updateRoutine(initialData.id, payload);
@@ -148,45 +162,93 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
             onClose();
         },
         onError: (error: AxiosError<{ message: string }>) => {
-            toast.error(error.response?.data?.message || "Failed to save schedule");
+            toast.error(error.response?.data?.message || "Conflict detected");
         },
     });
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 gap-0 border-white/20 dark:border-white/10 shadow-2xl bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl">
-                <DialogHeader className="p-6 pb-4 border-b border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
-                    <DialogTitle className="text-[18px] font-extrabold text-slate-900 dark:text-white">
-                        {isEdit ? "Edit Schedule" : "Add New Schedule"}
+            <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto border-white/20 dark:border-white/10 shadow-2xl bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl rounded-[32px] p-0 gap-0">
+                <DialogHeader className="p-8 border-b border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
+                    <DialogTitle className="text-[22px] font-black text-slate-900 dark:text-white flex items-center gap-3">
+                        <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                            <BookOpen className="h-5 w-5" />
+                        </div>
+                        {isEdit ? "Update Schedule" : "New Class Schedule"}
                     </DialogTitle>
                 </DialogHeader>
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="p-6 space-y-6">
-                        <div className="grid grid-cols-2 gap-5">
+                    <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="p-8 space-y-7">
+                        <div className="grid grid-cols-2 gap-6">
                             <FormField
-                                control={form.control}
+                                control={control}
+                                name="day"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Day Selection</FormLabel>
+                                        <Select onValueChange={(val) => { field.onChange(val); setValue("periodId", ""); setValue("teacherId", "none"); }} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold h-12 rounded-2xl focus:ring-primary/20">
+                                                    <SelectValue placeholder="Select Day" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="rounded-2xl">
+                                                {["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"].map((d) => (
+                                                    <SelectItem key={d} value={d} className="font-semibold">{d}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage className="text-[11px]" />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={control}
+                                name="periodId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Time Slot</FormLabel>
+                                        <Select onValueChange={(val) => { field.onChange(val); setValue("teacherId", "none"); }} value={field.value} disabled={!selectedDay}>
+                                            <FormControl>
+                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold h-12 rounded-2xl focus:ring-primary/20">
+                                                    <SelectValue placeholder={selectedDay ? "Pick a Period" : "Select Day First"} />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="rounded-2xl">
+                                                {periodList.map((p: any) => (
+                                                    <SelectItem key={p.id} value={p.id} className="font-medium">
+                                                        <div className="flex flex-col py-1">
+                                                            <span className="font-bold text-[14px]">{p.name}</span>
+                                                            <span className="text-[11px] text-slate-500 font-medium">{p.startTime} - {p.endTime}</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage className="text-[11px]" />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            <FormField
+                                control={control}
                                 name="classId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Class <span className="text-red-500">*</span></FormLabel>
-                                        <Select
-                                            onValueChange={(val) => {
-                                                field.onChange(val);
-                                                setValue("sectionId", "");
-                                                setValue("subjectId", "");
-                                                setValue("teacherId", "none");
-                                            }}
-                                            value={field.value ? String(field.value) : undefined}
-                                        >
+                                        <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Class</FormLabel>
+                                        <Select onValueChange={(val) => { field.onChange(val); setValue("sectionId", ""); setValue("subjectId", ""); }} value={field.value}>
                                             <FormControl>
-                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus:ring-primary/20 backdrop-blur-sm transition-colors hover:bg-white/80 dark:hover:bg-slate-900/80">
+                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold h-12 rounded-2xl">
                                                     <SelectValue placeholder="Select Class" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent className="max-h-[200px]">
+                                            <SelectContent className="max-h-[240px] rounded-2xl">
                                                 {classList.map((c: any) => (
-                                                    <SelectItem key={c.id} value={String(c.id)} className="font-medium">{c.name}</SelectItem>
+                                                    <SelectItem key={c.id} value={String(c.id)} className="font-semibold">{c.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -196,24 +258,20 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
                             />
 
                             <FormField
-                                control={form.control}
+                                control={control}
                                 name="sectionId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Section <span className="text-red-500">*</span></FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value ? String(field.value) : undefined}
-                                            disabled={!selectedClassId}
-                                        >
+                                        <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Section</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedClassId}>
                                             <FormControl>
-                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus:ring-primary/20 backdrop-blur-sm transition-colors hover:bg-white/80 dark:hover:bg-slate-900/80">
+                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold h-12 rounded-2xl">
                                                     <SelectValue placeholder="Select Section" />
                                                 </SelectTrigger>
                                             </FormControl>
-                                            <SelectContent className="max-h-[200px]">
+                                            <SelectContent className="rounded-2xl">
                                                 {sectionList.map((s: any) => (
-                                                    <SelectItem key={s.id} value={String(s.id)} className="font-medium">{s.name}</SelectItem>
+                                                    <SelectItem key={s.id} value={String(s.id)} className="font-semibold">{s.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -223,225 +281,164 @@ export function RoutineModal({ isOpen, onClose, initialData, defaultClassId, def
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-5">
-                            <FormField
-                                control={form.control}
-                                name="subjectId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Subject <span className="text-red-500">*</span></FormLabel>
-                                        <Select
-                                            onValueChange={(val) => {
-                                                field.onChange(val);
-                                                setValue("teacherId", "none");
-                                            }}
-                                            value={field.value ? String(field.value) : undefined}
-                                            disabled={!selectedClassId}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus:ring-primary/20 backdrop-blur-sm transition-colors hover:bg-white/80 dark:hover:bg-slate-900/80">
-                                                    <SelectValue placeholder="Select Subject" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="max-h-[200px]">
-                                                {filteredSubjects.map((s: any) => (
-                                                    <SelectItem key={s.id} value={String(s.id)} className="font-medium">{s.name} ({s.code})</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage className="text-[11px]" />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="teacherId"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="text-[13px] font-bold text-slate-700 dark:text-slate-300 mb-[6px]">Teacher</FormLabel>
-                                        <Popover open={openTeacherSelect} onOpenChange={setOpenTeacherSelect}>
-                                            <PopoverTrigger asChild>
+                        {!isBreak && (
+                            <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <FormField
+                                    control={control}
+                                    name="subjectId"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Subject</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || ""} disabled={!selectedClassId}>
                                                 <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        disabled={!selectedSubjectId}
-                                                        className={cn(
-                                                            "w-full justify-between bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-sm transition-colors hover:bg-white/80 dark:hover:bg-slate-900/80",
-                                                            !field.value && "text-slate-500 font-normal"
-                                                        )}
-                                                    >
-                                                        {field.value === "none"
-                                                            ? (!selectedSubjectId ? "Select Subject First" : "Self Study / Tiffin")
-                                                            : (() => {
-                                                                const t = teachersList.find((t: any) => String(t.id) === String(field.value));
-                                                                if (!t) return "Search Teacher...";
-                                                                const isRec = t.subjects?.some((s: any) => String(s.id) === String(selectedSubjectId));
-                                                                return (
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="truncate font-semibold text-slate-900 dark:text-white">{t.firstName} {t.lastName}</span>
-                                                                        {!isRec && <Badge variant="secondary" className="h-[18px] text-[9px] px-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 border-0 uppercase tracking-widest font-bold rounded-sm">Sub</Badge>}
-                                                                    </div>
-                                                                );
-                                                            })()
-                                                        }
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
+                                                    <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold h-12 rounded-2xl">
+                                                        <SelectValue placeholder={selectedClassId ? "Pick Subject" : "Select Class First"} />
+                                                    </SelectTrigger>
                                                 </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 shadow-xl border-slate-200 dark:border-slate-800 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl">
-                                                <Command>
-                                                    <CommandInput placeholder="Search teacher..." className="h-10 text-[13px]" />
-                                                    <CommandList className="custom-scrollbar">
-                                                        <CommandEmpty className="text-[13px] py-4">No teacher found.</CommandEmpty>
+                                                <SelectContent className="max-h-[240px] rounded-2xl">
+                                                    {filteredSubjects.length > 0 ? (
+                                                        filteredSubjects.map((s: any) => (
+                                                            <SelectItem key={s.id} value={String(s.id)} className="font-semibold">
+                                                                {s.name} <span className="text-[10px] text-slate-400 ml-2">[{s.code}]</span>
+                                                            </SelectItem>
+                                                        ))
+                                                    ) : (
+                                                        <div className="p-4 text-center text-xs text-slate-400 font-bold">No subjects in this class</div>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage className="text-[11px]" />
+                                        </FormItem>
+                                    )}
+                                />
 
-                                                        <CommandGroup heading="System Options" className="text-[11px] font-bold text-slate-400">
-                                                            <CommandItem
-                                                                value="none"
-                                                                onSelect={() => {
-                                                                    form.setValue("teacherId", "none");
-                                                                    setOpenTeacherSelect(false);
-                                                                }}
-                                                                className="text-[13px] font-medium"
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4 text-primary", field.value === "none" ? "opacity-100" : "opacity-0")} />
-                                                                Self Study / Tiffin
-                                                            </CommandItem>
-                                                        </CommandGroup>
-
-                                                        {recommendedTeachers.length > 0 && (
-                                                            <>
-                                                                <CommandSeparator className="bg-slate-100 dark:bg-slate-800" />
-                                                                <CommandGroup heading="Subject Teachers" className="text-[11px] font-bold text-primary">
-                                                                    {recommendedTeachers.map((teacher: any) => (
+                                <FormField
+                                    control={control}
+                                    name="teacherId"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                            <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Assign Teacher</FormLabel>
+                                            <Popover open={openTeacherSelect} onOpenChange={setOpenTeacherSelect}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            disabled={!selectedPeriodId}
+                                                            className={cn(
+                                                                "w-full justify-between bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm h-12 rounded-2xl font-bold transition-all",
+                                                                !field.value && "text-slate-500 font-normal"
+                                                            )}
+                                                        >
+                                                            {field.value === "none" ? "Self Study / No Teacher" : 
+                                                                (() => {
+                                                                    const t = teachersList.find((t: any) => String(t.id) === String(field.value));
+                                                                    return t ? `${t.firstName} ${t.lastName}` : "Search Teacher";
+                                                                })()
+                                                            }
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 shadow-2xl border-slate-200 dark:border-slate-800 rounded-[24px] bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl overflow-hidden">
+                                                    <Command className="bg-transparent">
+                                                        <div className="flex items-center border-b border-black/5 dark:border-white/5 px-3">
+                                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            <CommandInput placeholder="Search all faculty..." className="h-12 border-0 bg-transparent focus:ring-0 text-[13px] font-medium" />
+                                                        </div>
+                                                        <CommandList className="max-h-[300px] custom-scrollbar p-1">
+                                                            <CommandEmpty className="text-[13px] py-8 text-center text-slate-400 font-bold">No faculty member found.</CommandEmpty>
+                                                            <CommandGroup heading="General" className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-2">
+                                                                <CommandItem value="none" onSelect={() => { setValue("teacherId", "none"); setOpenTeacherSelect(false); }} className="rounded-xl h-11 px-3">
+                                                                    <Check className={cn("mr-2 h-4 w-4 text-primary", field.value === "none" ? "opacity-100" : "opacity-0")} />
+                                                                    <span className="font-bold text-[13px]">Self Study (No Teacher)</span>
+                                                                </CommandItem>
+                                                            </CommandGroup>
+                                                            <CommandSeparator className="bg-black/5 dark:bg-white/5" />
+                                                            <CommandGroup heading="Faculty List" className="text-[10px] font-black uppercase tracking-widest text-slate-400 p-2">
+                                                                {teachersList.map((teacher: any) => {
+                                                                    const isBusy = busyTeacherIds.includes(String(teacher.id));
+                                                                    const isExpert = teacher.subjects?.some((s: any) => String(s.id) === String(selectedSubjectId));
+                                                                    
+                                                                    return (
                                                                         <CommandItem
                                                                             key={teacher.id}
-                                                                            value={`${teacher.firstName} ${teacher.lastName} ${teacher.phone || ""}`}
-                                                                            onSelect={() => {
-                                                                                form.setValue("teacherId", String(teacher.id));
-                                                                                setOpenTeacherSelect(false);
-                                                                            }}
-                                                                            className="py-2"
+                                                                            value={`${teacher.firstName} ${teacher.lastName}`}
+                                                                            disabled={isBusy}
+                                                                            onSelect={() => { if(!isBusy) { setValue("teacherId", String(teacher.id)); setOpenTeacherSelect(false); } }}
+                                                                            className={cn(
+                                                                                "rounded-xl py-2.5 px-3 mb-1 transition-all",
+                                                                                isBusy ? "opacity-40 grayscale cursor-not-allowed" : "cursor-pointer"
+                                                                            )}
                                                                         >
-                                                                            <Check className={cn("mr-2 h-4 w-4 text-primary", String(field.value) === String(teacher.id) ? "opacity-100" : "opacity-0")} />
-                                                                            <div className="flex flex-col gap-0.5">
-                                                                                <span className="font-bold text-[13px] text-slate-900 dark:text-white">{teacher.firstName} {teacher.lastName}</span>
-                                                                                {teacher.phone && <span className="text-[10px] font-medium text-slate-500">{teacher.phone}</span>}
+                                                                            <div className="flex flex-1 items-center justify-between">
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <div className={cn("p-1.5 rounded-lg border", isExpert ? "bg-primary/10 border-primary/20 text-primary" : "bg-slate-100 border-slate-200 text-slate-400")}>
+                                                                                        <User className="h-3.5 w-3.5" />
+                                                                                    </div>
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className={cn("text-[13px] font-bold", isExpert && !isBusy ? "text-primary" : "text-slate-900 dark:text-slate-100")}>
+                                                                                            {teacher.firstName} {teacher.lastName}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] font-medium text-slate-500">{teacher.phone || "No Contact"}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    {isBusy && (
+                                                                                        <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20 text-[9px] font-black uppercase px-2 py-0 h-5">
+                                                                                            <AlertCircle className="h-2.5 w-2.5 mr-1" /> Booked
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                    {isExpert && !isBusy && (
+                                                                                        <Badge variant="secondary" className="bg-primary/10 text-primary border-0 text-[9px] font-black uppercase px-2 py-0 h-5">Expert</Badge>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </>
-                                                        )}
+                                                                    );
+                                                                })}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage className="text-[11px]" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
 
-                                                        {otherTeachers.length > 0 && (
-                                                            <>
-                                                                <CommandSeparator className="bg-slate-100 dark:bg-slate-800" />
-                                                                <CommandGroup heading="Other Teachers (Substitute)" className="text-[11px] font-bold text-slate-400">
-                                                                    {otherTeachers.map((teacher: any) => (
-                                                                        <CommandItem
-                                                                            key={teacher.id}
-                                                                            value={`${teacher.firstName} ${teacher.lastName} ${teacher.phone || ""}`}
-                                                                            onSelect={() => {
-                                                                                form.setValue("teacherId", String(teacher.id));
-                                                                                setOpenTeacherSelect(false);
-                                                                            }}
-                                                                            className="py-2"
-                                                                        >
-                                                                            <Check className={cn("mr-2 h-4 w-4 text-primary", String(field.value) === String(teacher.id) ? "opacity-100" : "opacity-0")} />
-                                                                            <div className="flex flex-col gap-0.5">
-                                                                                <span className="font-semibold text-[13px] text-slate-600 dark:text-slate-300">{teacher.firstName} {teacher.lastName}</span>
-                                                                                {teacher.phone && <span className="text-[10px] font-medium text-slate-400">{teacher.phone}</span>}
-                                                                            </div>
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </>
-                                                        )}
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage className="text-[11px]" />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                        {isBreak && (
+                            <div className="p-8 border-2 border-dashed border-orange-500/30 bg-orange-500/5 rounded-[24px] flex flex-col items-center justify-center text-center animate-in zoom-in-95 duration-500">
+                                <div className="h-14 w-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4 border-2 border-orange-200 dark:border-orange-800">
+                                    <Info className="h-7 w-7 text-orange-600 dark:text-orange-400" />
+                                </div>
+                                <h4 className="font-black text-orange-700 dark:text-orange-400 text-[16px] uppercase tracking-tight">Break Time Slot</h4>
+                                <p className="text-orange-600/70 text-[13px] font-bold mt-2 max-w-[300px]">This period is designated as a break. No academic assignments are necessary.</p>
+                            </div>
+                        )}
 
                         <FormField
-                            control={form.control}
-                            name="day"
+                            control={control}
+                            name="roomNo"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-[13px] font-bold text-slate-700 dark:text-slate-300">Day <span className="text-red-500">*</span></FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value ? String(field.value) : undefined}>
-                                        <FormControl>
-                                            <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus:ring-primary/20 backdrop-blur-sm transition-colors hover:bg-white/80 dark:hover:bg-slate-900/80">
-                                                <SelectValue placeholder="Select Day" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"].map((d) => (
-                                                <SelectItem key={d} value={d} className="font-medium">{d}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormLabel className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Venue / Room No</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Hall 102, Lab A" className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm h-12 rounded-2xl font-bold focus-visible:ring-primary/20" {...field} value={field.value || ""} />
+                                    </FormControl>
                                     <FormMessage className="text-[11px]" />
                                 </FormItem>
                             )}
                         />
 
-                        <div className="grid grid-cols-3 gap-5 bg-white/30 dark:bg-slate-900/30 p-4 rounded-2xl border border-white/40 dark:border-white/5 backdrop-blur-sm">
-                            <FormField
-                                control={form.control}
-                                name="startTime"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[12px] font-bold text-slate-600 dark:text-slate-400">Start Time</FormLabel>
-                                        <FormControl>
-                                            <Input type="time" className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus-visible:ring-primary/20 font-medium text-[13px] backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                        <FormMessage className="text-[11px]" />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="endTime"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[12px] font-bold text-slate-600 dark:text-slate-400">End Time</FormLabel>
-                                        <FormControl>
-                                            <Input type="time" className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus-visible:ring-primary/20 font-medium text-[13px] backdrop-blur-sm" {...field} />
-                                        </FormControl>
-                                        <FormMessage className="text-[11px]" />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="roomNo"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[12px] font-bold text-slate-600 dark:text-slate-400">Room No</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. 101" className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm focus-visible:ring-primary/20 font-medium text-[13px] backdrop-blur-sm" {...field} value={field.value || ""} />
-                                        </FormControl>
-                                        <FormMessage className="text-[11px]" />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending} className="rounded-xl font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors bg-white/20 dark:bg-white/5 hover:bg-white/40 dark:hover:bg-white/10">
+                        <div className="flex justify-end gap-4 pt-6 border-t border-black/5 dark:border-white/5">
+                            <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending} className="rounded-2xl font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all h-12 px-6">
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={mutation.isPending} className="rounded-xl font-bold px-8 shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:-translate-y-0.5">
-                                {mutation.isPending ? "Saving..." : "Save Schedule"}
+                            <Button type="submit" disabled={mutation.isPending} className="rounded-2xl font-black px-12 shadow-xl shadow-primary/20 transition-all hover:shadow-2xl hover:-translate-y-1 h-12 bg-primary">
+                                {mutation.isPending ? "Processing..." : "Sync Schedule"}
                             </Button>
                         </div>
                     </form>
