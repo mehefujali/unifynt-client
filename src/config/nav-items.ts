@@ -11,7 +11,8 @@ import {
   Gem,
   Banknote,
   UserPlus,
-  LayoutTemplate, 
+  LayoutTemplate,
+  FileText
 } from "lucide-react";
 
 export type SubItem = { title: string; href: string };
@@ -38,7 +39,7 @@ export const navItems: Record<string, NavItem[]> = {
     },
     { title: "Schools", href: "/super-admin/schools", icon: School },
     { title: "Users", href: "/super-admin/users", icon: Users },
-    { title: "Site Templates", href: "/super-admin/site-templates", icon: LayoutTemplate }, // Super Admin-এর জন্য টেমপ্লেট রাউট
+    { title: "Site Templates", href: "/super-admin/site-templates", icon: LayoutTemplate },
     { title: "Global Settings", href: "/super-admin/settings", icon: Settings },
   ],
   SCHOOL_ADMIN: [
@@ -70,6 +71,7 @@ export const navItems: Record<string, NavItem[]> = {
         { title: "Routine", href: "/admin/routine" },
       ],
     },
+    { title: "Forms & Surveys", href: "/admin/forms", icon: FileText },
     {
       title: "Finance",
       href: "#",

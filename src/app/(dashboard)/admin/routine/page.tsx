@@ -100,7 +100,7 @@ export default function RoutinePage() {
                 </div>
                 <Button
                     onClick={() => { setSelectedRoutine(null); setIsModalOpen(true); }}
-                    className="rounded-2xl font-black px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:shadow-2xl hover:-translate-y-1 bg-primary text-white"
+                    className="rounded-2xl font-black px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:shadow-2xl hover:-translate-y-1 bg-primary dark:text-black text-white"
                 >
                     <Plus className="mr-2 h-5 w-5 stroke-[3]" /> Add Schedule
                 </Button>
@@ -327,7 +327,7 @@ export default function RoutinePage() {
                                 >
                                     <ChevronLeft className="h-4 w-4 stroke-[3]" />
                                 </Button>
-                                <div className="px-4 h-9 flex items-center justify-center bg-primary text-white rounded-xl font-black text-[13px] shadow-lg shadow-primary/20">
+                                <div className="px-4 h-9 flex items-center justify-center bg-primary text-white dark:text-black rounded-xl font-black text-[13px] shadow-lg shadow-primary/20">
                                     {currentPage} / {meta?.totalPage || 1}
                                 </div>
                                 <Button
