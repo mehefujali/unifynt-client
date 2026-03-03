@@ -13,7 +13,8 @@ import {
   UserPlus,
   LayoutTemplate,
   FileText,
-  Award
+  Award,
+  ShieldAlert // Audit Log এর জন্য আইকন
 } from "lucide-react";
 
 export type SubItem = { title: string; href: string };
@@ -41,6 +42,7 @@ export const navItems: Record<string, NavItem[]> = {
     { title: "Schools", href: "/super-admin/schools", icon: School },
     { title: "Users", href: "/super-admin/users", icon: Users },
     { title: "Site Templates", href: "/super-admin/site-templates", icon: LayoutTemplate },
+    { title: "Audit Logs", href: "/super-admin/audit-logs", icon: ShieldAlert, color: "text-emerald-500" }, // নতুন মেনু
     { title: "Global Settings", href: "/super-admin/settings", icon: Settings },
   ],
   SCHOOL_ADMIN: [
