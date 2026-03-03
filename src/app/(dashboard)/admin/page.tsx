@@ -2,375 +2,180 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import {
-    Users,
-    GraduationCap,
-    IndianRupee,
-    CalendarCheck,
-    BellRing,
-    TrendingUp,
-    Activity,
-    School,
-} from "lucide-react";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    Legend,
-    Label,
-} from "recharts";
-
 import api from "@/lib/axios";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+    Users, 
+    TrendingUp, 
+    GraduationCap, 
+    Wallet, 
+    Calendar,
+    Bell,
+    ArrowUpRight,
+    PieChart,
+    UserCheck,
+    Clock,
+    LayoutDashboard,
+    ChevronRight
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const COLOR_THEMES = {
-    blue: { iconBg: "bg-blue-500/10 dark:bg-blue-500/20", iconText: "text-blue-600 dark:text-blue-400" },
-    emerald: { iconBg: "bg-emerald-500/10 dark:bg-emerald-500/20", iconText: "text-emerald-600 dark:text-emerald-400" },
-    violet: { iconBg: "bg-violet-500/10 dark:bg-violet-500/20", iconText: "text-violet-600 dark:text-violet-400" },
-    amber: { iconBg: "bg-amber-500/10 dark:bg-amber-500/20", iconText: "text-amber-600 dark:text-amber-400" },
-    rose: { iconBg: "bg-rose-500/10 dark:bg-rose-500/20", iconText: "text-rose-600 dark:text-rose-400" },
-};
+export default function AdminDashboard() {
+    const { data: response, isLoading } = useQuery({
+        queryKey: ["adminStats"],
+        queryFn: async () => {
+            const res = await api.get("/dashboard/school-admin");
+            return res.data?.data;
+        }
+    });
 
-const CHART_COLORS = {
-    primary: "#3b82f6",
-    success: "#10b981",
-    danger: "#ef4444",
-    warning: "#f59e0b",
-    muted: "#94a3b8"
-};
-
-const ATTENDANCE_COLORS = {
-    PRESENT: CHART_COLORS.success,
-    ABSENT: CHART_COLORS.danger,
-    LATE: CHART_COLORS.warning,
-    LEAVE: CHART_COLORS.primary,
-};
-
-const GENDER_COLORS = [CHART_COLORS.primary, CHART_COLORS.danger, CHART_COLORS.warning];
-
-const MetricCard = ({ title, value, subtitle, icon: Icon, trend, theme = "blue" }: any) => {
-    const styles = COLOR_THEMES[theme as keyof typeof COLOR_THEMES];
-
-    return (
-        <Card className="relative overflow-hidden rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none transition-all duration-300 hover:shadow-lg hover:bg-white/50 dark:hover:bg-white/5 hover:-translate-y-1">
-            <div className={cn("absolute -right-6 -top-6 h-24 w-24 rounded-full blur-3xl opacity-60 pointer-events-none", styles.iconBg)} />
-            
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative z-10">
-                <CardTitle className="text-[13px] font-bold text-slate-500 dark:text-slate-400">{title}</CardTitle>
-                <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm backdrop-blur-md", styles.iconBg, styles.iconText)}>
-                    <Icon className="h-5 w-5" strokeWidth={2.5} />
-                </div>
-            </CardHeader>
-            <CardContent className="relative z-10">
-                <div className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm">{value}</div>
-                <div className="flex items-center gap-1.5 mt-2 w-fit px-2 py-0.5 rounded-full bg-white/60 dark:bg-white/10 text-[12px] font-bold text-slate-600 dark:text-slate-300 border border-black/5 dark:border-white/5 backdrop-blur-md">
-                    {trend && <TrendingUp className={cn("h-3.5 w-3.5", styles.iconText)} />}
-                    <span>{subtitle}</span>
-                </div>
-            </CardContent>
-        </Card>
-    );
-};
-
-const CustomTooltip = ({ active, payload, label, currency = false }: any) => {
-    if (active && payload && payload.length) {
+    if (isLoading) {
         return (
-            <div className="bg-white/80 dark:bg-black/60 backdrop-blur-xl border border-white/60 dark:border-white/10 p-3 rounded-2xl shadow-xl text-sm ring-1 ring-black/5">
-                <p className="font-bold text-slate-900 dark:text-white mb-1.5">{label}</p>
-                <p className="text-[13px] font-bold flex items-center gap-2" style={{ color: payload[0].fill }}>
-                    <span className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: payload[0].fill }} />
-                    {currency ? `₹${payload[0].value.toLocaleString()}` : payload[0].value}
-                    <span className="text-slate-500 dark:text-slate-400 font-medium ml-1">{currency ? "" : "Students"}</span>
-                </p>
+            <div className="p-8 space-y-8 animate-pulse">
+                <div className="h-12 w-64 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-2xl" />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="h-32 bg-zinc-200/30 dark:bg-zinc-800/30 rounded-[32px]" />
+                    ))}
+                </div>
             </div>
         );
     }
-    return null;
-};
 
-export default function SchoolAdminDashboard() {
-    const { data: response, isLoading, isError } = useQuery({
-        queryKey: ["schoolAdminDashboard"],
-        queryFn: async () => {
-            const res = await api.get("/dashboard/school-admin");
-            return res.data;
-        },
-    });
+    const { overview, todaysAttendance, classDistribution, recentNotices } = response || {};
 
-    if (isLoading) return <DashboardSkeleton />;
-    if (isError || !response?.data) return <DashboardError />;
-
-    const stats = response.data;
-
-    const todaysAttendance = stats?.todaysAttendance || [];
-    const attendanceData = todaysAttendance.map((item: any) => ({
-        name: item.status.charAt(0) + item.status.slice(1).toLowerCase(),
-        value: item.count,
-        fill: ATTENDANCE_COLORS[item.status as keyof typeof ATTENDANCE_COLORS] || CHART_COLORS.muted,
-    }));
-
-    const totalStudents = stats?.totalStudents || 0;
-    const totalPresent = todaysAttendance.find((a: any) => a.status === "PRESENT")?.count || 0;
-    const attendancePercentage = totalStudents > 0 ? Math.round((totalPresent / totalStudents) * 100) : 0;
-
-    const genderData = (stats?.genderRatio || []).map((item: any) => ({
-        name: item.name.charAt(0) + item.name.slice(1).toLowerCase(),
-        value: item.value,
-    }));
-
-    const totalCollected = stats?.financialOverview?.totalCollected || 0;
-    const totalDue = stats?.financialOverview?.totalDue || 0;
-    const totalBilled = totalCollected + totalDue;
-    const collectionPercentage = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 0;
-
-    const financialData = [
-        { name: "Collected", value: totalCollected, fill: CHART_COLORS.success },
-        { name: "Pending Dues", value: totalDue, fill: "#f43f5e" },
+    const stats = [
+        { label: "Total Students", value: overview?.totalStudents, icon: GraduationCap, color: "text-blue-500", bg: "bg-blue-500/10" },
+        { label: "Active Teachers", value: overview?.totalTeachers, icon: Users, color: "text-purple-500", bg: "bg-purple-500/10" },
+        { label: "Monthly Fees", value: `₹${overview?.totalCollected.toLocaleString()}`, icon: Wallet, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+        { label: "Dues Pending", value: `₹${overview?.totalDue.toLocaleString()}`, icon: TrendingUp, color: "text-rose-500", bg: "bg-rose-500/10" },
     ];
 
-    const recentNotices = stats?.recentNotices || [];
-
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in zoom-in-[0.99] duration-700 ease-out">
-            <div className="flex flex-col gap-1 pb-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 dark:border-white/10">
-                        <School className="h-6 w-6 text-primary" />
+        <div className="relative min-h-screen p-4 md:p-8 space-y-10 overflow-hidden">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/20 blur-[120px] rounded-full -z-10" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-400/20 blur-[120px] rounded-full -z-10" />
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-1">
+                    <h1 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase italic">
+                        Analytics
+                    </h1>
+                    <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Live Institution Monitoring</p>
                     </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm">Executive Dashboard</h1>
                 </div>
-                <p className="text-slate-500 dark:text-slate-400 text-[14px] font-medium ml-[60px]">
-                    Real-time operational insights for your institution.
-                </p>
+                <div className="flex items-center gap-4 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md px-6 py-3 rounded-[24px] border border-white/20 dark:border-white/5 shadow-xl shadow-black/5">
+                    <Clock className="h-4 w-4 text-zinc-500" />
+                    <span className="text-xs font-black text-zinc-700 dark:text-zinc-300 uppercase tracking-tighter">
+                        {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </span>
+                </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <MetricCard
-                    title="Total Students"
-                    value={totalStudents.toLocaleString()}
-                    subtitle="Active Enrollments"
-                    icon={Users}
-                    trend={true}
-                    theme="blue"
-                />
-                <MetricCard
-                    title="Total Teachers"
-                    value={(stats?.totalTeachers || 0).toLocaleString()}
-                    subtitle="Current Faculty"
-                    icon={GraduationCap}
-                    trend={true}
-                    theme="violet"
-                />
-                <MetricCard
-                    title="Today's Attendance"
-                    value={`${attendancePercentage}%`}
-                    subtitle={`${totalPresent} students present`}
-                    icon={CalendarCheck}
-                    theme="emerald"
-                />
-                <MetricCard
-                    title="Fee Collection"
-                    value={`₹${(totalCollected / 1000).toFixed(1)}k`}
-                    subtitle={`${collectionPercentage}% of total billed`}
-                    icon={IndianRupee}
-                    trend={true}
-                    theme="amber"
-                />
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300 hover:shadow-lg hover:bg-white/50 dark:hover:bg-white/5">
-                    <CardHeader className="bg-white/30 dark:bg-black/10 border-b border-black/5 dark:border-white/5 pb-4 backdrop-blur-xl">
-                        <CardTitle className="font-extrabold text-[16px] flex items-center gap-2 text-slate-900 dark:text-white">
-                            <div className="p-1.5 rounded-xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
-                                <Activity className="h-4 w-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((stat, i) => (
+                    <div key={i} className="group relative bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 p-7 rounded-[35px] shadow-2xl shadow-black/5 transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className={cn("h-14 w-14 rounded-[22px] flex items-center justify-center shadow-inner", stat.bg)}>
+                                <stat.icon className={cn("h-7 w-7", stat.color)} />
                             </div>
-                            Daily Attendance Overview
-                        </CardTitle>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Current status of student presence.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[340px] w-full pt-6">
-                        {attendanceData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={attendanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" opacity={0.4} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: "currentColor" }} className="text-slate-500" dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: "currentColor" }} className="text-slate-500" dx={-10} />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "currentColor", opacity: 0.05 }} />
-                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={45} animationDuration={1000} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <EmptyState message="No attendance data for today." />
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-3 rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300 hover:shadow-lg hover:bg-white/50 dark:hover:bg-white/5">
-                    <CardHeader className="bg-white/30 dark:bg-black/10 border-b border-black/5 dark:border-white/5 pb-4 backdrop-blur-xl">
-                        <CardTitle className="font-extrabold text-[16px] flex items-center gap-2 text-slate-900 dark:text-white">
-                            <div className="p-1.5 rounded-xl bg-violet-500/10 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400">
-                                <Users className="h-4 w-4" />
+                            <div className="h-8 w-8 rounded-full bg-white/50 dark:bg-white/5 flex items-center justify-center border border-white/20">
+                                <ArrowUpRight className="h-4 w-4 text-zinc-400 group-hover:text-zinc-900 transition-colors" />
                             </div>
-                            Student Demographics
-                        </CardTitle>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Gender distribution ratio.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[340px] w-full flex items-center justify-center pt-6">
-                        {genderData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={genderData}
-                                        cx="50%"
-                                        cy="45%"
-                                        innerRadius={85}
-                                        outerRadius={115}
-                                        paddingAngle={4}
-                                        dataKey="value"
-                                        stroke="none"
-                                        cornerRadius={8}
-                                    >
-                                        {genderData.map((entry: any, index: number) => (
-                                            <Cell key={`cell-${index}`} fill={GENDER_COLORS[index % GENDER_COLORS.length]} />
-                                        ))}
-                                        <Label
-                                            value={totalStudents}
-                                            position="center"
-                                            className="text-[32px] font-black fill-slate-900 dark:fill-white"
-                                        />
-                                        <Label
-                                            value="Total"
-                                            position="center"
-                                            dy={28}
-                                            className="text-[12px] font-bold uppercase tracking-widest fill-slate-500"
-                                        />
-                                    </Pie>
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={10} wrapperStyle={{ fontSize: '13px', fontWeight: 700 }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <EmptyState message="No gender data available." />
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-3 rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300 hover:shadow-lg hover:bg-white/50 dark:hover:bg-white/5">
-                    <CardHeader className="bg-white/30 dark:bg-black/10 border-b border-black/5 dark:border-white/5 pb-4 backdrop-blur-xl">
-                        <CardTitle className="font-extrabold text-[16px] flex items-center gap-2 text-slate-900 dark:text-white">
-                            <div className="p-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
-                                <IndianRupee className="h-4 w-4" />
-                            </div>
-                            Financial Health
-                        </CardTitle>
-                        <CardDescription className="text-[13px] font-medium text-slate-500">Collected fees vs pending dues.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[320px] w-full pt-8">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={financialData} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="currentColor" className="text-slate-200 dark:text-slate-800" opacity={0.4} />
-                                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: "currentColor" }} className="text-slate-500" tickFormatter={(value) => `₹${(value / 1000)}k`} />
-                                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 800, fill: "currentColor" }} className="text-slate-700 dark:text-slate-300" width={100} />
-                                <Tooltip content={<CustomTooltip currency={true} />} cursor={{ fill: "currentColor", opacity: 0.05 }} />
-                                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={32} animationDuration={1000}>
-                                    {financialData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-4 rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300 hover:shadow-lg hover:bg-white/50 dark:hover:bg-white/5">
-                    <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-black/5 dark:border-white/5 bg-white/30 dark:bg-black/10 backdrop-blur-xl">
-                        <div className="flex flex-col gap-1">
-                            <CardTitle className="font-extrabold text-[16px] flex items-center gap-2 text-slate-900 dark:text-white">
-                                <div className="p-1.5 rounded-xl bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400">
-                                    <BellRing className="h-4 w-4" />
-                                </div>
-                                Notice Board
-                            </CardTitle>
                         </div>
-                        {recentNotices.length > 0 && (
-                            <Badge className="bg-rose-500/10 text-rose-600 dark:text-rose-400 px-3 py-1 rounded-full text-[11px] font-black tracking-widest uppercase shadow-sm border border-rose-500/20 backdrop-blur-md">
-                                {recentNotices.length} New
-                            </Badge>
-                        )}
-                    </CardHeader>
-                    <CardContent className="p-0 h-[320px] overflow-y-auto custom-scrollbar">
-                        {recentNotices.length > 0 ? (
-                            <div className="divide-y divide-black/5 dark:divide-white/5">
-                                {recentNotices.map((notice: any) => (
-                                    <div key={notice.id} className="p-5 flex flex-col gap-2 hover:bg-white/60 dark:hover:bg-white/10 transition-colors border-l-[4px] border-l-transparent hover:border-l-rose-500 group">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="font-extrabold text-slate-900 dark:text-white text-[14px] leading-tight group-hover:text-primary transition-colors">{notice.title}</h4>
-                                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest whitespace-nowrap ml-3 bg-white/60 dark:bg-black/20 border border-black/5 dark:border-white/10 px-2.5 py-1 rounded-md shadow-sm backdrop-blur-md">
-                                                {new Date(notice.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                            </span>
-                                        </div>
-                                        <p className="text-[13px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-medium">
-                                            {notice.content}
-                                        </p>
-                                    </div>
-                                ))}
+                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-zinc-400 mb-2">{stat.label}</p>
+                        <h3 className="text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter tabular-nums">{stat.value}</h3>
+                    </div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[40px] shadow-2xl shadow-black/5 overflow-hidden">
+                    <div className="px-8 py-7 border-b border-white/10 flex items-center justify-between">
+                        <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                            <UserCheck className="h-4 w-4 text-emerald-500" />
+                            Attendance
+                        </h2>
+                    </div>
+                    <div className="p-8 space-y-8">
+                        {todaysAttendance?.length > 0 ? todaysAttendance.map((item: any) => (
+                            <div key={item.status} className="space-y-3">
+                                <div className="flex justify-between text-[11px] font-black uppercase tracking-tight">
+                                    <span className="text-zinc-500">{item.status}</span>
+                                    <span className="text-zinc-900 dark:text-zinc-100">{item.count} Students</span>
+                                </div>
+                                <div className="h-3 w-full bg-black/5 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
+                                    <div 
+                                        className={cn("h-full rounded-full transition-all duration-1000", item.status === "PRESENT" ? "bg-gradient-to-r from-emerald-400 to-teal-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]" : "bg-gradient-to-r from-rose-400 to-red-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]")}
+                                        style={{ width: `${(item.count / (overview?.totalStudents || 1)) * 100}%` }}
+                                    />
+                                </div>
                             </div>
-                        ) : (
-                            <EmptyState message="No recent notices published." icon={BellRing} />
+                        )) : (
+                            <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 opacity-30">
+                                <UserCheck className="h-12 w-12" />
+                                <p className="text-[10px] font-black uppercase tracking-widest italic">No Data Collected</p>
+                            </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
+
+                <div className="lg:col-span-2 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[40px] shadow-2xl shadow-black/5 overflow-hidden">
+                    <div className="px-8 py-7 border-b border-white/10 flex items-center justify-between">
+                        <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                            <PieChart className="h-4 w-4 text-blue-500" />
+                            Class Enrollment
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 h-full">
+                        {classDistribution?.map((c: any) => (
+                            <div key={c.name} className="p-10 flex flex-col items-center justify-center text-center border-r border-b border-white/10 group hover:bg-white/20 transition-all">
+                                <span className="text-4xl font-black text-zinc-900 dark:text-zinc-100 mb-2 group-hover:scale-110 transition-transform tabular-nums">{c.students}</span>
+                                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Class {c.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="lg:col-span-3 bg-white/30 dark:bg-zinc-900/30 backdrop-blur-2xl border border-white/20 dark:border-white/5 rounded-[45px] shadow-2xl shadow-black/10 overflow-hidden">
+                    <div className="px-10 py-8 border-b border-white/10 flex items-center justify-between bg-white/10">
+                        <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-4">
+                            <Bell className="h-5 w-5 text-orange-400" />
+                            Bulletin Board
+                        </h2>
+                        <button className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors flex items-center gap-2 group">
+                            Full Archive <ChevronRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                    <div className="p-2 divide-y divide-white/5">
+                        {recentNotices?.length > 0 ? recentNotices.map((notice: any) => (
+                            <div key={notice.id} className="mx-4 my-2 px-8 py-7 flex items-center justify-between hover:bg-white/20 dark:hover:bg-white/5 rounded-[30px] transition-all group cursor-pointer">
+                                <div className="flex items-center gap-8">
+                                    <div className="h-14 w-14 rounded-[20px] bg-zinc-900 dark:bg-white flex flex-col items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                                        <span className="text-[8px] font-black uppercase text-white/50 dark:text-black/50">{new Date(notice.createdAt).toLocaleString('default', { month: 'short' })}</span>
+                                        <span className="text-xl font-black text-white dark:text-black leading-none">{new Date(notice.createdAt).getDate()}</span>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">{notice.title}</p>
+                                        <div className="flex items-center gap-3">
+                                            <span className="bg-black/5 dark:bg-white/10 px-3 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter text-zinc-500">Official Release</span>
+                                            <span className="text-[10px] font-bold text-zinc-400 tabular-nums">{new Date(notice.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="h-12 w-12 rounded-[18px] bg-white/50 dark:bg-white/5 border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                                    <ArrowUpRight className="h-5 w-5 text-zinc-500" />
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="py-20 text-center text-[11px] font-black uppercase tracking-[0.3em] text-zinc-300">No Notifications</div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
-
-const DashboardSkeleton = () => (
-    <div className="flex flex-col gap-6 w-full">
-        <div className="space-y-3 pb-4 border-b border-black/5 dark:border-white/5">
-            <Skeleton className="h-10 w-[300px] rounded-xl bg-white/40 dark:bg-white/5 backdrop-blur-xl" />
-            <Skeleton className="h-4 w-[200px] rounded-lg bg-white/40 dark:bg-white/5 backdrop-blur-xl" />
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-36 rounded-[24px] bg-white/40 dark:bg-white/5 backdrop-blur-xl" />)}
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-            <Skeleton className="h-[400px] rounded-[24px] col-span-4 bg-white/40 dark:bg-white/5 backdrop-blur-xl" />
-            <Skeleton className="h-[400px] rounded-[24px] col-span-3 bg-white/40 dark:bg-white/5 backdrop-blur-xl" />
-        </div>
-    </div>
-);
-
-const DashboardError = () => (
-    <div className="flex h-[70vh] flex-col items-center justify-center space-y-4">
-        <div className="p-5 bg-red-500/10 rounded-3xl ring-1 ring-red-500/20 backdrop-blur-xl">
-            <Activity className="h-10 w-10 text-red-600 dark:text-red-400" />
-        </div>
-        <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white drop-shadow-sm">Failed to load dashboard</h2>
-        <p className="text-slate-500 font-medium text-center">
-            Could not connect to the server. Please try again later.
-        </p>
-    </div>
-);
-
-const EmptyState = ({ message, icon: Icon = Activity }: any) => (
-    <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400 dark:text-slate-600">
-        <div className="p-4 bg-white/50 dark:bg-white/5 backdrop-blur-xl rounded-2xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
-            <Icon className="h-8 w-8 text-slate-400" />
-        </div>
-        <p className="font-bold text-[14px] text-slate-500">{message}</p>
-    </div>
-);
