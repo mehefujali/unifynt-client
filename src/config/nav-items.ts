@@ -12,7 +12,8 @@ import {
   Banknote,
   UserPlus,
   LayoutTemplate,
-  FileText
+  FileText,
+  Award
 } from "lucide-react";
 
 export type SubItem = { title: string; href: string };
@@ -69,6 +70,23 @@ export const navItems: Record<string, NavItem[]> = {
       subItems: [
         { title: "Academics overview", href: "/admin/academics" },
         { title: "Routine", href: "/admin/routine" },
+      ],
+    },
+    { 
+      title: "Attendance", 
+      href: "/admin/attendance", 
+      icon: UserCheck 
+    },
+    {
+      title: "Examinations",
+      href: "#",
+      icon: Award,
+      subItems: [
+        { title: "Exam Master", href: "/admin/examinations/exams" },
+        { title: "Grading Scale", href: "/admin/examinations/grades" },
+        { title: "Exam Schedules", href: "/admin/examinations/schedules" },
+        { title: "Marks Entry", href: "/admin/examinations/marks-entry" },
+        { title: "Results & Marksheet", href: "/admin/examinations/results" },
       ],
     },
     { title: "Forms & Surveys", href: "/admin/forms", icon: FileText },
