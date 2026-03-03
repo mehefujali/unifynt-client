@@ -81,4 +81,10 @@ export const AcademicService = {
     const response = await axiosInstance.delete(`/academic/years/${id}`);
     return response.data;
   },
+  getSectionsByClass: async (classId: string) => {
+    const response = await axiosInstance.get("/academic/sections", {
+      params: { classId },
+    });
+    return response.data?.data || response.data;
+  },
 };

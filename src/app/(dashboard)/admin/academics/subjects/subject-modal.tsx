@@ -1,244 +1,113 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { AxiosError } from "axios";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SubjectService } from "@/services/subject.service";
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { AcademicService } from "@/services/academic.service";
-import { subjectSchema, SubjectFormValues } from "./schema";
 
-export interface ISubject {
-    id: string;
-    name: string;
-    code: string;
-    classId: string;
-    bookName?: string | null;
-    type: "THEORY" | "PRACTICAL" | "OPTIONAL" | "LAB";
-    credit: number | null;
-}
-
-interface SubjectModalProps {
+interface Props {
     isOpen: boolean;
     onClose: () => void;
-    initialData?: ISubject | null;
+    subjectToEdit?: any;
 }
 
-export function SubjectModal({ isOpen, onClose, initialData }: SubjectModalProps) {
+export default function SubjectModal({ isOpen, onClose, subjectToEdit }: Props) {
     const queryClient = useQueryClient();
-    const isEdit = !!initialData;
+    const [formData, setFormData] = useState({ name: "", code: "", type: "THEORY", classId: "", bookName: "" });
 
-    const { data: classData, isLoading: isClassesLoading } = useQuery({
+    const { data: classesResponse } = useQuery({
         queryKey: ["classes"],
         queryFn: () => AcademicService.getAllClasses(),
-        enabled: isOpen,
     });
 
-   
-    const classesList = Array.isArray(classData) ? classData : (classData?.data || []);
-
-    const form = useForm<SubjectFormValues>({
-        resolver: zodResolver(subjectSchema),
-        defaultValues: {
-            name: "",
-            code: "",
-            classId: "",
-            bookName: "",
-            type: "THEORY",
-            credit: 0,
-        },
-    });
-
-    const { reset } = form;
+    const classList = Array.isArray(classesResponse?.data) ? classesResponse.data : (Array.isArray(classesResponse) ? classesResponse : []);
 
     useEffect(() => {
-        if (isOpen) {
-            if (initialData) {
-                reset({
-                    name: initialData.name,
-                    code: initialData.code,
-                    classId: initialData.classId || "",
-                    bookName: initialData.bookName || "",
-                    type: initialData.type,
-                    credit: initialData.credit || 0,
-                });
-            } else {
-                reset({
-                    name: "",
-                    code: "",
-                    classId: "",
-                    bookName: "",
-                    type: "THEORY",
-                    credit: 0,
-                });
-            }
+        if (subjectToEdit) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setFormData({
+                name: subjectToEdit.subjectName || "",
+                code: subjectToEdit.subjectCode || "",
+                type: subjectToEdit.type || "THEORY",
+                classId: subjectToEdit.classes?.[0]?.id || "",
+                bookName: subjectToEdit.bookName || "",
+            });
+        } else {
+            setFormData({ name: "", code: "", type: "THEORY", classId: "", bookName: "" });
         }
-    }, [initialData, reset, isOpen]);
+    }, [subjectToEdit, isOpen]);
 
     const mutation = useMutation({
-        mutationFn: (data: SubjectFormValues) => {
-            if (isEdit && initialData?.id) {
-                return SubjectService.updateSubject(initialData.id, data);
-            }
-            return SubjectService.createSubject(data);
-        },
+        mutationFn: (data: any) => (subjectToEdit ? SubjectService.updateSubject(subjectToEdit.id, data) : SubjectService.createSubject(data)),
         onSuccess: () => {
-            toast.success(`Subject ${isEdit ? "updated" : "created"} successfully!`);
+            toast.success(subjectToEdit ? "Subject updated successfully" : "Subject created successfully");
             queryClient.invalidateQueries({ queryKey: ["subjects"] });
             onClose();
         },
-        onError: (error: AxiosError<{ message: string }>) => {
-            toast.error(error.response?.data?.message || "Something went wrong!");
-        },
+        onError: (error: any) => toast.error(error?.response?.data?.message || "Something went wrong"),
     });
 
-    const onSubmit = (data: SubjectFormValues) => {
-        mutation.mutate(data);
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        mutation.mutate(formData);
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[550px]">
-                <DialogHeader>
-                    <DialogTitle>{isEdit ? "Edit Subject" : "Add New Subject"}</DialogTitle>
-                </DialogHeader>
-
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="rounded-2xl border-0 ring-1 ring-border/50 shadow-xl bg-white dark:bg-zinc-950 sm:max-w-[425px]">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader className="pb-4 border-b border-border/50">
+                        <DialogTitle className="text-lg font-medium">{subjectToEdit ? "Edit Subject" : "Add New Subject"}</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-500">Subject Name</label>
+                            <Input required placeholder="e.g. Mathematics" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50" />
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subject Name <span className="text-destructive">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. Mathematics" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="classId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Assign to Class <span className="text-destructive">*</span></FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isClassesLoading}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={isClassesLoading ? "Loading..." : "Select class"} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {/* আপডেট করা classesList ব্যবহার করা হচ্ছে */}
-                                                {classesList.map((c: { id: string; name: string }) => (
-                                                    <SelectItem key={c.id} value={c.id}>
-                                                        {c.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-zinc-500">Subject Code</label>
+                                <Input required placeholder="e.g. MATH101" value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-zinc-500">Subject Type</label>
+                                <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
+                                    <SelectTrigger className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="rounded-xl">
+                                        {["THEORY", "PRACTICAL", "MANDATORY", "OPTIONAL"].map((t) => (<SelectItem key={t} value={t}>{t}</SelectItem>))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subject Code <span className="text-destructive">*</span></FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. MATH101" className="uppercase" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="type"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subject Type</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="THEORY">Theory</SelectItem>
-                                                <SelectItem value="PRACTICAL">Practical</SelectItem>
-                                                <SelectItem value="OPTIONAL">Optional</SelectItem>
-                                                <SelectItem value="LAB">Lab</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-500">Assign to Class</label>
+                            <Select value={formData.classId} onValueChange={(val) => setFormData({ ...formData, classId: val })}>
+                                <SelectTrigger className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50"><SelectValue placeholder="Select Class" /></SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {classList.map((c: any) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                                </SelectContent>
+                            </Select>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="bookName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Book Name / Author</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. RS Aggarwal" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="credit"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Credit Point</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                placeholder="0"
-                                                {...field}
-                                                onChange={(e) => field.onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-500">Book Name (Optional)</label>
+                            <Input placeholder="e.g. Advanced Math Vol 1" value={formData.bookName} onChange={(e) => setFormData({ ...formData, bookName: e.target.value })} className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50" />
                         </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t mt-6">
-                            <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={mutation.isPending}>
-                                {mutation.isPending ? "Saving..." : "Save Subject"}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
+                    </div>
+                    <DialogFooter className="pt-4 border-t border-border/50">
+                        <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl">Cancel</Button>
+                        <Button type="submit" disabled={mutation.isPending} className="rounded-xl px-6 bg-primary text-primary-foreground">
+                            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Subject
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );
