@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,12 +7,12 @@ import { AxiosError } from "axios";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SubjectService } from "@/services/subject.service";
-import { ISubject } from "./subject-modal";
+
 
 interface DeleteSubjectModalProps {
     isOpen: boolean;
     onClose: () => void;
-    subject: ISubject | null;
+    subject: any;
 }
 
 export function DeleteSubjectModal({ isOpen, onClose, subject }: DeleteSubjectModalProps) {

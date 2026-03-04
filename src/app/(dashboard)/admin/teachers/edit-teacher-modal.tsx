@@ -213,7 +213,7 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                                                                 const subject = subjectsList.find((s: any) => s.id === id);
                                                                 return subject ? (
                                                                     <Badge key={id} variant="secondary" className="flex items-center gap-1">
-                                                                        {subject.name}
+                                                                        {subject.subjectName}
                                                                         <span className="cursor-pointer hover:bg-muted-foreground/20 rounded-full p-0.5" onClick={(e) => { e.stopPropagation(); field.onChange(field.value?.filter((val: string) => val !== id)); }}>
                                                                             <X className="h-3 w-3" />
                                                                         </span>
@@ -234,9 +234,9 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                                                             {subjectsList.map((subject: any) => {
                                                                 const isSelected = (field.value || []).includes(subject.id);
                                                                 return (
-                                                                    <CommandItem key={subject.id} value={subject.name} onSelect={() => { const currentValues = field.value || []; const newValues = isSelected ? currentValues.filter((val: string) => val !== subject.id) : [...currentValues, subject.id]; field.onChange(newValues); }}>
+                                                                    <CommandItem key={subject.id} value={subject.subjectName} onSelect={() => { const currentValues = field.value || []; const newValues = isSelected ? currentValues.filter((val: string) => val !== subject.id) : [...currentValues, subject.id]; field.onChange(newValues); }}>
                                                                         <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100 text-primary" : "opacity-0")} />
-                                                                        {subject.name} <span className="text-xs text-muted-foreground ml-2">({subject.code})</span>
+                                                                        {subject.subjectName} <span className="text-xs text-muted-foreground ml-2">({subject.subjectCode})</span>
                                                                     </CommandItem>
                                                                 );
                                                             })}
