@@ -6,8 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
     Plus, Edit, Trash2, Search, Clock, MapPin,
     User, BookOpen, Layers, FilterX, ChevronLeft,
-    ChevronRight, Phone, CalendarDays, ChevronsLeft,
-    ChevronsRight, GraduationCap, Info
+    ChevronRight, Phone, CalendarDays, Info, GraduationCap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,10 +232,10 @@ export default function RoutinePage() {
                                                         </div>
                                                         <div>
                                                             <p className="font-black text-[15px] text-slate-900 dark:text-white leading-none mb-1.5">
-                                                                {routine.subject.name}
+                                                                {routine.subject.subjectName}
                                                             </p>
                                                             <Badge variant="outline" className="text-[10px] font-bold border-slate-200 dark:border-white/10 text-slate-500 rounded-md py-0 px-1.5">
-                                                                CODE: {routine.subject.code}
+                                                                CODE: {routine.subject.subjectCode}
                                                             </Badge>
                                                         </div>
                                                     </div>
