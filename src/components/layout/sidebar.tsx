@@ -1,23 +1,24 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { navItems, NavItem } from "@/config/nav-items";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-    Command,
     Loader2,
     LogOut,
-    User as UserIcon,
     PanelLeftClose,
     PanelLeft,
     ChevronRight,
+    Lock,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 const SidebarItemNode = ({
     item,
@@ -54,6 +55,7 @@ const SidebarItemNode = ({
     const [isOpen, setIsOpen] = useState(isChildActive);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (isChildActive) setIsOpen(true);
     }, [isChildActive, pathname]);
 
@@ -74,7 +76,7 @@ const SidebarItemNode = ({
                 className={cn(
                     "group relative flex items-center rounded-xl transition-all duration-300 ease-out font-medium text-[14px] cursor-pointer outline-none",
                     isCollapsed
-                        ? "justify-center h-[46px] w-[46px] mx-auto"
+                        ? "justify-center h-11.5 w-11.5 mx-auto"
                         : "justify-between px-3.5 py-3",
                     isActive && !hasSubItems
                         ? "bg-white/80 dark:bg-white/10 text-primary font-bold shadow-sm border border-white/60 dark:border-white/5 backdrop-blur-md"
@@ -125,7 +127,7 @@ const SidebarItemNode = ({
                     <div className="overflow-hidden">
                         <div className="flex flex-col gap-1 pl-[38px] pr-2 py-1 relative">
                             <div className="absolute left-[21px] top-0 bottom-3 w-px bg-gradient-to-b from-black/5 to-transparent dark:from-white/10" />
-                            
+
                             {item.subItems!.map((sub, idx) => {
                                 const isSubActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
                                 return (
@@ -171,7 +173,44 @@ export default function Sidebar() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => setIsMounted(true), []);
+
+    const userPermissions = useMemo(() => {
+        return (user as any)?.permissions || [];
+    }, [user]);
+
+    const authorizedNavItems = useMemo(() => {
+        if (!user?.role) return [];
+        const role = user.role.toUpperCase() as keyof typeof navItems;
+        const baseItems = navItems[role] || [];
+
+        const checkPermission = (required?: string[]) => {
+            if (!required || required.length === 0) return true;
+            if (userPermissions.includes("*")) return true;
+            return required.some((p) => userPermissions.includes(p));
+        };
+
+        return baseItems.reduce((acc: NavItem[], item) => {
+            if (!checkPermission(item.requiredPermissions)) return acc;
+
+            if (item.subItems) {
+                const filteredSubItems = item.subItems.filter((sub) =>
+                    checkPermission(sub.requiredPermissions)
+                );
+
+                if (item.subItems.length > 0 && filteredSubItems.length === 0) {
+                    return acc;
+                }
+
+                acc.push({ ...item, subItems: filteredSubItems });
+            } else {
+                acc.push(item);
+            }
+
+            return acc;
+        }, []);
+    }, [user, userPermissions]);
 
     if (!isMounted || isLoading) {
         return (
@@ -181,8 +220,23 @@ export default function Sidebar() {
         );
     }
 
-    const userRole = user?.role ? (user.role.toUpperCase() as keyof typeof navItems) : null;
-    const items = userRole ? navItems[userRole] : [];
+    // Determine user display name and profile image
+    const displayName = user?.details?.firstName 
+        ? `${user.details.firstName} ${user.details.lastName || ""}`.trim() 
+        : user?.name || "Admin User";
+        
+    const profileImage = user?.details?.profileImage || (user as any)?.profileImage || "";
+    
+    // Function to get initials for avatar fallback
+    const getInitials = (name: string) => {
+        if (!name) return "UN";
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+            .substring(0, 2);
+    };
 
     return (
         <aside
@@ -208,16 +262,22 @@ export default function Sidebar() {
                     isCollapsed ? "justify-center px-0" : "px-6"
                 )}
             >
-                <Link href="/" className="flex items-center gap-3.5 overflow-hidden group">
-                    <div className="flex flex-shrink-0 items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-b from-primary to-blue-700 text-white shadow-lg shadow-primary/30 group-hover:shadow-primary/50 group-hover:scale-105 transition-all duration-300 ring-1 ring-white/20">
-                        <Command className="h-5 w-5" strokeWidth={2.5} />
+                <Link href="/" className="flex items-center gap-1.5 overflow-hidden group">
+                    <div className="relative flex items-center justify-center h-10 w-10 transition-all duration-300">
+                        <Image
+                            src="/unifynt-logo.png"
+                            alt="Unifynt Logo"
+                            fill
+                            className="object-contain"
+                            priority
+                        />
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col whitespace-nowrap">
                             <span className="font-extrabold text-[22px] tracking-tight text-slate-900 dark:text-white leading-none">
                                 Unifynt
                             </span>
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1.5 opacity-90">
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest opacity-90">
                                 Workspace
                             </span>
                         </div>
@@ -227,8 +287,8 @@ export default function Sidebar() {
 
             <ScrollArea className="flex-1 py-6 custom-scrollbar overflow-hidden">
                 <nav className="flex flex-col px-4 gap-0.5">
-                    {items.length > 0 ? (
-                        items.map((item, index) => (
+                    {authorizedNavItems.length > 0 ? (
+                        authorizedNavItems.map((item, index) => (
                             <SidebarItemNode
                                 key={index}
                                 item={item}
@@ -238,8 +298,11 @@ export default function Sidebar() {
                             />
                         ))
                     ) : (
-                        <div className="p-4 text-center mt-10">
-                            <Command className="h-6 w-6 text-slate-300 mx-auto opacity-50" />
+                        <div className="p-4 text-center mt-10 flex flex-col items-center justify-center gap-2">
+                            <Lock className="h-8 w-8 text-slate-300 opacity-50 mb-2" />
+                            <p className="text-xs text-slate-400 font-medium px-4 text-balance">
+                                You do not have permission to view any modules.
+                            </p>
                         </div>
                     )}
                 </nav>
@@ -258,17 +321,20 @@ export default function Sidebar() {
                             isCollapsed ? "justify-center w-full" : "gap-3.5"
                         )}
                     >
-                        <div className="h-10 w-10 rounded-xl bg-blue-50/50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-black/5 dark:ring-white/10 group-hover:bg-blue-100/50 transition-colors backdrop-blur-sm">
-                            <UserIcon className="h-[18px] w-[18px] text-primary" />
-                        </div>
+                        <Avatar className="h-10 w-10 rounded-xl border border-black/5 dark:border-white/10 shadow-sm transition-transform duration-300 group-hover:scale-105">
+                            <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
+                            <AvatarFallback className="bg-blue-50 dark:bg-blue-500/10 text-primary font-bold text-xs rounded-xl">
+                                {getInitials(displayName)}
+                            </AvatarFallback>
+                        </Avatar>
 
                         {!isCollapsed && (
                             <div className="flex flex-col whitespace-nowrap">
                                 <span className="text-[13.5px] font-bold text-slate-900 dark:text-white truncate max-w-[110px] leading-tight">
-                                    {user?.name || "Admin User"}
+                                    {displayName}
                                 </span>
                                 <span className="text-[11px] font-medium text-slate-500 truncate max-w-[110px] mt-0.5">
-                                    {user?.email || "admin@unifynt.com"}
+                                    {user?.role || "USER"}
                                 </span>
                             </div>
                         )}

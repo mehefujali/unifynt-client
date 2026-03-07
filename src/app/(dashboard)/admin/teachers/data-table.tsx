@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import * as React from "react";
@@ -12,7 +13,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FilterX } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FilterX, Users, Briefcase, UserCircle } from "lucide-react";
+
+// --- Import Permissions ---
+import { PERMISSIONS } from "@/config/permissions";
+import { usePermission } from "@/hooks/use-permission";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -48,6 +53,10 @@ export function DataTable<TData, TValue>({
     setSelectedEmploymentType,
 }: DataTableProps<TData, TValue>) {
 
+    const { hasPermission } = usePermission();
+    // Logic: Advanced filtering visibility for HR/Admins
+    const canManageFaculty = hasPermission([PERMISSIONS.TEACHER_CREATE, PERMISSIONS.TEACHER_EDIT]);
+
     const table = useReactTable({
         data,
         columns,
@@ -69,10 +78,11 @@ export function DataTable<TData, TValue>({
     const hasActiveFilters = searchTerm || selectedGender || selectedDepartment || selectedEmploymentType;
 
     return (
-        <div className="w-full bg-card flex flex-col">
-            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 p-5 border-b bg-card">
-                <div className="relative w-full xl:max-w-md shrink-0">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/70" />
+        <div className="w-full bg-card flex flex-col min-h-[600px]">
+            {/* --- Premium Filter Toolbar --- */}
+            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 p-5 border-b bg-muted/20">
+                <div className="relative w-full xl:max-w-sm shrink-0">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
                         placeholder="Search by name, ID, or phone..."
                         value={searchTerm}
@@ -80,55 +90,71 @@ export function DataTable<TData, TValue>({
                             onSearchChange(event.target.value);
                             onPaginationChange(prev => ({ ...prev, pageIndex: 0 }));
                         }}
-                        className="pl-10 h-11 w-full bg-muted/20 border-border/60 shadow-none focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/20 transition-all rounded-lg font-medium"
+                        className="pl-11 h-11 bg-background focus-visible:ring-primary rounded-2xl shadow-sm border-slate-200 dark:border-slate-800 font-medium text-[13px]"
                     />
                 </div>
 
                 <div className="flex items-center gap-3 w-full overflow-x-auto pb-2 xl:pb-0 custom-scrollbar">
+                    {/* Department Selector */}
                     <Select value={selectedDepartment || "all"} onValueChange={(val) => { setSelectedDepartment(val === "all" ? "" : val); onPaginationChange(prev => ({ ...prev, pageIndex: 0 })); }}>
-                        <SelectTrigger className="h-11 w-[160px] bg-background shadow-sm border-border/60"><SelectValue placeholder="Department" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Departments</SelectItem>
-                            {DEPARTMENTS.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
+                        <SelectTrigger className="h-11 w-[170px] bg-background rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[13px] shadow-sm">
+                            <Briefcase className="mr-2 h-4 w-4 text-primary/60" />
+                            <SelectValue placeholder="Department" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl">
+                            <SelectItem value="all" className="font-bold text-primary">All Departments</SelectItem>
+                            {DEPARTMENTS.map(dept => <SelectItem key={dept} value={dept} className="font-medium">{dept}</SelectItem>)}
                         </SelectContent>
                     </Select>
 
-                    <Select value={selectedEmploymentType || "all"} onValueChange={(val) => { setSelectedEmploymentType(val === "all" ? "" : val); onPaginationChange(prev => ({ ...prev, pageIndex: 0 })); }}>
-                        <SelectTrigger className="h-11 w-[150px] bg-background shadow-sm border-border/60"><SelectValue placeholder="Type" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="FULL_TIME">Full Time</SelectItem>
-                            <SelectItem value="PART_TIME">Part Time</SelectItem>
-                            <SelectItem value="CONTRACT">Contract</SelectItem>
-                            <SelectItem value="GUEST">Guest</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    {/* Employment Type Selector (Protected/Sensitive) */}
+                    {canManageFaculty && (
+                        <Select value={selectedEmploymentType || "all"} onValueChange={(val) => { setSelectedEmploymentType(val === "all" ? "" : val); onPaginationChange(prev => ({ ...prev, pageIndex: 0 })); }}>
+                            <SelectTrigger className="h-11 w-[160px] bg-background rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[13px] shadow-sm">
+                                <SelectValue placeholder="Job Type" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl">
+                                <SelectItem value="all" className="font-bold text-primary">All Types</SelectItem>
+                                <SelectItem value="FULL_TIME" className="font-medium">Full Time</SelectItem>
+                                <SelectItem value="PART_TIME" className="font-medium">Part Time</SelectItem>
+                                <SelectItem value="CONTRACT" className="font-medium">Contract</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )}
 
+                    {/* Gender Selector */}
                     <Select value={selectedGender || "all"} onValueChange={(val) => { setSelectedGender(val === "all" ? "" : val); onPaginationChange(prev => ({ ...prev, pageIndex: 0 })); }}>
-                        <SelectTrigger className="h-11 w-[130px] bg-background shadow-sm border-border/60"><SelectValue placeholder="Gender" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Genders</SelectItem>
-                            <SelectItem value="MALE">Male</SelectItem>
-                            <SelectItem value="FEMALE">Female</SelectItem>
-                            <SelectItem value="OTHER">Other</SelectItem>
+                        <SelectTrigger className="h-11 w-[140px] bg-background rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[13px] shadow-sm">
+                            <UserCircle className="mr-2 h-4 w-4 text-primary/60" />
+                            <SelectValue placeholder="Gender" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl">
+                            <SelectItem value="all" className="font-bold text-primary">All Genders</SelectItem>
+                            <SelectItem value="MALE" className="font-medium">Male</SelectItem>
+                            <SelectItem value="FEMALE" className="font-medium">Female</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {hasActiveFilters && (
-                        <Button variant="ghost" onClick={handleClearFilters} className="h-11 px-3 text-muted-foreground hover:text-destructive shrink-0 transition-colors">
-                            <FilterX className="h-4 w-4 mr-2" /> Clear
+                        <Button 
+                            variant="ghost" 
+                            onClick={handleClearFilters} 
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-11 px-4 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all"
+                        >
+                            <FilterX className="h-4 w-4 mr-2" /> Reset
                         </Button>
                     )}
                 </div>
             </div>
 
-            <div className="w-full overflow-x-auto custom-scrollbar bg-card relative">
-                <Table className="w-full min-w-[900px] border-collapse">
-                    <TableHeader className="bg-muted/60 sticky top-0 z-20 backdrop-blur-sm">
+            {/* --- Table Section --- */}
+            <div className="flex-1 overflow-auto custom-scrollbar">
+                <Table>
+                    <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-border/60">
+                            <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="h-12 px-6 text-xs font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap select-none">
+                                    <TableHead key={header.id} className="font-black text-[11px] uppercase text-slate-400 tracking-[2px] py-5 px-6">
                                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                     </TableHead>
                                 ))}
@@ -138,21 +164,28 @@ export function DataTable<TData, TValue>({
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} className="transition-colors h-16 border-b border-border/60 even:bg-muted/30 odd:bg-card hover:bg-muted/70 group">
+                                <TableRow 
+                                    key={row.id} 
+                                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all border-b border-slate-50 dark:border-slate-800/50 h-16"
+                                >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="px-6 py-3 whitespace-nowrap font-medium text-sm text-foreground/90 group-hover:text-foreground transition-colors">
+                                        <TableCell key={cell.id} className="px-6 py-4">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow className="hover:bg-transparent">
-                                <TableCell colSpan={columns.length} className="h-[400px] text-center bg-card">
-                                    <div className="flex flex-col items-center justify-center text-muted-foreground animate-in fade-in-50">
-                                        <Search className="h-16 w-16 opacity-20 mb-4" />
-                                        <p className="font-bold text-lg text-foreground">No teachers found</p>
-                                        <Button variant="link" onClick={handleClearFilters} className="mt-4 text-primary font-bold">Clear Filters</Button>
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-[450px] text-center">
+                                    <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in-50">
+                                        <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[32px] border border-dashed border-slate-200 dark:border-white/10">
+                                            <Users className="h-10 w-10 text-slate-300" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-black text-[15px] text-slate-600 dark:text-slate-400 uppercase tracking-wider">No faculty found</p>
+                                            <p className="text-[12px] font-bold text-slate-400">Try adjusting your filters or search terms.</p>
+                                        </div>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -161,15 +194,59 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t bg-card text-sm font-medium text-muted-foreground">
-                <div className="flex-1 whitespace-nowrap">
-                    Page <span className="font-bold text-foreground">{table.getState().pagination.pageIndex + 1}</span> of <span className="font-bold text-foreground">{table.getPageCount() || 1}</span>
+            {/* --- Premium Pagination Section --- */}
+            <div className="p-6 border-t bg-slate-50/30 dark:bg-black/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 order-2 sm:order-1">
+                    <div className="flex flex-col">
+                        <span className="text-[13px] font-black text-slate-900 dark:text-white leading-none">
+                            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest">
+                            {data.length} records active this page
+                        </span>
+                    </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="icon" className="h-8 w-8 lg:flex hidden shadow-sm border-border/60 bg-muted/20 hover:bg-muted/40 rounded-md" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}><ChevronsLeft className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="sm" className="h-8 px-3 shadow-sm border-border/60 bg-muted/20 hover:bg-muted/40 rounded-md flex items-center gap-1" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}><ChevronLeft className="h-4 w-4" /> Previous</Button>
-                    <Button variant="outline" size="sm" className="h-8 px-3 shadow-sm border-border/60 bg-muted/20 hover:bg-muted/40 rounded-md flex items-center gap-1" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>Next <ChevronRight className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 lg:flex hidden shadow-sm border-border/60 bg-muted/20 hover:bg-muted/40 rounded-md" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}><ChevronsRight className="h-4 w-4" /></Button>
+
+                <div className="flex items-center gap-2 order-1 sm:order-2">
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900" 
+                        onClick={() => table.setPageIndex(0)} 
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        <ChevronsLeft className="h-4 w-4 stroke-[3]" />
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900" 
+                        onClick={() => table.previousPage()} 
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        <ChevronLeft className="h-4 w-4 stroke-[3]" />
+                    </Button>
+                    
+                    <div className="px-4 h-9 flex items-center justify-center bg-primary text-white dark:text-black rounded-xl font-black text-[13px] shadow-lg shadow-primary/20">
+                        {table.getState().pagination.pageIndex + 1}
+                    </div>
+
+                    <Button 
+                        variant="outline" 
+                        className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900" 
+                        onClick={() => table.nextPage()} 
+                        disabled={!table.getCanNextPage()}
+                    >
+                        <ChevronRight className="h-4 w-4 stroke-[3]" />
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900" 
+                        onClick={() => table.setPageIndex(table.getPageCount() - 1)} 
+                        disabled={!table.getCanNextPage()}
+                    >
+                        <ChevronsRight className="h-4 w-4 stroke-[3]" />
+                    </Button>
                 </div>
             </div>
         </div>

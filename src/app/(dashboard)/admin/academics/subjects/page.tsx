@@ -16,6 +16,11 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { AcademicService } from "@/services/academic.service";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function SubjectsPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,6 +32,10 @@ export default function SubjectsPage() {
   const [limit] = useState(10);
   const [classFilter, setClassFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
+
+  // Check edit/delete permissions for the Actions column
+  const { hasPermission } = usePermission();
+  const canEditOrDelete = hasPermission([PERMISSIONS.SUBJECT_EDIT, PERMISSIONS.SUBJECT_DELETE]);
 
   const { data: classesResponse } = useQuery({ 
     queryKey: ["classes"], 
@@ -70,12 +79,16 @@ export default function SubjectsPage() {
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Subjects</h1>
           <p className="text-sm text-zinc-500 mt-1">Manage all academic subjects and their assigned classes.</p>
         </div>
-        <Button 
-          onClick={() => { setSelectedSubject(null); setIsModalOpen(true); }} 
-          className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Add Subject
-        </Button>
+        
+        {/* 🔒 Gate for Add Subject Button */}
+        <PermissionGate required={PERMISSIONS.SUBJECT_CREATE}>
+            <Button 
+            onClick={() => { setSelectedSubject(null); setIsModalOpen(true); }} 
+            className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all"
+            >
+            <Plus className="mr-2 h-4 w-4" /> Add Subject
+            </Button>
+        </PermissionGate>
       </div>
 
       <Card className="border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden flex flex-col">
@@ -134,7 +147,7 @@ export default function SubjectsPage() {
                   <th className="px-6 py-4 font-medium">Type</th>
                   <th className="px-6 py-4 font-medium">Assigned Classes</th>
                   <th className="px-6 py-4 font-medium">Book Name</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  {canEditOrDelete && <th className="px-6 py-4 font-medium text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -166,14 +179,25 @@ export default function SubjectsPage() {
                     <td className="px-6 py-4 text-zinc-600 dark:text-zinc-400">
                       {subject.bookName || "-"}
                     </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(subject)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30">
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(subject.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
+                    
+                    {/* Actions Column */}
+                    {canEditOrDelete && (
+                        <td className="px-6 py-4 text-right space-x-2">
+                            {/* 🔒 Gate for Edit Button */}
+                            <PermissionGate required={PERMISSIONS.SUBJECT_EDIT}>
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(subject)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30">
+                                    <Edit2 className="h-4 w-4" />
+                                </Button>
+                            </PermissionGate>
+                            
+                            {/* 🔒 Gate for Delete Button */}
+                            <PermissionGate required={PERMISSIONS.SUBJECT_DELETE}>
+                                <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(subject.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </PermissionGate>
+                        </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

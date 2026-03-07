@@ -3,17 +3,26 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Clock, CalendarDays, Coffee, BookOpen } from "lucide-react";
+import { Plus, Edit, Clock, BookOpen, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PeriodService } from "@/services/period.service";
 import { PeriodModal } from "./period-modal";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function PeriodsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState<any>(null);
+
+    // Check edit permission for the Actions column
+    const { hasPermission } = usePermission();
+    const canEdit = hasPermission(PERMISSIONS.ROUTINE_EDIT);
 
     const { data: serverResponse, isLoading } = useQuery({
         queryKey: ["periods"],
@@ -34,12 +43,16 @@ export default function PeriodsPage() {
                         <p className="text-muted-foreground mt-1 text-[14px] font-medium">Manage time slots, periods, and breaks for schedules.</p>
                     </div>
                 </div>
-                <Button 
-                    onClick={() => { setSelectedPeriod(null); setIsModalOpen(true); }} 
-                    className="rounded-xl font-bold px-6 shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
-                >
-                    <Plus className="mr-2 h-4 w-4" /> Add Time Slot
-                </Button>
+                
+                {/* 🔒 Gate for Create Button */}
+                <PermissionGate required={PERMISSIONS.ROUTINE_CREATE}>
+                    <Button 
+                        onClick={() => { setSelectedPeriod(null); setIsModalOpen(true); }} 
+                        className="rounded-xl font-bold px-6 shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
+                    >
+                        <Plus className="mr-2 h-4 w-4" /> Add Time Slot
+                    </Button>
+                </PermissionGate>
             </div>
 
             <Card className="rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300">
@@ -51,17 +64,17 @@ export default function PeriodsPage() {
                                     <TableHead className="pl-6 h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Slot Details</TableHead>
                                     <TableHead className="h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Type</TableHead>
                                     <TableHead className="h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider w-[40%]">Applicable Days</TableHead>
-                                    <TableHead className="text-right pr-6 h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>
+                                    {canEdit && <TableHead className="text-right pr-6 h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-48 text-center text-slate-500 font-medium">Loading time slots...</TableCell>
+                                        <TableCell colSpan={canEdit ? 4 : 3} className="h-48 text-center text-slate-500 font-medium">Loading time slots...</TableCell>
                                     </TableRow>
                                 ) : periods.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-64 text-center">
+                                        <TableCell colSpan={canEdit ? 4 : 3} className="h-64 text-center">
                                             <div className="flex flex-col items-center justify-center text-slate-400">
                                                 <div className="p-4 bg-white/50 dark:bg-white/5 rounded-full mb-4 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
                                                     <Clock className="h-8 w-8 text-slate-300" />
@@ -104,13 +117,20 @@ export default function PeriodsPage() {
                                                     ))}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right pr-6 py-4">
-                                                <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10 transition-colors bg-white/50 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-sm" onClick={() => { setSelectedPeriod(period); setIsModalOpen(true); }}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                                            
+                                            {/* Actions Column */}
+                                            {canEdit && (
+                                                <TableCell className="text-right pr-6 py-4">
+                                                    <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                        {/* 🔒 Gate for Edit Button */}
+                                                        <PermissionGate required={PERMISSIONS.ROUTINE_EDIT}>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10 transition-colors bg-white/50 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-sm" onClick={() => { setSelectedPeriod(period); setIsModalOpen(true); }}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </PermissionGate>
+                                                    </div>
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     ))
                                 )}

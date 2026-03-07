@@ -9,8 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, CalendarOff, Loader2, UsersIcon, } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, CalendarOff, Loader2, UsersIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
 
 interface Props {
   classId: string;
@@ -22,6 +27,10 @@ interface Props {
 export default function AttendanceGrid({ classId, sectionId, academicYearId, date }: Props) {
   const queryClient = useQueryClient();
   const [records, setRecords] = useState<any[]>([]);
+
+  // Check if the user has permission to mark/edit attendance
+  const { hasPermission } = usePermission();
+  const canMarkAttendance = hasPermission(PERMISSIONS.ATTENDANCE_MARK);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["attendanceGrid", classId, sectionId, academicYearId, date],
@@ -57,10 +66,12 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
   });
 
   const handleStatusChange = (studentId: string, status: string) => {
+    if (!canMarkAttendance) return;
     setRecords((prev) => prev.map((r) => (r.studentId === studentId ? { ...r, status } : r)));
   };
 
   const handleRemarksChange = (studentId: string, remarks: string) => {
+    if (!canMarkAttendance) return;
     setRecords((prev) => prev.map((r) => (r.studentId === studentId ? { ...r, remarks } : r)));
   };
 
@@ -117,14 +128,18 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
             <span className="px-2.5 py-1 rounded-md bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Absent: {stats.absent}</span>
           </div>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={mutation.isPending || records.length === 0}
-          className="rounded-xl px-6 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 shadow-sm transition-all"
-        >
-          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Attendance
-        </Button>
+        
+        {/* 🔒 Gate for Save Button */}
+        <PermissionGate required={PERMISSIONS.ATTENDANCE_MARK}>
+            <Button
+            onClick={handleSave}
+            disabled={mutation.isPending || records.length === 0}
+            className="rounded-xl px-6 bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:hover:bg-white dark:text-zinc-900 shadow-sm transition-all"
+            >
+            {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Attendance
+            </Button>
+        </PermissionGate>
       </CardHeader>
       <CardContent className="p-0">
         <div className="divide-y divide-border/50">
@@ -146,36 +161,60 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex p-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl ring-1 ring-inset ring-border/50">
                   <button
+                    disabled={!canMarkAttendance}
                     onClick={() => handleStatusChange(record.studentId, "PRESENT")}
-                    className={cn("flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", record.status === "PRESENT" ? "bg-white dark:bg-zinc-800 text-green-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100")}
+                    className={cn(
+                      "flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", 
+                      record.status === "PRESENT" ? "bg-white dark:bg-zinc-800 text-green-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100",
+                      !canMarkAttendance && "opacity-60 cursor-not-allowed pointer-events-none"
+                    )}
                   >
                     <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Present
                   </button>
                   <button
+                    disabled={!canMarkAttendance}
                     onClick={() => handleStatusChange(record.studentId, "ABSENT")}
-                    className={cn("flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", record.status === "ABSENT" ? "bg-white dark:bg-zinc-800 text-red-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100")}
+                    className={cn(
+                      "flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", 
+                      record.status === "ABSENT" ? "bg-white dark:bg-zinc-800 text-red-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100",
+                      !canMarkAttendance && "opacity-60 cursor-not-allowed pointer-events-none"
+                    )}
                   >
                     <XCircle className="mr-1.5 h-3.5 w-3.5" /> Absent
                   </button>
                   <button
+                    disabled={!canMarkAttendance}
                     onClick={() => handleStatusChange(record.studentId, "LATE")}
-                    className={cn("flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", record.status === "LATE" ? "bg-white dark:bg-zinc-800 text-amber-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100")}
+                    className={cn(
+                      "flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", 
+                      record.status === "LATE" ? "bg-white dark:bg-zinc-800 text-amber-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100",
+                      !canMarkAttendance && "opacity-60 cursor-not-allowed pointer-events-none"
+                    )}
                   >
                     <Clock className="mr-1.5 h-3.5 w-3.5" /> Late
                   </button>
                   <button
+                    disabled={!canMarkAttendance}
                     onClick={() => handleStatusChange(record.studentId, "LEAVE")}
-                    className={cn("flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", record.status === "LEAVE" ? "bg-white dark:bg-zinc-800 text-blue-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100")}
+                    className={cn(
+                      "flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all", 
+                      record.status === "LEAVE" ? "bg-white dark:bg-zinc-800 text-blue-600 shadow-sm ring-1 ring-border/50" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100",
+                      !canMarkAttendance && "opacity-60 cursor-not-allowed pointer-events-none"
+                    )}
                   >
                     <CalendarOff className="mr-1.5 h-3.5 w-3.5" /> Leave
                   </button>
                 </div>
 
                 <Input
+                  disabled={!canMarkAttendance}
                   placeholder="Remarks..."
                   value={record.remarks}
                   onChange={(e) => handleRemarksChange(record.studentId, e.target.value)}
-                  className="w-40 rounded-xl h-9 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus-visible:ring-primary text-sm shadow-none"
+                  className={cn(
+                    "w-40 rounded-xl h-9 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus-visible:ring-primary text-sm shadow-none",
+                    !canMarkAttendance && "opacity-60 cursor-not-allowed"
+                  )}
                 />
               </div>
             </div>

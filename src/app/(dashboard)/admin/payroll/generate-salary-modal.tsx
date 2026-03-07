@@ -66,7 +66,7 @@ export function GenerateSalaryModal() {
                 <div className="p-6 bg-muted/20 border-b">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-extrabold text-primary">Generate Bulk Salary</DialogTitle>
-                        <DialogDescription>Run payroll for all active teachers. Double payments are automatically prevented.</DialogDescription>
+                        <DialogDescription>Run payroll for all active teachers and staff. Double payments are automatically prevented.</DialogDescription>
                     </DialogHeader>
                 </div>
 
@@ -78,7 +78,7 @@ export function GenerateSalaryModal() {
                                 <div className="space-y-2">
                                     <Label className="font-bold">Month</Label>
                                     <select
-                                        className={`flex h-11 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${errors.month ? 'border-red-500' : 'border-input'}`}
+                                        className={`flex h-11 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${errors.month ? 'border-destructive' : 'border-input'}`}
                                         {...register("month", { valueAsNumber: true })}
                                     >
                                         {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
@@ -88,7 +88,7 @@ export function GenerateSalaryModal() {
                                     <Label className="font-bold">Year</Label>
                                     <Input
                                         type="number"
-                                        className={`h-11 shadow-sm ${errors.year ? 'border-red-500' : ''}`}
+                                        className={`h-11 shadow-sm ${errors.year ? 'border-destructive' : ''}`}
                                         {...register("year", { valueAsNumber: true })}
                                     />
                                 </div>
@@ -101,7 +101,7 @@ export function GenerateSalaryModal() {
                                         Global Allowances
                                         <span className="text-xs font-normal text-muted-foreground hidden sm:inline">(e.g., Bonus, HRA)</span>
                                     </Label>
-                                    <Button type="button" variant="outline" size="sm" onClick={() => addAllowance({ name: "", amount: 0 })} className="h-8 bg-background">
+                                    <Button type="button" variant="outline" size="sm" onClick={() => addAllowance({ title: "", amount: 0 })} className="h-8 bg-background">
                                         <PlusCircle className="h-4 w-4 mr-1" /> Add Allowance
                                     </Button>
                                 </div>
@@ -109,9 +109,9 @@ export function GenerateSalaryModal() {
                                     <div key={field.id} className="flex gap-3 items-start animate-in fade-in zoom-in-95 duration-200">
                                         <div className="flex-1">
                                             <Input
-                                                placeholder="Allowance Name"
+                                                placeholder="Allowance Title"
                                                 className="bg-background shadow-sm"
-                                                {...register(`allowances.${index}.name` as const)}
+                                                {...register(`allowances.${index}.title` as const)}
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -137,7 +137,7 @@ export function GenerateSalaryModal() {
                                         Global Deductions
                                         <span className="text-xs font-normal text-muted-foreground hidden sm:inline">(e.g., Tax, Unpaid Leave)</span>
                                     </Label>
-                                    <Button type="button" variant="outline" size="sm" onClick={() => addDeduction({ name: "", amount: 0 })} className="h-8 bg-background">
+                                    <Button type="button" variant="outline" size="sm" onClick={() => addDeduction({ title: "", amount: 0 })} className="h-8 bg-background">
                                         <PlusCircle className="h-4 w-4 mr-1" /> Add Deduction
                                     </Button>
                                 </div>
@@ -145,9 +145,9 @@ export function GenerateSalaryModal() {
                                     <div key={field.id} className="flex gap-3 items-start animate-in fade-in zoom-in-95 duration-200">
                                         <div className="flex-1">
                                             <Input
-                                                placeholder="Deduction Name"
+                                                placeholder="Deduction Title"
                                                 className="bg-background shadow-sm"
-                                                {...register(`deductions.${index}.name` as const)}
+                                                {...register(`deductions.${index}.title` as const)}
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -168,7 +168,7 @@ export function GenerateSalaryModal() {
 
                             <div className="p-4 bg-muted/50 rounded-lg flex items-start gap-3 text-sm text-muted-foreground border">
                                 <Settings2 className="h-5 w-5 shrink-0 text-primary" />
-                                <p>This will calculate <strong className="text-foreground">(Basic Salary + Total Allowances) - Total Deductions</strong> for all eligible teachers. Double calculation is protected by the server.</p>
+                                <p>This will calculate <strong className="text-foreground">(Basic Salary + Total Allowances) - Total Deductions</strong> for all eligible employees. Double calculation is protected by the server.</p>
                             </div>
                         </div>
                     </ScrollArea>

@@ -44,7 +44,7 @@ export function EditTeacherModal({ teacherId, open, onOpenChange }: EditTeacherM
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-187.5 overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
+            <SheetContent className="sm:max-w-[750px] overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
                 <div className="p-8 pb-4 bg-muted/20 border-b shrink-0">
                     <SheetHeader>
                         <SheetTitle className="text-2xl font-extrabold tracking-tight text-primary">Edit Teacher Profile</SheetTitle>
@@ -92,7 +92,7 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
             address: teacher.address || "", department: teacher.department || "", designation: teacher.designation || "",
             qualification: teacher.qualification || "", employmentType: teacher.employmentType || "FULL_TIME",
             experienceYears: teacher.experienceYears || 0, joiningDate: safeDate(teacher.joiningDate),
-            employeeId: teacher.employeeId || "", linkedinUrl: teacher.linkedinUrl || "", profileImage: teacher.profileImage || "",
+            linkedinUrl: teacher.linkedinUrl || "", profileImage: teacher.profileImage || "",
             resumeUrl: teacher.resumeUrl || "", emergencyContactName: teacher.emergencyContactName || "",
             emergencyContactPhone: teacher.emergencyContactPhone || "",
             basicSalary: teacher.basicSalary || 0, bankName: teacher.bankName || "", accountNumber: teacher.accountNumber || "",
@@ -198,6 +198,14 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                         </TabsContent>
 
                         <TabsContent value="professional" className="space-y-6">
+                            <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-xl border border-border/50">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Employee ID</span>
+                                    <span className="font-mono text-lg font-black tracking-widest text-primary">{teacher.employeeId}</span>
+                                </div>
+                                <Badge variant="secondary" className="ml-auto pointer-events-none">Auto Generated</Badge>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label>Assigned Subjects (Multi-select)</Label>
                                 <Controller
@@ -225,7 +233,7 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                 <Command>
                                                     <CommandInput placeholder="Search subject..." className="h-9" />
                                                     <CommandList>
@@ -268,10 +276,7 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                                 <div className="space-y-2"><Label>Experience (Years)</Label><Input type="number" {...register("experienceYears")} /></div>
                                 <div className="space-y-2"><Label>Joining Date *</Label><Input type="date" className={errors.joiningDate ? 'border-red-500' : ''} {...register("joiningDate")} /></div>
                             </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2"><Label>Employee ID</Label><Input {...register("employeeId")} /></div>
-                                <div className="space-y-2"><Label>LinkedIn Profile</Label><Input {...register("linkedinUrl")} /></div>
-                            </div>
+                            <div className="space-y-2"><Label>LinkedIn Profile</Label><Input {...register("linkedinUrl")} /></div>
                         </TabsContent>
 
                         <TabsContent value="payroll" className="space-y-6">

@@ -14,6 +14,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function ClassesPage() {
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -23,17 +28,19 @@ export default function ClassesPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
+    // Check if user has edit or delete permissions to show the "Actions" column
+    const { hasPermission } = usePermission();
+    const canEditOrDelete = hasPermission([PERMISSIONS.CLASS_EDIT, PERMISSIONS.CLASS_DELETE]);
+
     const { data: rawData, isLoading } = useQuery({
         queryKey: ["classes"],
         queryFn: async () => {
             const res = await api.get("/academic/classes");
-            // API রেসপন্স চেক করে সঠিক Array টি বের করে আনা হচ্ছে
             const responseData = res.data?.data;
             return Array.isArray(responseData) ? responseData : (responseData?.data || []);
         },
     });
 
-    // নিশ্চিত করা হচ্ছে যে classes সবসময় একটি Array হবে
     const classes = Array.isArray(rawData) ? rawData : [];
 
     const filteredClasses = classes.filter((cls: any) =>
@@ -108,24 +115,29 @@ export default function ClassesPage() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="shadow-lg shadow-primary/20 w-full sm:w-auto">
-                            <Plus className="mr-2 h-4 w-4" /> Add Class
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Create New Class</DialogTitle></DialogHeader>
-                        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-                            <div className="grid gap-2"><Label>Class Name</Label><Input name="name" placeholder="e.g. Class Ten" required /></div>
-                            <div className="grid gap-2"><Label>Numeric Value</Label><Input name="numericValue" type="number" placeholder="e.g. 10" required /></div>
-                            <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Class
+                
+                {/* 🔒 Gate for Create Button */}
+                <PermissionGate required={PERMISSIONS.CLASS_CREATE}>
+                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="shadow-lg shadow-primary/20 w-full sm:w-auto">
+                                <Plus className="mr-2 h-4 w-4" /> Add Class
                             </Button>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Create New Class</DialogTitle></DialogHeader>
+                            <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                                <div className="grid gap-2"><Label>Class Name</Label><Input name="name" placeholder="e.g. Class Ten" required /></div>
+                                <div className="grid gap-2"><Label>Numeric Value</Label><Input name="numericValue" type="number" placeholder="e.g. 10" required /></div>
+                                <Button type="submit" disabled={createMutation.isPending}>
+                                    {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Class
+                                </Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </PermissionGate>
 
+                {/* Edit Modal remains here, triggered via code */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogContent>
                         <DialogHeader><DialogTitle>Edit Class</DialogTitle></DialogHeader>
@@ -149,12 +161,12 @@ export default function ClassesPage() {
                             <TableRow>
                                 <TableHead>Class Name</TableHead>
                                 <TableHead>Level</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                {canEditOrDelete && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={3} className="h-24 text-center">Loading...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canEditOrDelete ? 3 : 2} className="h-24 text-center">Loading...</TableCell></TableRow>
                             ) : paginatedClasses.length > 0 ? (
                                 paginatedClasses.map((cls: any) => (
                                     <TableRow key={cls.id}>
@@ -165,18 +177,31 @@ export default function ClassesPage() {
                                             {cls.name}
                                         </TableCell>
                                         <TableCell><Badge variant="outline">Level {cls.numericValue}</Badge></TableCell>
-                                        <TableCell className="text-right flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => openEditModal(cls)}>
-                                                <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(cls.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </TableCell>
+                                        
+                                        {/* Actions Column */}
+                                        {canEditOrDelete && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    {/* 🔒 Gate for Edit Button */}
+                                                    <PermissionGate required={PERMISSIONS.CLASS_EDIT}>
+                                                        <Button variant="ghost" size="icon" onClick={() => openEditModal(cls)}>
+                                                            <Edit className="h-4 w-4 text-blue-500" />
+                                                        </Button>
+                                                    </PermissionGate>
+
+                                                    {/* 🔒 Gate for Delete Button */}
+                                                    <PermissionGate required={PERMISSIONS.CLASS_DELETE}>
+                                                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(cls.id)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </PermissionGate>
+                                                </div>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={3} className="h-24 text-center text-muted-foreground">No classes found.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canEditOrDelete ? 3 : 2} className="h-24 text-center text-muted-foreground">No classes found.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>

@@ -1,224 +1,224 @@
+/* eslint-disable react-hooks/static-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-    Building2,
-    Users,
-    GraduationCap,
-    Activity,
-} from "lucide-react";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
 import api from "@/lib/axios";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
-// --- Enterprise Color Themes for Super Admin ---
-const THEMES = {
-  indigo: { bg: "bg-indigo-50/50 dark:bg-indigo-500/5", border: "border-indigo-100/50 dark:border-indigo-500/20", iconBg: "bg-indigo-100 dark:bg-indigo-500/20", iconText: "text-indigo-600 dark:text-indigo-400" },
-  blue: { bg: "bg-blue-50/50 dark:bg-blue-500/5", border: "border-blue-100/50 dark:border-blue-500/20", iconBg: "bg-blue-100 dark:bg-blue-500/20", iconText: "text-blue-600 dark:text-blue-400" },
-  violet: { bg: "bg-violet-50/50 dark:bg-violet-500/5", border: "border-violet-100/50 dark:border-violet-500/20", iconBg: "bg-violet-100 dark:bg-violet-500/20", iconText: "text-violet-600 dark:text-violet-400" },
-  emerald: { bg: "bg-emerald-50/50 dark:bg-emerald-500/5", border: "border-emerald-100/50 dark:border-emerald-500/20", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconText: "text-emerald-600 dark:text-emerald-400" },
-};
-
-function StatsCard({ title, value, icon: Icon, desc, theme = "indigo" }: any) {
-    const styles = THEMES[theme as keyof typeof THEMES];
-    
-    return (
-        <Card className={cn("relative overflow-hidden border transition-all duration-300 hover:shadow-md", styles.border, styles.bg)}>
-            <div className={cn("absolute -right-6 -top-6 h-24 w-24 rounded-full blur-3xl opacity-60 pointer-events-none", styles.iconBg)} />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                <CardTitle className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground">{title}</CardTitle>
-                <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg shadow-sm ring-1 ring-inset ring-black/5 dark:ring-white/5", styles.iconBg, styles.iconText)}>
-                    <Icon className="h-4 w-4" strokeWidth={2.5} />
-                </div>
-            </CardHeader>
-            <CardContent className="relative z-10">
-                <div className="text-3xl font-extrabold tracking-tight text-foreground">{value}</div>
-                <p className="mt-2 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <span className={cn("h-1.5 w-1.5 rounded-full", styles.iconBg.replace('bg-', 'bg-').replace('/20', ''))} />
-                    {desc}
-                </p>
-            </CardContent>
-        </Card>
-    );
-}
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-        return (
-            <div className="bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-slate-800 p-3 rounded-xl shadow-xl text-sm ring-1 ring-black/5">
-                <p className="font-bold text-slate-900 dark:text-white mb-1.5 capitalize">{label} Plan</p>
-                <p className="text-[13px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                    {payload[0].value} <span className="text-slate-500 dark:text-slate-400 font-medium ml-1">Schools</span>
-                </p>
-            </div>
-        );
-    }
-    return null;
-};
+import { 
+    Building2, Users, CalendarDays, Gem, Activity, 
+    CheckCircle2, Globe, CreditCard
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
 
 export default function SuperAdminDashboard() {
-    const { data: stats, isLoading, isError } = useQuery({
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const { data: response, isLoading } = useQuery({
         queryKey: ["superAdminStats"],
         queryFn: async () => {
             const res = await api.get("/dashboard/super-admin");
-            return res.data.data;
-        },
+            return res.data?.data;
+        }
     });
 
-    if (isLoading || !stats) {
-        return <div className="p-8 flex items-center justify-center h-[50vh] text-slate-500 font-bold text-[15px] animate-pulse">Loading SaaS analytics...</div>;
+    if (isLoading) {
+        return (
+            <div className="p-4 md:p-8 space-y-6 animate-pulse">
+                <div className="h-10 w-1/4 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {[1, 2, 3].map((i) => <div key={i} className="h-32 bg-zinc-200 dark:bg-zinc-800 rounded-xl" />)}
+                </div>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="h-[350px] bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                    <div className="h-[350px] bg-zinc-200 dark:bg-zinc-800 rounded-xl" />
+                </div>
+            </div>
+        );
     }
 
-    if (isError) {
-        return <div className="p-8 text-center text-red-500 font-bold text-[15px]">Failed to load dashboard data.</div>;
-    }
+    const { overview, planDistribution, recentSchools, recentTransactions } = response || {};
+
+    const maxPlanCount = planDistribution?.length > 0 
+        ? Math.max(...planDistribution.map((p: any) => p.count || 0)) 
+        : 1;
+
+    const StatCard = ({ title, value, subtitle, icon: Icon }: any) => (
+        <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 p-6 rounded-xl shadow-sm flex flex-col justify-between group">
+            <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{title}</p>
+                <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                    <Icon className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+                </div>
+            </div>
+            <div>
+                <div className="flex items-baseline gap-2">
+                    <h3 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">{value}</h3>
+                </div>
+                {subtitle && <p className="text-xs text-zinc-500 mt-2">{subtitle}</p>}
+            </div>
+        </div>
+    );
 
     return (
-        <div className="flex flex-col gap-6 p-4 md:p-8 animate-in fade-in duration-500">
-            <div className="flex flex-col gap-1 pb-4 border-b border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl shadow-sm ring-1 ring-indigo-200 dark:ring-indigo-800">
-                        <Building2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Global SaaS Overview</h1>
+        <div className="space-y-6 p-4 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                        Overview
+                    </h1>
+                    <p className="text-sm text-zinc-500 mt-1">
+                        Global metrics and platform administration.
+                    </p>
                 </div>
-                <p className="text-slate-500 dark:text-slate-400 text-[13px] font-medium ml-12">
-                    Monitor platform usage, subscriptions, and global metrics.
-                </p>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">System Operational</span>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm text-xs font-medium text-zinc-600 dark:text-zinc-300 tabular-nums">
+                        <CalendarDays className="h-3.5 w-3.5 text-zinc-400" />
+                        {format(currentTime, 'MMM dd, yyyy • hh:mm a')}
+                    </div>
+                </div>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
-                <StatsCard
-                    title="Total Schools"
-                    value={stats.totalSchools}
-                    icon={Building2}
-                    desc={`${stats.activeSchools} Active / ${stats.inactiveSchools} Inactive`}
-                    theme="indigo"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard 
+                    title="Total Revenue" 
+                    value={`₹${(overview?.totalRevenue || 0).toLocaleString()}`} 
+                    subtitle="Lifetime platform collections"
+                    icon={CreditCard} 
                 />
-                <StatsCard
-                    title="Total Students"
-                    value={stats.totalStudents}
-                    icon={GraduationCap}
-                    desc="Across all institutions"
-                    theme="blue"
+                <StatCard 
+                    title="Active Institutions" 
+                    value={overview?.totalSchools || 0} 
+                    subtitle={`${overview?.activeSchools || 0} Active • ${overview?.inactiveSchools || 0} Inactive`}
+                    icon={Building2} 
                 />
-                <StatsCard
-                    title="Total Teachers"
-                    value={stats.totalTeachers}
-                    icon={Users}
-                    desc="Registered educators"
-                    theme="violet"
-                />
-                <StatsCard
-                    title="System Health"
-                    value="99.9%"
-                    icon={Activity}
-                    desc="Uptime status"
-                    theme="emerald"
+                <StatCard 
+                    title="Total Users" 
+                    value={(overview?.totalUsers || 0).toLocaleString()} 
+                    subtitle="Registered accounts across all schools"
+                    icon={Users} 
                 />
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="col-span-4 shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 dark:bg-[#0c0d14] border-b border-slate-100 dark:border-slate-800/60 pb-4">
-                        <CardTitle className="font-bold text-[15px] flex items-center gap-2">
-                           <div className="p-1.5 rounded-md bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                                <Activity className="h-4 w-4" />
-                            </div>
-                            Subscription Overview
-                        </CardTitle>
-                        <CardDescription className="text-xs">
-                            Distribution of schools across different pricing plans
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6 h-[340px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={stats.planDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
-                                <XAxis
-                                    dataKey="plan"
-                                    stroke="hsl(var(--muted-foreground))"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    dy={10}
-                                    tickFormatter={(val) => val.charAt(0).toUpperCase() + val.slice(1)}
-                                />
-                                <YAxis
-                                    stroke="hsl(var(--muted-foreground))"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    dx={-10}
-                                />
-                                <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.1 }} />
-                                <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} maxBarSize={50} animationDuration={1000} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-
-                <Card className="col-span-3 shadow-sm border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 dark:bg-[#0c0d14] border-b border-slate-100 dark:border-slate-800/60 pb-4">
-                        <CardTitle className="font-bold text-[15px] flex items-center gap-2">
-                            <div className="p-1.5 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                                <Building2 className="h-4 w-4" />
-                            </div>
-                            Recent Registrations
-                        </CardTitle>
-                        <CardDescription className="text-xs">Newest schools joined the platform</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0 h-[340px] overflow-y-auto custom-scrollbar">
-                        <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                            {stats.recentSchools.map((school: any) => (
-                                <div key={school.id} className="p-4 flex items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <Avatar className="h-10 w-10 border border-slate-200 dark:border-slate-700 shadow-sm">
-                                        <AvatarImage src={school.logo} alt={school.name} className="object-cover" />
-                                        <AvatarFallback className="bg-indigo-50 text-indigo-700 font-bold dark:bg-indigo-900/50 dark:text-indigo-400">
-                                            {school.name.substring(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="ml-4 space-y-0.5 flex-1 overflow-hidden">
-                                        <p className="text-[13px] font-bold leading-tight text-slate-900 dark:text-white truncate">{school.name}</p>
-                                        <p className="text-[11px] font-medium text-slate-500 truncate">
-                                            {school.slug}.yourdomain.com
-                                        </p>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm flex flex-col min-h-[350px]">
+                    <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                            <Gem className="h-4 w-4 text-zinc-500" /> Plan Distribution
+                        </h2>
+                    </div>
+                    <div className="flex-1 p-5 overflow-y-auto custom-scrollbar space-y-5">
+                        {planDistribution?.length > 0 ? (
+                            planDistribution.map((plan: any, index: number) => {
+                                const percent = maxPlanCount > 0 ? (plan.count / maxPlanCount) * 100 : 0;
+                                return (
+                                    <div key={index} className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium text-zinc-900 dark:text-zinc-100">{plan.name}</span>
+                                                <span className="text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 rounded-md">Up to {plan.limit}</span>
+                                            </div>
+                                            <span className="font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">{plan.count}</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800/50 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-zinc-900 dark:bg-zinc-100 rounded-full transition-all duration-1000 ease-out"
+                                                style={{ width: `${percent}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="ml-3 font-medium">
-                                        <Badge 
-                                            variant={school.isActive ? "secondary" : "destructive"} 
-                                            className={cn(
-                                                "text-[9px] font-black tracking-widest uppercase border-0 shadow-none px-2",
-                                                school.isActive ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : ""
-                                            )}
-                                        >
-                                            {school.plan}
-                                        </Badge>
+                                )
+                            })
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-center opacity-60 space-y-2">
+                                <Gem className="h-8 w-8 text-zinc-400" />
+                                <p className="text-sm text-zinc-500">No active plans found</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm flex flex-col min-h-[350px]">
+                    <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-zinc-500" /> Recent Transactions
+                        </h2>
+                        <Button variant="outline" size="sm" className="h-7 text-xs">View All</Button>
+                    </div>
+                    <div className="flex-1 p-3 overflow-y-auto custom-scrollbar">
+                        {recentTransactions?.length > 0 ? recentTransactions.map((tx: any) => (
+                            <div key={tx.id} className="flex items-center justify-between p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-lg transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-100 dark:border-emerald-500/20">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 leading-none">{tx.school?.name}</p>
+                                        <p className="text-xs text-zinc-500 mt-1">{tx.planType} • {format(new Date(tx.createdAt), 'MMM dd, hh:mm a')}</p>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                                <div className="text-right">
+                                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">+₹{tx.amount.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="h-full flex flex-col items-center justify-center text-center opacity-60 space-y-2">
+                                <Activity className="h-8 w-8 text-zinc-400" />
+                                <p className="text-sm text-zinc-500">No transactions recorded</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm flex flex-col">
+                <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-zinc-500" /> Recently Onboarded Institutions
+                    </h2>
+                </div>
+                <div className="p-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                        {recentSchools?.length > 0 ? recentSchools.map((school: any) => (
+                            <div key={school.id} className="p-4 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center border border-zinc-200 dark:border-zinc-800">
+                                        <Building2 className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                                    </div>
+                                    <span className="text-[10px] font-medium text-zinc-500 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 rounded-md">
+                                        {format(new Date(school.createdAt), 'MMM dd')}
+                                    </span>
+                                </div>
+                                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate mb-1">{school.name}</h3>
+                                <p className="text-xs text-zinc-500 truncate mb-3">{school.subdomain}.unifynt.com</p>
+                                
+                                <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/50">
+                                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                                        {school.plan?.name || "Trial"}
+                                    </span>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="col-span-full py-10 flex flex-col items-center justify-center text-center opacity-60">
+                                <Globe className="h-8 w-8 text-zinc-400 mb-2" />
+                                <p className="text-sm text-zinc-500">No institutions onboarded yet</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -8,6 +8,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { SchoolService } from "@/services/school.service";
 
+// --- Import Permissions and Gate ---
+import { PermissionGate } from "@/components/common/permission-gate";
+
 export default function BillingLayout({
     children,
 }: {
@@ -43,60 +46,76 @@ export default function BillingLayout({
     ];
 
     return (
-        <div className="flex flex-col gap-8 p-4 md:p-8 max-w-7xl mx-auto w-full">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-card p-6 md:p-8 rounded-2xl border shadow-sm gap-4">
-                <div className="flex items-center gap-5">
-                    <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
-                        <CreditCard className="h-8 w-8" />
+        // 🔒 SUPER SECURE GATE: Only School Admins (who have "*" wildcard permission) can access Billing
+        <PermissionGate 
+            required="*"
+            fallback={
+                <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95 duration-500">
+                    <div className="h-20 w-20 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6 ring-8 ring-red-50/50 dark:ring-red-500/5">
+                        <ShieldAlert className="h-10 w-10" />
                     </div>
-                    <div className="space-y-1.5">
-                        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-                            Billing & Subscription
-                        </h1>
-                        <p className="text-base text-muted-foreground font-medium">
-                            Manage your institution&apos;s active plan, limits, and billing history securely.
-                        </p>
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Access Restricted</h2>
+                    <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+                        Only School Administrators have authorization to access the Billing & Subscription portal.
+                    </p>
+                </div>
+            }
+        >
+            <div className="flex flex-col gap-8 p-4 md:p-8 max-w-7xl mx-auto w-full">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-card p-6 md:p-8 rounded-2xl border shadow-sm gap-4">
+                    <div className="flex items-center gap-5">
+                        <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
+                            <CreditCard className="h-8 w-8" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+                                Billing & Subscription
+                            </h1>
+                            <p className="text-base text-muted-foreground font-medium">
+                                Manage your institution&apos;s active plan, limits, and billing history securely.
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {isExpired && (
-                <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-5 rounded-r-xl flex items-start md:items-center gap-4 text-red-700 dark:text-red-400 shadow-sm transition-all animate-in fade-in slide-in-from-top-4">
-                    <ShieldAlert className="h-7 w-7 shrink-0 animate-pulse mt-1 md:mt-0" />
-                    <div className="flex-1">
-                        <h3 className="font-bold text-lg tracking-tight">Subscription Expired</h3>
-                        <p className="text-sm mt-0.5 leading-relaxed">
-                            Your dashboard access is restricted. Please select a plan below and complete the payment to restore full functionality instantly.
-                        </p>
+                {isExpired && (
+                    <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-5 rounded-r-xl flex items-start md:items-center gap-4 text-red-700 dark:text-red-400 shadow-sm transition-all animate-in fade-in slide-in-from-top-4">
+                        <ShieldAlert className="h-7 w-7 shrink-0 animate-pulse mt-1 md:mt-0" />
+                        <div className="flex-1">
+                            <h3 className="font-bold text-lg tracking-tight">Subscription Expired</h3>
+                            <p className="text-sm mt-0.5 leading-relaxed">
+                                Your dashboard access is restricted. Please select a plan below and complete the payment to restore full functionality instantly.
+                            </p>
+                        </div>
                     </div>
+                )}
+
+                <div className="flex items-center gap-6 border-b border-border/60 px-2 overflow-x-auto no-scrollbar">
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        const Icon = item.icon;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "flex items-center gap-2 pb-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap",
+                                    isActive
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                                )}
+                            >
+                                <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
+                                {item.name}
+                            </Link>
+                        );
+                    })}
                 </div>
-            )}
 
-            <div className="flex items-center gap-6 border-b border-border/60 px-2 overflow-x-auto no-scrollbar">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.href;
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-2 pb-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap",
-                                isActive
-                                    ? "border-primary text-primary"
-                                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                            )}
-                        >
-                            <Icon className={cn("h-4 w-4", isActive ? "text-primary" : "text-muted-foreground")} />
-                            {item.name}
-                        </Link>
-                    );
-                })}
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {children}
+                </div>
             </div>
-
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {children}
-            </div>
-        </div>
+        </PermissionGate>
     );
 }

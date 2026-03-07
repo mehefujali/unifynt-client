@@ -20,6 +20,11 @@ import { PeriodService } from "@/services/period.service";
 import { RoutineModal } from "./routine-modal";
 import { DeleteRoutineModal } from "./delete-routine-modal";
 
+// --- Import Permissions and Hooks ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 const DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
 export default function RoutinePage() {
@@ -34,6 +39,10 @@ export default function RoutinePage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedRoutine, setSelectedRoutine] = useState<any>(null);
+
+    // Permission Check for Actions Column
+    const { hasPermission } = usePermission();
+    const canEditOrDelete = hasPermission([PERMISSIONS.ROUTINE_EDIT, PERMISSIONS.ROUTINE_DELETE]);
 
     const { data: classes } = useQuery({
         queryKey: ["classes"],
@@ -97,12 +106,16 @@ export default function RoutinePage() {
                         <p className="text-muted-foreground text-[14px] font-bold opacity-80">Period-based class routine management.</p>
                     </div>
                 </div>
-                <Button
-                    onClick={() => { setSelectedRoutine(null); setIsModalOpen(true); }}
-                    className="rounded-2xl font-black px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:shadow-2xl hover:-translate-y-1 bg-primary dark:text-black text-white"
-                >
-                    <Plus className="mr-2 h-5 w-5 stroke-[3]" /> Add Schedule
-                </Button>
+                
+                {/* 🔒 Gate for Add Button */}
+                <PermissionGate required={PERMISSIONS.ROUTINE_CREATE}>
+                    <Button
+                        onClick={() => { setSelectedRoutine(null); setIsModalOpen(true); }}
+                        className="rounded-2xl font-black px-8 py-6 shadow-xl shadow-primary/20 transition-all hover:shadow-2xl hover:-translate-y-1 bg-primary dark:text-black text-white"
+                    >
+                        <Plus className="mr-2 h-5 w-5 stroke-[3]" /> Add Schedule
+                    </Button>
+                </PermissionGate>
             </div>
 
             <Card className="rounded-[32px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300">
@@ -185,17 +198,17 @@ export default function RoutinePage() {
                                     <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Class / Section</TableHead>
                                     <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Faculty</TableHead>
                                     <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Location</TableHead>
-                                    <TableHead className="text-right pr-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Manage</TableHead>
+                                    {canEditOrDelete && <TableHead className="text-right pr-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Manage</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isRoutinesLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-64 text-center text-slate-400 font-bold animate-pulse">Syncing data...</TableCell>
+                                        <TableCell colSpan={canEditOrDelete ? 6 : 5} className="h-64 text-center text-slate-400 font-bold animate-pulse">Syncing data...</TableCell>
                                     </TableRow>
                                 ) : routines.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-80 text-center">
+                                        <TableCell colSpan={canEditOrDelete ? 6 : 5} className="h-80 text-center">
                                             <div className="flex flex-col items-center justify-center space-y-4">
                                                 <div className="p-6 bg-slate-100 dark:bg-white/5 rounded-[32px] border border-dashed border-slate-300 dark:border-white/10 shadow-inner">
                                                     <BookOpen className="h-12 w-12 text-slate-300" />
@@ -282,16 +295,24 @@ export default function RoutinePage() {
                                                     {routine.roomNo || "Open Area"}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right pr-8 py-5">
-                                                <div className="flex justify-end gap-3 transition-all duration-300">
-                                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-blue-500/10 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm" onClick={() => { setSelectedRoutine(routine); setIsModalOpen(true); }}>
-                                                        <Edit className="h-4 w-4 stroke-[2.5]" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-red-500/10 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm" onClick={() => { setSelectedRoutine(routine); setIsDeleteModalOpen(true); }}>
-                                                        <Trash2 className="h-4 w-4 stroke-[2.5]" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+
+                                            {/* Actions Column */}
+                                            {canEditOrDelete && (
+                                                <TableCell className="text-right pr-8 py-5">
+                                                    <div className="flex justify-end gap-3 transition-all duration-300">
+                                                        <PermissionGate required={PERMISSIONS.ROUTINE_EDIT}>
+                                                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-blue-500/10 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm" onClick={() => { setSelectedRoutine(routine); setIsModalOpen(true); }}>
+                                                                <Edit className="h-4 w-4 stroke-[2.5]" />
+                                                            </Button>
+                                                        </PermissionGate>
+                                                        <PermissionGate required={PERMISSIONS.ROUTINE_DELETE}>
+                                                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-red-500/10 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 bg-white/50 dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm" onClick={() => { setSelectedRoutine(routine); setIsDeleteModalOpen(true); }}>
+                                                                <Trash2 className="h-4 w-4 stroke-[2.5]" />
+                                                            </Button>
+                                                        </PermissionGate>
+                                                    </div>
+                                                </TableCell>
+                                            )}
                                         </TableRow>
                                     ))
                                 )}

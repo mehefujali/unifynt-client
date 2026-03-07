@@ -16,6 +16,11 @@ import ExamModal from "./exam-modal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function ExamsMasterPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,6 +30,10 @@ export default function ExamsMasterPage() {
   const debouncedSearch = useDebounce(searchTerm, 500);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  // Check edit/delete permissions for the Actions column
+  const { hasPermission } = usePermission();
+  const canEditOrDelete = hasPermission([PERMISSIONS.EXAM_EDIT, PERMISSIONS.EXAM_DELETE]);
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["exams", page, limit, debouncedSearch],
@@ -60,12 +69,16 @@ export default function ExamsMasterPage() {
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">Examinations</h1>
           <p className="text-sm text-zinc-500 mt-1">Manage all your school examinations and terms.</p>
         </div>
-        <Button 
-          onClick={() => { setSelectedExam(null); setIsModalOpen(true); }} 
-          className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Create Exam
-        </Button>
+        
+        {/* 🔒 Gate for Create Button */}
+        <PermissionGate required={PERMISSIONS.EXAM_CREATE}>
+            <Button 
+            onClick={() => { setSelectedExam(null); setIsModalOpen(true); }} 
+            className="rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white shadow-sm dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all"
+            >
+            <Plus className="mr-2 h-4 w-4" /> Create Exam
+            </Button>
+        </PermissionGate>
       </div>
 
       <Card className="border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden flex flex-col">
@@ -105,7 +118,7 @@ export default function ExamsMasterPage() {
                   <th className="px-6 py-4 font-medium">Duration</th>
                   <th className="px-6 py-4 font-medium text-center">Stats</th>
                   <th className="px-6 py-4 font-medium text-center">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  {canEditOrDelete && <th className="px-6 py-4 font-medium text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -145,14 +158,25 @@ export default function ExamsMasterPage() {
                         {exam.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(exam)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30">
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(exam.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
+                    
+                    {/* Actions Column */}
+                    {canEditOrDelete && (
+                        <td className="px-6 py-4 text-right space-x-2">
+                            {/* 🔒 Gate for Edit Button */}
+                            <PermissionGate required={PERMISSIONS.EXAM_EDIT}>
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(exam)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30">
+                                    <Edit2 className="h-4 w-4" />
+                                </Button>
+                            </PermissionGate>
+                            
+                            {/* 🔒 Gate for Delete Button */}
+                            <PermissionGate required={PERMISSIONS.EXAM_DELETE}>
+                                <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(exam.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </PermissionGate>
+                        </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
