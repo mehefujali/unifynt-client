@@ -15,6 +15,11 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function SessionsPage() {
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +28,10 @@ export default function SessionsPage() {
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
+
+    // Check if user has edit or delete permissions to show the "Actions" column
+    const { hasPermission } = usePermission();
+    const canEditOrDelete = hasPermission([PERMISSIONS.CLASS_EDIT, PERMISSIONS.CLASS_DELETE]);
 
     const { data: years = [], isLoading } = useQuery({
         queryKey: ["years"],
@@ -113,31 +122,36 @@ export default function SessionsPage() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="shadow-lg shadow-primary/20 w-full sm:w-auto">
-                            <Plus className="mr-2 h-4 w-4" /> New Session
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Create Academic Year</DialogTitle></DialogHeader>
-                        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-                            <div className="grid gap-2"><Label>Session Name</Label><Input name="name" placeholder="e.g. 2024-2025" required /></div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2"><Label>Start Date</Label><Input name="startDate" type="date" required /></div>
-                                <div className="grid gap-2"><Label>End Date</Label><Input name="endDate" type="date" required /></div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Switch name="isCurrent" id="isCurrent" />
-                                <Label htmlFor="isCurrent">Set as Active Session</Label>
-                            </div>
-                            <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Session
+                
+                {/* 🔒 Gate for Create Button */}
+                <PermissionGate required={PERMISSIONS.CLASS_CREATE}>
+                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="shadow-lg shadow-primary/20 w-full sm:w-auto">
+                                <Plus className="mr-2 h-4 w-4" /> New Session
                             </Button>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Create Academic Year</DialogTitle></DialogHeader>
+                            <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                                <div className="grid gap-2"><Label>Session Name</Label><Input name="name" placeholder="e.g. 2024-2025" required /></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2"><Label>Start Date</Label><Input name="startDate" type="date" required /></div>
+                                    <div className="grid gap-2"><Label>End Date</Label><Input name="endDate" type="date" required /></div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Switch name="isCurrent" id="isCurrent" />
+                                    <Label htmlFor="isCurrent">Set as Active Session</Label>
+                                </div>
+                                <Button type="submit" disabled={createMutation.isPending}>
+                                    {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create Session
+                                </Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </PermissionGate>
 
+                {/* Edit Modal */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogContent>
                         <DialogHeader><DialogTitle>Edit Academic Year</DialogTitle></DialogHeader>
@@ -175,12 +189,12 @@ export default function SessionsPage() {
                                 <TableHead>Name</TableHead>
                                 <TableHead>Duration</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                {canEditOrDelete && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center">Loading...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canEditOrDelete ? 4 : 3} className="h-24 text-center">Loading...</TableCell></TableRow>
                             ) : paginatedYears.length > 0 ? (
                                 paginatedYears.map((yr: any) => (
                                     <TableRow key={yr.id}>
@@ -194,23 +208,42 @@ export default function SessionsPage() {
                                                     <CheckCircle2 className="h-3 w-3" /> Active
                                                 </Badge>
                                             ) : (
-                                                <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => setActiveMutation.mutate(yr.id)}>
-                                                    Set Active
-                                                </Button>
+                                                /* 🔒 Gate for 'Set Active' Action */
+                                                <PermissionGate 
+                                                    required={PERMISSIONS.CLASS_EDIT}
+                                                    fallback={<Badge variant="outline" className="text-muted-foreground font-medium border-slate-200">Inactive</Badge>}
+                                                >
+                                                    <Button variant="outline" size="sm" className="h-6 text-xs" onClick={() => setActiveMutation.mutate(yr.id)}>
+                                                        Set Active
+                                                    </Button>
+                                                </PermissionGate>
                                             )}
                                         </TableCell>
-                                        <TableCell className="text-right flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => openEditModal(yr)}>
-                                                <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(yr.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </TableCell>
+                                        
+                                        {/* Actions Column */}
+                                        {canEditOrDelete && (
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    {/* 🔒 Gate for Edit Button */}
+                                                    <PermissionGate required={PERMISSIONS.CLASS_EDIT}>
+                                                        <Button variant="ghost" size="icon" onClick={() => openEditModal(yr)}>
+                                                            <Edit className="h-4 w-4 text-blue-500" />
+                                                        </Button>
+                                                    </PermissionGate>
+                                                    
+                                                    {/* 🔒 Gate for Delete Button */}
+                                                    <PermissionGate required={PERMISSIONS.CLASS_DELETE}>
+                                                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(yr.id)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </PermissionGate>
+                                                </div>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No sessions found.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canEditOrDelete ? 4 : 3} className="h-24 text-center text-muted-foreground">No sessions found.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>

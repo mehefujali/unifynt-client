@@ -1,23 +1,32 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
-import { ShieldCheck, ServerCrash, Zap, RefreshCcw } from "lucide-react";
+import { ShieldCheck, RefreshCcw, Database, ServerCrash, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
 import io from "socket.io-client";
 
 export default function AuditLogsPage() {
     const queryClient = useQueryClient();
 
-    const { data, isLoading, refetch, isFetching } = useQuery({
-        queryKey: ["auditLogs"],
+    const [page, setPage] = useState(1);
+    const [limit] = useState(15);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [actionFilter, setActionFilter] = useState("ALL");
+
+    const { data: response, isLoading, refetch, isFetching } = useQuery({
+        queryKey: ["auditLogs", page, limit, searchTerm, actionFilter],
         queryFn: async () => {
-            const res = await api.get("/audit-logs"); 
-            return res.data?.data;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const params: any = { page, limit };
+            if (searchTerm) params.search = searchTerm;
+            if (actionFilter !== "ALL") params.action = actionFilter;
+            
+            const res = await api.get("/audit-logs", { params }); 
+            return res.data;
         }
     });
 
@@ -28,47 +37,38 @@ export default function AuditLogsPage() {
             socket.emit("join_super_admin_room");
         });
 
-        socket.on("NEW_AUDIT_LOG", (newLog) => {
-            queryClient.setQueryData(["auditLogs"], (oldData: any) => {
-                if (!oldData) return [newLog];
-                return [newLog, ...oldData];
-            });
+        socket.on("NEW_AUDIT_LOG", () => {
+            if (page === 1) {
+                refetch();
+            }
         });
 
         return () => {
             socket.disconnect();
         };
-    }, [queryClient]);
+    }, [page, refetch]);
 
-    const stats = {
-        total: data?.length || 0,
-        deletions: data?.filter((l: any) => l.action === "DELETE").length || 0,
-        updates: data?.filter((l: any) => l.action === "UPDATE").length || 0,
-    };
+    const logs = response?.data || [];
+    const meta = response?.meta || { total: 0, page: 1, limit: 15, totalPage: 1, totalDeletions: 0, totalUpdates: 0 };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 bg-zinc-50/50 dark:bg-[#0a0a0a] min-h-screen">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="p-4 md:p-8 space-y-6 bg-zinc-50 dark:bg-[#09090b] min-h-screen">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-2xl bg-zinc-900 dark:bg-white flex items-center justify-center shadow-lg">
-                            <ShieldCheck className="h-5 w-5 text-white dark:text-black" />
-                        </div>
-                        SECURITY LOGS
+                    <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <ShieldCheck className="h-6 w-6 text-zinc-700 dark:text-zinc-300" />
+                        System Audit Logs
                     </h1>
-                    <div className="flex items-center gap-2 mt-2">
-                        <span className="relative flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Real-time Forensic Monitoring</p>
-                    </div>
+                    <p className="text-sm text-zinc-500 mt-1">
+                        Real-time tracking of platform activities, mutations, and security events.
+                    </p>
                 </div>
                 
                 <Button 
                     onClick={() => refetch()} 
                     disabled={isFetching}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-[16px] shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 font-black text-[10px] uppercase tracking-widest h-11 px-6 transition-all"
+                    variant="outline"
+                    className="h-9 px-4 text-xs font-semibold bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-sm"
                 >
                     <RefreshCcw className={`mr-2 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
                     Sync Feed
@@ -76,38 +76,55 @@ export default function AuditLogsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-[28px] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-zinc-100 dark:bg-zinc-800 rounded-full blur-[40px] -mr-10 -mt-10" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-2">Total Queries</p>
-                    <h3 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tighter">{stats.total}</h3>
+                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 p-6 rounded-xl shadow-sm flex flex-col justify-between group transition-shadow hover:shadow-md">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Total Queries</p>
+                        <div className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                            <Database className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
+                        </div>
+                    </div>
+                    <h3 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">{meta.total.toLocaleString()}</h3>
                 </div>
                 
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-[28px] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-colors" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-2 flex items-center gap-2">
-                        <Zap className="h-3 w-3" /> Mutations
-                    </p>
-                    <h3 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tighter">{stats.updates}</h3>
+                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 p-6 rounded-xl shadow-sm flex flex-col justify-between group transition-shadow hover:shadow-md">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Mutations (Updates)</p>
+                        <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
+                            <Zap className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                    </div>
+                    <h3 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">{meta.totalUpdates.toLocaleString()}</h3>
                 </div>
 
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-[28px] shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-rose-500/20 transition-colors" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600 mb-2 flex items-center gap-2">
-                        <ServerCrash className="h-3 w-3" /> Deletions
-                    </p>
-                    <h3 className="text-4xl font-black text-zinc-900 dark:text-white tracking-tighter">{stats.deletions}</h3>
+                <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 p-6 rounded-xl shadow-sm flex flex-col justify-between group transition-shadow hover:shadow-md">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Deletions</p>
+                        <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20">
+                            <ServerCrash className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                        </div>
+                    </div>
+                    <h3 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums">{meta.totalDeletions.toLocaleString()}</h3>
                 </div>
             </div>
 
             {isLoading ? (
-                <div className="h-[600px] w-full rounded-[32px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 animate-pulse flex items-center justify-center">
-                    <div className="flex flex-col items-center gap-4 opacity-50">
-                        <ShieldCheck className="h-10 w-10 text-zinc-400 animate-bounce" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Loading Secure Logs...</span>
+                <div className="h-[400px] w-full rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 flex items-center justify-center shadow-sm">
+                    <div className="flex flex-col items-center gap-3 opacity-50">
+                        <ShieldCheck className="h-8 w-8 text-zinc-400 animate-pulse" />
+                        <span className="text-sm font-medium text-zinc-500">Loading Secure Logs...</span>
                     </div>
                 </div>
             ) : (
-                <DataTable columns={columns} data={data || []} />
+                <DataTable 
+                    columns={columns} 
+                    data={logs} 
+                    meta={meta}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    actionFilter={actionFilter}
+                    setActionFilter={setActionFilter}
+                    setPage={setPage}
+                />
             )}
         </div>
     );

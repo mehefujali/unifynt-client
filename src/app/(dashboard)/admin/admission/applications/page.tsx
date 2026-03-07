@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// --- নতুন Dropdown ইমপোর্ট ---
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,13 +41,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  FileSpreadsheet, // Excel Icon
-  FileText,        // CSV Icon
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 
 import ApplicationReviewModal from "./application-review-modal";
 import { useDebounce } from "@/hooks/use-debounce";
-import { downloadCSV, downloadExcel } from "@/lib/export-utils"; // পাথটি আপনার মতো ঠিক করে নেবেন
+import { downloadCSV, downloadExcel } from "@/lib/export-utils";
+
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
 
 export default function ApplicationsPage() {
   const [search, setSearch] = useState("");
@@ -58,6 +62,10 @@ export default function ApplicationsPage() {
   const limit = 10;
 
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+
+  // Check permissions for rendering conditional columns
+  const { hasPermission } = usePermission();
+  const canReview = hasPermission([PERMISSIONS.ADMISSION_EDIT, PERMISSIONS.ADMISSION_DELETE]);
 
   const { data: appsRes, isLoading } = useQuery({
     queryKey: ["applications", page, status, debouncedSearch],
@@ -73,7 +81,6 @@ export default function ApplicationsPage() {
   const applications = appsRes?.data || [];
   const meta = appsRes?.meta || { total: 0, page: 1, limit, totalPages: 1 };
 
-  // Export Mutation (এখন 'csv' বা 'excel' আর্গুমেন্ট রিসিভ করবে)
   const exportMutation = useMutation({
     mutationFn: async (type: "csv" | "excel") => {
       const params = {
@@ -81,14 +88,13 @@ export default function ApplicationsPage() {
         ...(debouncedSearch && { search: debouncedSearch }),
       };
       const res = await AdmissionService.exportApplications(params);
-      return { data: res.data, type }; // ডেটার সাথে টাইপটাও রিটার্ন করছি
+      return { data: res.data, type };
     },
     onSuccess: ({ data, type }) => {
       if (data && data.length > 0) {
         const dateStr = new Date().toISOString().split("T")[0];
         const filename = `Admission_Applications_${dateStr}`;
         
-        // ইউজারের চয়েস অনুযায়ী ফাইল ডাউনলোড
         if (type === "csv") {
           downloadCSV(data, filename);
         } else {
@@ -117,45 +123,46 @@ export default function ApplicationsPage() {
           </p>
         </div>
 
-        {/* --- Dropdown Export Menu --- */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 border-primary/20 shadow-sm transition-colors hover:bg-primary/5"
-              disabled={exportMutation.isPending}
-            >
-              {exportMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              ) : (
-                <Download className="h-4 w-4 text-primary" />
-              )}
-              <span className="font-semibold text-primary">
-                {exportMutation.isPending ? "Exporting..." : "Export Options"}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 font-medium">
-            <DropdownMenuItem 
-              onClick={() => exportMutation.mutate("excel")} 
-              className="cursor-pointer py-2"
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600" />
-              <span>Export as Excel (.xlsx)</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => exportMutation.mutate("csv")} 
-              className="cursor-pointer py-2"
-            >
-              <FileText className="mr-2 h-4 w-4 text-blue-600" />
-              <span>Export as CSV (.csv)</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* 🔒 Gate for Export Menu */}
+        <PermissionGate required={PERMISSIONS.ADMISSION_EDIT}>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                variant="outline"
+                className="flex items-center gap-2 border-primary/20 shadow-sm transition-colors hover:bg-primary/5"
+                disabled={exportMutation.isPending}
+                >
+                {exportMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : (
+                    <Download className="h-4 w-4 text-primary" />
+                )}
+                <span className="font-semibold text-primary">
+                    {exportMutation.isPending ? "Exporting..." : "Export Options"}
+                </span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 font-medium">
+                <DropdownMenuItem 
+                onClick={() => exportMutation.mutate("excel")} 
+                className="cursor-pointer py-2"
+                >
+                <FileSpreadsheet className="mr-2 h-4 w-4 text-emerald-600" />
+                <span>Export as Excel (.xlsx)</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                onClick={() => exportMutation.mutate("csv")} 
+                className="cursor-pointer py-2"
+                >
+                <FileText className="mr-2 h-4 w-4 text-blue-600" />
+                <span>Export as CSV (.csv)</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        </PermissionGate>
       </div>
 
       <Card className="border-border shadow-sm">
-        {/* ... আপনার বাকি Card Header, Table এবং Pagination একদম আগের মতোই থাকবে ... */}
         <CardHeader className="border-b bg-muted/20 p-4">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="relative w-full sm:w-96">
@@ -205,22 +212,24 @@ export default function ApplicationsPage() {
                 <TableHead className="font-semibold text-foreground">
                   Status
                 </TableHead>
-                <TableHead className="px-6 text-right font-semibold text-foreground">
-                  Action
-                </TableHead>
+                {canReview && (
+                    <TableHead className="px-6 text-right font-semibold text-foreground">
+                    Action
+                    </TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-64 text-center">
+                  <TableCell colSpan={canReview ? 5 : 4} className="h-64 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
               ) : applications.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={canReview ? 5 : 4}
                     className="h-64 text-center text-muted-foreground"
                   >
                     <Inbox className="mx-auto mb-4 h-12 w-12 opacity-20" />
@@ -271,16 +280,21 @@ export default function ApplicationsPage() {
                         {app.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="px-6 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedAppId(app.id)}
-                        className="h-9 hover:bg-primary/10 hover:text-primary"
-                      >
-                        <Eye className="mr-2 h-4 w-4" /> Review
-                      </Button>
-                    </TableCell>
+                    {canReview && (
+                        <TableCell className="px-6 text-right">
+                        {/* 🔒 Gate for Review Button inside the column */}
+                        <PermissionGate required={[PERMISSIONS.ADMISSION_EDIT, PERMISSIONS.ADMISSION_DELETE]}>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedAppId(app.id)}
+                                className="h-9 hover:bg-primary/10 hover:text-primary"
+                            >
+                                <Eye className="mr-2 h-4 w-4" /> Review
+                            </Button>
+                        </PermissionGate>
+                        </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}

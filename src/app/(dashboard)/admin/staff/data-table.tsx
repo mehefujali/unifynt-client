@@ -8,7 +8,6 @@ import {
     getCoreRowModel,
     useReactTable,
 } from "@tanstack/react-table";
-import { useQuery } from "@tanstack/react-query";
 
 import {
     Table,
@@ -27,21 +26,37 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Search, FilterX, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Layers, GraduationCap, Users } from "lucide-react";
-import { AcademicService } from "@/services/academic.service";
+import {
+    Search,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    FilterX,
+    Users,
+    ShieldCheck,
+} from "lucide-react";
+
+// --- Import Permissions ---
+import { PERMISSIONS } from "@/config/permissions";
+import { usePermission } from "@/hooks/use-permission";
+import { PermissionGate } from "@/components/common/permission-gate";
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     pageCount: number;
-    pagination: { pageIndex: number; pageSize: number };
-    onPaginationChange: React.Dispatch<React.SetStateAction<{ pageIndex: number; pageSize: number }>>;
+    pagination: {
+        pageIndex: number;
+        pageSize: number;
+    };
+    onPaginationChange: (pagination: any) => void;
     searchTerm: string;
     onSearchChange: (value: string) => void;
-    selectedClassId: string;
-    setSelectedClassId: (id: string) => void;
-    selectedSectionId: string;
-    setSelectedSectionId: (id: string) => void;
+    selectedRole: string;
+    setSelectedRole: (value: string) => void;
+    selectedDepartment: string;
+    setSelectedDepartment: (value: string) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -52,11 +67,15 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     searchTerm,
     onSearchChange,
-    selectedClassId,
-    setSelectedClassId,
-    selectedSectionId,
-    setSelectedSectionId,
+    selectedRole,
+    setSelectedRole,
+    selectedDepartment,
+    setSelectedDepartment,
 }: DataTableProps<TData, TValue>) {
+    const { hasPermission } = usePermission();
+    
+    // 💡 Logic: Only Admins can filter by specific Roles
+    const canFilterByRole = hasPermission([PERMISSIONS.STAFF_CREATE, PERMISSIONS.STAFF_EDIT]);
 
     const table = useReactTable({
         data,
@@ -64,97 +83,75 @@ export function DataTable<TData, TValue>({
         pageCount: pageCount,
         getCoreRowModel: getCoreRowModel(),
         manualPagination: true,
-        onPaginationChange,
+        onPaginationChange: onPaginationChange,
         state: {
             pagination,
         },
     });
 
-    const { data: classesRes } = useQuery({
-        queryKey: ["classes"],
-        queryFn: () => AcademicService.getAllClasses(),
-    });
-    const classesList = classesRes?.data?.data || classesRes?.data || (Array.isArray(classesRes) ? classesRes : []);
-
-    const { data: sectionsRes } = useQuery({
-        queryKey: ["sections", selectedClassId],
-        queryFn: () => AcademicService.getAllSections({ classId: selectedClassId }),
-        enabled: !!selectedClassId && selectedClassId !== "all",
-    });
-    const sectionsList = sectionsRes?.data?.data || sectionsRes?.data || (Array.isArray(sectionsRes) ? sectionsRes : []);
-
-    const handleClearFilters = () => {
-        onSearchChange("");
-        setSelectedClassId("all");
-        setSelectedSectionId("all");
-        onPaginationChange({ pageIndex: 0, pageSize: pagination.pageSize });
-    };
-
     return (
         <div className="w-full flex flex-col min-h-[600px]">
-            {/* Advanced Filter Toolbar */}
+            {/* Header & Filters Section */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 p-5 border-b bg-muted/20">
                 <div className="relative w-full lg:max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
-                        placeholder="Search student name or ID..."
+                        placeholder="Search name, email or ID..."
                         value={searchTerm}
-                        onChange={(event) => {
-                            onSearchChange(event.target.value);
-                            onPaginationChange(prev => ({ ...prev, pageIndex: 0 }));
-                        }}
+                        onChange={(e) => onSearchChange(e.target.value)}
                         className="pl-11 bg-background focus-visible:ring-primary h-11 rounded-2xl shadow-sm border-slate-200 dark:border-slate-800 font-medium text-[13px]"
                     />
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto">
                     <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Select
-                            value={selectedClassId || "all"}
-                            onValueChange={(val) => {
-                                setSelectedClassId(val);
-                                setSelectedSectionId("all");
-                                onPaginationChange(prev => ({ ...prev, pageIndex: 0 }));
-                            }}
-                        >
-                            <SelectTrigger className="w-full sm:w-[150px] bg-background h-11 rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[13px] shadow-sm">
-                                <GraduationCap className="mr-2 h-4 w-4 text-primary/60" />
-                                <SelectValue placeholder="All Classes" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl">
-                                <SelectItem value="all" className="font-bold text-primary">All Classes</SelectItem>
-                                {classesList.map((cls: any) => (
-                                    <SelectItem key={cls.id} value={cls.id} className="font-medium">{cls.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        
+                        {/* 🔒 Gate for Role Filter: Hide or show based on administrative power */}
+                        {canFilterByRole && (
+                            <Select
+                                value={selectedRole || "all"}
+                                onValueChange={(val) => setSelectedRole(val === "all" ? "" : val)}
+                            >
+                                <SelectTrigger className="w-full sm:w-[150px] bg-background h-11 rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[13px] shadow-sm">
+                                    <SelectValue placeholder="Role" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl">
+                                    <SelectItem value="all" className="font-bold text-primary">All Roles</SelectItem>
+                                    <SelectItem value="SCHOOL_ADMIN" className="font-medium">Admin</SelectItem>
+                                    <SelectItem value="TEACHER" className="font-medium">Teacher</SelectItem>
+                                    <SelectItem value="ACCOUNTANT" className="font-medium">Accountant</SelectItem>
+                                    <SelectItem value="STAFF" className="font-medium">Staff</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
 
                         <Select
-                            value={selectedSectionId || "all"}
-                            onValueChange={(val) => {
-                                setSelectedSectionId(val);
-                                onPaginationChange(prev => ({ ...prev, pageIndex: 0 }));
-                            }}
-                            disabled={!selectedClassId || selectedClassId === "all"}
+                            value={selectedDepartment || "all"}
+                            onValueChange={(val) => setSelectedDepartment(val === "all" ? "" : val)}
                         >
                             <SelectTrigger className="w-full sm:w-[150px] bg-background h-11 rounded-2xl border-slate-200 dark:border-slate-800 font-bold text-[13px] shadow-sm">
-                                <Layers className="mr-2 h-4 w-4 text-primary/60" />
-                                <SelectValue placeholder="All Sections" />
+                                <SelectValue placeholder="Department" />
                             </SelectTrigger>
                             <SelectContent className="rounded-2xl">
-                                <SelectItem value="all" className="font-bold text-primary">All Sections</SelectItem>
-                                {sectionsList.map((sec: any) => (
-                                    <SelectItem key={sec.id} value={sec.id} className="font-medium">{sec.name}</SelectItem>
-                                ))}
+                                <SelectItem value="all" className="font-bold text-primary">All Dept.</SelectItem>
+                                <SelectItem value="Bangla" className="font-medium">Bangla</SelectItem>
+                                <SelectItem value="English" className="font-medium">English</SelectItem>
+                                <SelectItem value="Mathematics" className="font-medium">Math</SelectItem>
+                                <SelectItem value="Science" className="font-medium">Science</SelectItem>
+                                <SelectItem value="Office" className="font-medium">Office</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {(searchTerm || (selectedClassId && selectedClassId !== "all") || (selectedSectionId && selectedSectionId !== "all")) && (
+                    {(searchTerm || selectedRole || selectedDepartment) && (
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={handleClearFilters}
+                            onClick={() => {
+                                onSearchChange("");
+                                setSelectedRole("");
+                                setSelectedDepartment("");
+                            }}
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 h-11 px-4 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all"
                         >
                             <FilterX className="h-4 w-4 mr-2" />
@@ -164,7 +161,7 @@ export function DataTable<TData, TValue>({
                 </div>
             </div>
 
-            {/* Table Core */}
+            {/* Table Section */}
             <div className="flex-1 overflow-auto custom-scrollbar">
                 <Table>
                     <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50 sticky top-0 z-10 border-b border-slate-100 dark:border-slate-800">
@@ -192,7 +189,10 @@ export function DataTable<TData, TValue>({
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id} className="py-4 px-6">
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext()
+                                            )}
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -208,7 +208,7 @@ export function DataTable<TData, TValue>({
                                             <Users className="h-10 w-10 text-slate-300" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="font-black text-[15px] text-slate-600 dark:text-slate-400">No students found</p>
+                                            <p className="font-black text-[15px] text-slate-600 dark:text-slate-400">No staff results</p>
                                             <p className="text-[12px] font-bold text-slate-400">Adjust filters or try a different search term.</p>
                                         </div>
                                     </div>
@@ -219,15 +219,18 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
 
-            {/* Premium Pagination Section */}
+            {/* Pagination Section */}
             <div className="p-6 border-t bg-slate-50/30 dark:bg-black/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3 order-2 sm:order-1">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                    </div>
                     <div className="flex flex-col">
                         <span className="text-[13px] font-black text-slate-900 dark:text-white leading-none">
-                            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+                            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                         </span>
                         <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest">
-                            {data.length} records shown this page
+                            Total {data.length} entries shown
                         </span>
                     </div>
                 </div>
@@ -257,7 +260,7 @@ export function DataTable<TData, TValue>({
                     <div className="flex items-center gap-2">
                         <Button
                             variant="outline"
-                            className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
+                            className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                             onClick={() => table.setPageIndex(0)}
                             disabled={!table.getCanPreviousPage()}
                         >
@@ -265,7 +268,7 @@ export function DataTable<TData, TValue>({
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
+                            className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
@@ -278,7 +281,7 @@ export function DataTable<TData, TValue>({
 
                         <Button
                             variant="outline"
-                            className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
+                            className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >
@@ -286,7 +289,7 @@ export function DataTable<TData, TValue>({
                         </Button>
                         <Button
                             variant="outline"
-                            className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
+                            className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                             disabled={!table.getCanNextPage()}
                         >

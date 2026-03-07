@@ -10,6 +10,10 @@ export const PayrollService = {
     const response = await api.post("/payroll/generate-bulk", data);
     return response.data;
   },
+  addAdjustment: async (data: any) => {
+    const response = await api.post("/payroll/adjustments", data);
+    return response.data;
+  },
   updateSalaryStatus: async (id: string, data: any) => {
     const response = await api.patch(`/payroll/${id}/status`, data);
     return response.data;

@@ -49,7 +49,7 @@ export default function LoginPage() {
             const role = data.data.role;
             if (role === "SUPER_ADMIN") router.push("/super-admin");
             else if (role === "SCHOOL_ADMIN") router.push("/admin");
-            else if (role === "TEACHER") router.push("/teacher");
+            else if (role === "TEACHER") router.push("/admin");
             else if (role === "STUDENT") router.push("/student");
             else router.push("/admin");
         },

@@ -244,7 +244,7 @@ export default function ResultsPage() {
                                                         variant="outline" 
                                                         size="sm" 
                                                         onClick={() => setSelectedStudentId(res.studentId)}
-                                                        className="rounded-xl bg-white hover:bg-zinc-50 text-zinc-900 border-0 ring-1 ring-inset ring-border/50 font-bold text-[11px] uppercase tracking-tight shadow-sm"
+                                                        className="rounded-xl bg-white hover:bg-zinc-50 dark:text-white text-zinc-900 border-0 ring-1 ring-inset ring-border/50 font-bold text-[11px] uppercase tracking-tight shadow-sm"
                                                     >
                                                         <FileText className="h-3.5 w-3.5 mr-2 text-zinc-400" />
                                                         Marksheet

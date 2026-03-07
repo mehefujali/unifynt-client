@@ -10,10 +10,19 @@ import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
 import GradeModal from "./grade-modal";
 import { toast } from "sonner";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function ExamGradesPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState<any>(null);
+
+  // Check edit/delete permissions for the Actions column
+  const { hasPermission } = usePermission();
+  const canEditOrDelete = hasPermission([PERMISSIONS.EXAM_EDIT, PERMISSIONS.EXAM_DELETE]);
 
   const { data: grades, isLoading } = useQuery({
     queryKey: ["examGrades"],
@@ -38,9 +47,13 @@ export default function ExamGradesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold tracking-tight">Grading Scale</h1>
-        <Button onClick={() => { setSelectedGrade(null); setIsModalOpen(true); }} className="rounded-xl bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900">
-          <Plus className="mr-2 h-4 w-4" /> Add Grade
-        </Button>
+        
+        {/* 🔒 Gate for Create Button */}
+        <PermissionGate required={PERMISSIONS.EXAM_CREATE}>
+            <Button onClick={() => { setSelectedGrade(null); setIsModalOpen(true); }} className="rounded-xl bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900">
+            <Plus className="mr-2 h-4 w-4" /> Add Grade
+            </Button>
+        </PermissionGate>
       </div>
 
       <Card className="border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden">
@@ -58,7 +71,7 @@ export default function ExamGradesPage() {
                   <th className="px-6 py-4 font-medium">Min Marks (%)</th>
                   <th className="px-6 py-4 font-medium">Max Marks (%)</th>
                   <th className="px-6 py-4 font-medium">Grade Point</th>
-                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  {canEditOrDelete && <th className="px-6 py-4 font-medium text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -68,10 +81,21 @@ export default function ExamGradesPage() {
                     <td className="px-6 py-4 text-zinc-600">{grade.minMarks}</td>
                     <td className="px-6 py-4 text-zinc-600">{grade.maxMarks}</td>
                     <td className="px-6 py-4 text-zinc-600">{grade.gradePoint || "-"}</td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(grade)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Edit2 className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(grade.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></Button>
-                    </td>
+                    
+                    {/* Actions Column */}
+                    {canEditOrDelete && (
+                        <td className="px-6 py-4 text-right space-x-2">
+                            {/* 🔒 Gate for Edit Button */}
+                            <PermissionGate required={PERMISSIONS.EXAM_EDIT}>
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(grade)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Edit2 className="h-4 w-4" /></Button>
+                            </PermissionGate>
+                            
+                            {/* 🔒 Gate for Delete Button */}
+                            <PermissionGate required={PERMISSIONS.EXAM_DELETE}>
+                                <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(grade.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></Button>
+                            </PermissionGate>
+                        </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

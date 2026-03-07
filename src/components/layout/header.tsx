@@ -27,8 +27,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { navItems } from "@/config/nav-items";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -57,7 +56,7 @@ export default function Header() {
     }, []);
 
     const userRole = user?.role ? (user.role.toUpperCase() as keyof typeof navItems) : null;
-    const currentNavItems = userRole ? navItems[userRole] : [];
+    const currentNavItems = userRole ? (navItems[userRole] || []) : [];
     
     const mainItems = currentNavItems.filter(item => !item.subItems || item.subItems.length === 0);
     const nestedItems = currentNavItems.filter(item => item.subItems && item.subItems.length > 0);
@@ -72,7 +71,7 @@ export default function Header() {
             .substring(0, 2);
     };
 
-    const isSchoolLevel = userRole === "SCHOOL_ADMIN" || userRole === "TEACHER" || userRole === "STUDENT";
+    const isSchoolLevel = userRole === "SCHOOL_ADMIN" || userRole === "TEACHER" || userRole === "STUDENT" || userRole === "STAFF" || userRole === "ACCOUNTANT";
 
     const profileImage = isSchoolLevel
         ? ((user as any)?.school?.logo || (user as any)?.avatar || (user as any)?.profileImage)

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,6 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Loader2, Plus, Trash2, Save, Settings2, Sparkles, FileText, Image as ImageIcon, Lock, CheckCircle2 } from "lucide-react";
+
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+import { cn } from "@/lib/utils";
 
 const FIXED_CORE_FIELDS = ["First Name", "Last Name", "Email Address", "Phone Number", "Class", "Academic Year"];
 
@@ -165,6 +172,10 @@ export default function FormBuilderSettingsPage() {
     const queryClient = useQueryClient();
     const [isClient, setIsClient] = useState(false);
 
+    // Permission check
+    const { hasPermission } = usePermission();
+    const canEditSettings = hasPermission([PERMISSIONS.ADMISSION_CREATE, PERMISSIONS.ADMISSION_EDIT]);
+
     useEffect(() => { setIsClient(true); }, []);
 
     const { data: configRes, isLoading: isFetching } = useQuery({
@@ -289,10 +300,13 @@ export default function FormBuilderSettingsPage() {
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">Configure your public admission form. Core fields are locked by default.</p>
                 </div>
-                <Button onClick={handleSubmit(onSubmit)} disabled={saveMutation.isPending} className="font-semibold px-6 shadow-sm">
-                    {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save Configuration
-                </Button>
+                {/* 🔒 Gate for Save Button */}
+                <PermissionGate required={[PERMISSIONS.ADMISSION_CREATE, PERMISSIONS.ADMISSION_EDIT]}>
+                    <Button onClick={handleSubmit(onSubmit)} disabled={saveMutation.isPending} className="font-semibold px-6 shadow-sm">
+                        {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Save Configuration
+                    </Button>
+                </PermissionGate>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
@@ -339,15 +353,17 @@ export default function FormBuilderSettingsPage() {
                                                             )}
                                                         </div>
                                                     </AccordionTrigger>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="ghost" 
-                                                        size="icon" 
-                                                        className="absolute right-12 top-2 h-8 w-8 text-destructive hover:bg-destructive/10 z-10" 
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); remove(index); }}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {canEditSettings && (
+                                                        <Button 
+                                                            type="button" 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="absolute right-12 top-2 h-8 w-8 text-destructive hover:bg-destructive/10 z-10" 
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); remove(index); }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                 </div>
                                                 <AccordionContent className="p-5 border-t bg-slate-50/50 dark:bg-slate-900/20">
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
@@ -363,6 +379,7 @@ export default function FormBuilderSettingsPage() {
                                                                 onChange={(e) => handleLabelChange(index, e.target.value)}
                                                                 placeholder="e.g. Type something..." 
                                                                 className="h-9 text-sm bg-background" 
+                                                                disabled={!canEditSettings}
                                                             />
                                                         </div>
 
@@ -372,7 +389,7 @@ export default function FormBuilderSettingsPage() {
                                                                 control={control}
                                                                 name={`fields.${index}.type` as const}
                                                                 render={({ field: { onChange, value } }) => (
-                                                                    <Select onValueChange={onChange} value={value} disabled={watch(`fields.${index}.isSystem`)}>
+                                                                    <Select onValueChange={onChange} value={value} disabled={!canEditSettings || watch(`fields.${index}.isSystem`)}>
                                                                         <SelectTrigger className="h-9 text-sm bg-background">
                                                                             <SelectValue placeholder="Select type" />
                                                                         </SelectTrigger>
@@ -393,8 +410,8 @@ export default function FormBuilderSettingsPage() {
                                                                 control={control}
                                                                 name={`fields.${index}.required` as const}
                                                                 render={({ field: { onChange, value } }) => (
-                                                                    <div className="flex items-center gap-3 bg-background border px-4 h-9 rounded-md w-max shadow-sm">
-                                                                        <Switch checked={value} onCheckedChange={onChange} id={`req-${index}`} className="scale-90" />
+                                                                    <div className={cn("flex items-center gap-3 bg-background border px-4 h-9 rounded-md w-max shadow-sm", !canEditSettings && "opacity-60")}>
+                                                                        <Switch checked={value} onCheckedChange={onChange} id={`req-${index}`} className="scale-90" disabled={!canEditSettings} />
                                                                         <Label htmlFor={`req-${index}`} className="text-xs font-semibold cursor-pointer">{value ? 'Required Field' : 'Optional Field'}</Label>
                                                                     </div>
                                                                 )}
@@ -415,7 +432,7 @@ export default function FormBuilderSettingsPage() {
                                                                             onChange={(e) => onChange(e.target.value)} 
                                                                             placeholder="e.g. Option A, Option B, Option C" 
                                                                             className="h-9 text-sm bg-background"
-                                                                            disabled={watch(`fields.${index}.isSystem`)}
+                                                                            disabled={!canEditSettings || watch(`fields.${index}.isSystem`)}
                                                                         />
                                                                     )}
                                                                 />
@@ -428,14 +445,16 @@ export default function FormBuilderSettingsPage() {
                                     </Accordion>
                                 )}
 
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    onClick={addCustomField} 
-                                    className="w-full mt-6 border-dashed h-12 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm"
-                                >
-                                    <Plus className="mr-2 h-4 w-4" /> Add Custom Field
-                                </Button>
+                                {canEditSettings && (
+                                    <Button 
+                                        type="button" 
+                                        variant="outline" 
+                                        onClick={addCustomField} 
+                                        className="w-full mt-6 border-dashed h-12 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm"
+                                    >
+                                        <Plus className="mr-2 h-4 w-4" /> Add Custom Field
+                                    </Button>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -457,7 +476,12 @@ export default function FormBuilderSettingsPage() {
                                         control={control}
                                         name="isActive"
                                         render={({ field: { onChange, value } }) => (
-                                            <Switch checked={value} onCheckedChange={onChange} className="data-[state=checked]:bg-emerald-500" />
+                                            <Switch 
+                                                checked={value} 
+                                                onCheckedChange={onChange} 
+                                                className="data-[state=checked]:bg-emerald-500" 
+                                                disabled={!canEditSettings}
+                                            />
                                         )}
                                     />
                                 </div>
@@ -487,9 +511,9 @@ export default function FormBuilderSettingsPage() {
                                                                     key={field.name} 
                                                                     type="button" 
                                                                     variant="outline" 
-                                                                    className={`justify-start h-9 px-3 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-all ${isAdded ? 'opacity-40 cursor-not-allowed border-solid bg-muted/50' : ''}`}
-                                                                    onClick={() => !isAdded && addSuggestedField(field)}
-                                                                    disabled={isAdded}
+                                                                    className={`justify-start h-9 px-3 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-all ${isAdded || !canEditSettings ? 'opacity-40 cursor-not-allowed border-solid bg-muted/50 hover:bg-muted/50 hover:border-border' : ''}`}
+                                                                    onClick={() => !isAdded && canEditSettings && addSuggestedField(field)}
+                                                                    disabled={isAdded || !canEditSettings}
                                                                 >
                                                                     <div className="flex items-center gap-2 w-full text-muted-foreground">
                                                                         {field.icon}

@@ -47,6 +47,8 @@ export function UpdateStatusModal({ slip, open, onClose }: { slip: any, open: bo
 
     if (!slip) return null;
 
+    const employee = slip.teacher || slip.staff;
+
     return (
         <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
             <DialogContent className="sm:max-w-[425px]">
@@ -54,7 +56,7 @@ export function UpdateStatusModal({ slip, open, onClose }: { slip: any, open: bo
                     <DialogTitle className="text-xl font-extrabold text-primary flex items-center gap-2">
                         <CreditCard className="h-5 w-5" /> Disburse Payment
                     </DialogTitle>
-                    <DialogDescription>Update the payment status for {slip.teacher?.firstName} {slip.teacher?.lastName}.</DialogDescription>
+                    <DialogDescription>Update the payment status for {employee?.firstName} {employee?.lastName}.</DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-5 py-4">

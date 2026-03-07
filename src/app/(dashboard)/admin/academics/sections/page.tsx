@@ -14,6 +14,11 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// --- Import Permissions and Gate ---
+import { PERMISSIONS } from "@/config/permissions";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { usePermission } from "@/hooks/use-permission";
+
 export default function SectionsPage() {
     const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +28,11 @@ export default function SectionsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
-    // ক্লাসের ডেটা ফেচ করার সময় সেফটি চেক
+    // Check if user has edit or delete permissions to show the "Actions" column
+    const { hasPermission } = usePermission();
+    const canEditOrDelete = hasPermission([PERMISSIONS.CLASS_EDIT, PERMISSIONS.CLASS_DELETE]);
+
+    // ক্লাসের ডেটা ফেচ করার সময় সেফটি চেক
     const { data: classRawData } = useQuery({
         queryKey: ["classes"],
         queryFn: async () => {
@@ -34,7 +43,7 @@ export default function SectionsPage() {
     });
     const classes = Array.isArray(classRawData) ? classRawData : [];
 
-    // সেকশনের ডেটা ফেচ করার সময় সেফটি চেক
+    // সেকশনের ডেটা ফেচ করার সময় সেফটি চেক
     const { data: sectionRawData, isLoading } = useQuery({
         queryKey: ["sections"],
         queryFn: async () => {
@@ -120,37 +129,42 @@ export default function SectionsPage() {
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
-                <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="shadow-lg shadow-primary/20 w-full sm:w-auto">
-                            <Plus className="mr-2 h-4 w-4" /> Add Section
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Create New Section</DialogTitle></DialogHeader>
-                        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label>Select Class</Label>
-                                <Select name="classId" required>
-                                    <SelectTrigger><SelectValue placeholder="Choose a class" /></SelectTrigger>
-                                    <SelectContent>
-                                        {classes.map((cls: any) => (
-                                            <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2"><Label>Section Name</Label><Input name="name" placeholder="e.g. A, Rose" required /></div>
-                                <div className="grid gap-2"><Label>Capacity</Label><Input name="capacity" type="number" defaultValue={50} /></div>
-                            </div>
-                            <Button type="submit" disabled={createMutation.isPending}>
-                                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Section
+                
+                {/* 🔒 Gate for Create Button */}
+                <PermissionGate required={PERMISSIONS.CLASS_CREATE}>
+                    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="shadow-lg shadow-primary/20 w-full sm:w-auto">
+                                <Plus className="mr-2 h-4 w-4" /> Add Section
                             </Button>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>Create New Section</DialogTitle></DialogHeader>
+                            <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+                                <div className="grid gap-2">
+                                    <Label>Select Class</Label>
+                                    <Select name="classId" required>
+                                        <SelectTrigger><SelectValue placeholder="Choose a class" /></SelectTrigger>
+                                        <SelectContent>
+                                            {classes.map((cls: any) => (
+                                                <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid gap-2"><Label>Section Name</Label><Input name="name" placeholder="e.g. A, Rose" required /></div>
+                                    <div className="grid gap-2"><Label>Capacity</Label><Input name="capacity" type="number" defaultValue={50} /></div>
+                                </div>
+                                <Button type="submit" disabled={createMutation.isPending}>
+                                    {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Section
+                                </Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </PermissionGate>
 
+                {/* Edit Modal */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogContent>
                         <DialogHeader><DialogTitle>Edit Section</DialogTitle></DialogHeader>
@@ -188,12 +202,12 @@ export default function SectionsPage() {
                                 <TableHead>Section Name</TableHead>
                                 <TableHead>Parent Class</TableHead>
                                 <TableHead>Capacity</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                {canEditOrDelete && <TableHead className="text-right">Actions</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center">Loading...</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canEditOrDelete ? 4 : 3} className="h-24 text-center">Loading...</TableCell></TableRow>
                             ) : paginatedSections.length > 0 ? (
                                 paginatedSections.map((sec: any) => (
                                     <TableRow key={sec.id}>
@@ -205,18 +219,29 @@ export default function SectionsPage() {
                                         </TableCell>
                                         <TableCell>{sec.class?.name || "N/A"}</TableCell>
                                         <TableCell>{sec.capacity} Students</TableCell>
-                                        <TableCell className="text-right flex justify-end gap-2">
-                                            <Button variant="ghost" size="icon" onClick={() => openEditModal(sec)}>
-                                                <Edit className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(sec.id)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </TableCell>
+                                        
+                                        {/* Actions Column */}
+                                        {canEditOrDelete && (
+                                            <TableCell className="text-right flex justify-end gap-2">
+                                                {/* 🔒 Gate for Edit Button */}
+                                                <PermissionGate required={PERMISSIONS.CLASS_EDIT}>
+                                                    <Button variant="ghost" size="icon" onClick={() => openEditModal(sec)}>
+                                                        <Edit className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                </PermissionGate>
+                                                
+                                                {/* 🔒 Gate for Delete Button */}
+                                                <PermissionGate required={PERMISSIONS.CLASS_DELETE}>
+                                                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(sec.id)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </PermissionGate>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow><TableCell colSpan={4} className="h-24 text-center text-muted-foreground">No sections found.</TableCell></TableRow>
+                                <TableRow><TableCell colSpan={canEditOrDelete ? 4 : 3} className="h-24 text-center text-muted-foreground">No sections found.</TableCell></TableRow>
                             )}
                         </TableBody>
                     </Table>
