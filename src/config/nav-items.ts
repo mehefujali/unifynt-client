@@ -15,6 +15,8 @@ import {
   Award,
   ShieldAlert,
   TrendingUp,
+  Megaphone,
+  Bell,
 } from "lucide-react";
 
 export type SubItem = {
@@ -349,6 +351,18 @@ export const navItems: Record<string, NavItem[]> = {
       title: "Site Templates",
       href: "/super-admin/site-templates",
       icon: LayoutTemplate,
+    },
+    {
+      title: "Announcements",
+      href: "/super-admin/announcements",
+      icon: Megaphone,
+      color: "text-amber-500",
+    },
+    {
+      title: "Notifications",
+      href: "/super-admin/notifications",
+      icon: Bell,
+      color: "text-rose-500",
     },
     {
       title: "Audit Logs",

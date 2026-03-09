@@ -38,6 +38,7 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command";
+import { NotificationBell } from "@/components/dashboard/notification-bell";
 
 export default function Header() {
     const { user, logout } = useAuth();
@@ -138,13 +139,7 @@ export default function Header() {
 
                         <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 mx-1" />
 
-                        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full text-zinc-500 hover:text-primary hover:bg-white dark:hover:bg-zinc-800 transition-all shadow-sm hover:shadow">
-                            <Bell className="h-[18px] w-[18px]" />
-                            <span className="absolute top-2 right-2 flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 border border-white dark:border-zinc-900"></span>
-                            </span>
-                        </Button>
+                        <NotificationBell />
                     </div>
 
                     <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block mx-1" />
