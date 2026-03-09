@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState } from "react";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Layout, Type, Image as ImageIcon, UploadCloud, Loader2, Link as LinkIcon, Globe } from "lucide-react";
+import { Layout, Type, Image as ImageIcon, UploadCloud, Loader2, Link as LinkIcon, Globe, Plus, Trash2 } from "lucide-react";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 
@@ -29,7 +30,7 @@ export function ContentEditor({ content, onChange }: any) {
         updateField(section, field, res.data.data.url);
         toast.success("Asset deployed to Cloudinary");
       }
-    } catch (error) {
+    } catch {
       toast.error("Upload failed");
     } finally {
       setIsUploading(null);
@@ -81,24 +82,69 @@ export function ContentEditor({ content, onChange }: any) {
                         {key.replace(/([A-Z])/g, ' $1')}
                       </Label>
 
-                      {isImageField ? (
+                      {Array.isArray(value) ? (
+                        <div className="space-y-3 border p-4 rounded-xl bg-zinc-50 border-zinc-200">
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">{key.replace(/([A-Z])/g, ' $1')}</Label>
+                          {value.map((link: any, index: number) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <Input
+                                value={link.label}
+                                onChange={(e) => {
+                                  const newLinks = [...value];
+                                  newLinks[index].label = e.target.value;
+                                  updateField(secKey, key, newLinks);
+                                }}
+                                className="h-10 text-xs" placeholder="Label (e.g. Careers)"
+                              />
+                              <Input
+                                value={link.url}
+                                onChange={(e) => {
+                                  const newLinks = [...value];
+                                  newLinks[index].url = e.target.value;
+                                  updateField(secKey, key, newLinks);
+                                }}
+                                className="h-10 text-xs font-mono text-primary" placeholder="/careers"
+                              />
+                              <Button
+                                variant="destructive" size="icon" className="h-10 w-10 shrink-0 rounded-lg"
+                                onClick={() => {
+                                  const newLinks = value.filter((_, i) => i !== index);
+                                  updateField(secKey, key, newLinks);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                          <Button
+                            variant="outline" size="sm" className="w-full border-dashed"
+                            onClick={() => {
+                              const newLinks = [...value];
+                              newLinks.push({ label: "", url: "" });
+                              updateField(secKey, key, newLinks);
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-2" /> Add Link
+                          </Button>
+                        </div>
+                      ) : isImageField ? (
                         <div className="space-y-4">
                           {value && (
                             <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-zinc-100 group">
-                              <img src={value} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
+                              <img src={value} alt="Asset" className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
                             </div>
                           )}
                           <div className="relative">
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              id={`upload-${secKey}-${key}`} 
+                            <input
+                              type="file"
+                              className="hidden"
+                              id={`upload-${secKey}-${key}`}
                               accept="image/*"
                               onChange={(e) => e.target.files?.[0] && handleImageUpload(secKey, key, e.target.files[0])}
                             />
-                            <Button 
-                              variant="outline" 
-                              className="w-full h-12 border-2 border-dashed rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/50" 
+                            <Button
+                              variant="outline"
+                              className="w-full h-12 border-2 border-dashed rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/50"
                               asChild
                               disabled={isUploading === `${secKey}-${key}`}
                             >
@@ -110,14 +156,14 @@ export function ContentEditor({ content, onChange }: any) {
                           </div>
                         </div>
                       ) : key.toLowerCase().includes("description") || key.toLowerCase().includes("subtitle") || key.toLowerCase().includes("quote") ? (
-                        <Textarea 
-                          value={value} 
+                        <Textarea
+                          value={value}
                           onChange={(e) => updateField(secKey, key, e.target.value)}
                           className="rounded-2xl bg-zinc-50 border-0 focus-visible:ring-1 text-sm min-h-[120px] font-medium leading-relaxed"
                         />
                       ) : (
-                        <Input 
-                          value={value} 
+                        <Input
+                          value={value}
                           onChange={(e) => updateField(secKey, key, e.target.value)}
                           className={`h-12 rounded-xl bg-zinc-50 border-0 focus-visible:ring-1 ${isLinkField ? 'font-mono text-xs text-primary' : 'font-bold text-sm'}`}
                           placeholder={isLinkField ? "https://your-link.com" : "Enter text content..."}

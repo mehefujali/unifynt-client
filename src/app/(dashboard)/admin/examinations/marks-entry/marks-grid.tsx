@@ -12,18 +12,10 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import {
     Loader2,
@@ -32,12 +24,10 @@ import {
     AlertCircle,
     CloudCheck,
     CloudUpload,
-    CloudOff,
     ChevronLeft,
     ChevronRight,
     ShieldAlert,
     ShieldCheck,
-    AlertTriangle,
     Key
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,12 +44,15 @@ export default function MarksGrid({ scheduleId }: Props) {
     const [isLockModalOpen, setIsLockModalOpen] = useState(false);
     const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
 
+    // Track components that the teacher wants to skip (e.g. Viva or Practical)
+    const [disabledComponents, setDisabledComponents] = useState<string[]>([]);
+
     // ✅ Local UI override state for Admin
     const [adminOverride, setAdminOverride] = useState(false);
 
     const isFirstRender = useRef(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
+    const pageSize = 10;
 
     const debouncedMarks = useDebounce(marksData, 1500);
     const isAdmin = user?.role === "SCHOOL_ADMIN" || user?.role === "SUPER_ADMIN";
@@ -71,9 +64,17 @@ export default function MarksGrid({ scheduleId }: Props) {
         staleTime: 5000,
     });
 
+    // 🟢 Generate components array dynamically from API data, or fallback to default
+    const components = useMemo(() => {
+        return data?.scheduleInfo?.components || [
+            { id: "theoryMarks", name: "Theory" },
+            { id: "practicalMarks", name: "Practical" },
+            { id: "vivaMarks", name: "Viva" }
+        ];
+    }, [data]);
+
     useEffect(() => {
         if (data?.gridData && !isFetching) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setMarksData(data.gridData);
             isFirstRender.current = true;
         }
@@ -121,19 +122,28 @@ export default function MarksGrid({ scheduleId }: Props) {
 
             const payload = {
                 scheduleId,
-                marks: debouncedMarks.map((m: any) => ({
-                    studentId: m.studentId,
-                    theoryMarks: m.theoryMarks,
-                    practicalMarks: m.practicalMarks,
-                    vivaMarks: m.vivaMarks,
-                    graceMarks: m.graceMarks,
-                    isAbsent: m.isAbsent,
-                    remarks: m.remarks,
-                })),
+                marks: debouncedMarks.map((m: any) => {
+                    const { studentId, isAbsent, remarks, graceMarks } = m;
+
+                    const componentData = components.reduce((acc: any, comp: any) => {
+                        // If a component is disabled by the teacher, explicitly set to 0 or null
+                        acc[comp.id] = disabledComponents.includes(comp.id) ? null : m[comp.id];
+                        return acc;
+                    }, {});
+
+                    return {
+                        studentId,
+                        isAbsent,
+                        remarks,
+                        graceMarks,
+                        ...componentData
+                    };
+                }),
             };
             saveMutation.mutate(payload);
         }
-    }, [debouncedMarks, scheduleId, isAdmin, adminOverride]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedMarks, scheduleId, isAdmin, adminOverride, components, disabledComponents]);
 
     const handleMarkChange = (studentId: string, field: string, value: string) => {
         const numValue = value === "" ? null : Number(value);
@@ -141,11 +151,12 @@ export default function MarksGrid({ scheduleId }: Props) {
             prev.map((row) => {
                 if (row.studentId === studentId) {
                     const updatedRow = { ...row, [field]: numValue };
-                    const theory = updatedRow.theoryMarks || 0;
-                    const practical = updatedRow.practicalMarks || 0;
-                    const viva = updatedRow.vivaMarks || 0;
+                    const componentsTotal = components.reduce((acc: number, comp: any) => {
+                        if (disabledComponents.includes(comp.id)) return acc;
+                        return acc + (updatedRow[comp.id] || 0);
+                    }, 0);
                     const grace = updatedRow.graceMarks || 0;
-                    updatedRow.totalMarks = updatedRow.isAbsent ? 0 : theory + practical + viva + grace;
+                    updatedRow.totalMarks = updatedRow.isAbsent ? 0 : componentsTotal + grace;
                     return updatedRow;
                 }
                 return row;
@@ -158,10 +169,14 @@ export default function MarksGrid({ scheduleId }: Props) {
             prev.map((row) => {
                 if (row.studentId === studentId) {
                     const isAbsent = !row.isAbsent;
+                    const componentsTotal = components.reduce((acc: number, comp: any) => {
+                        if (disabledComponents.includes(comp.id)) return acc;
+                        return acc + (row[comp.id] || 0);
+                    }, 0);
                     return {
                         ...row,
                         isAbsent,
-                        totalMarks: isAbsent ? 0 : (row.theoryMarks || 0) + (row.practicalMarks || 0) + (row.vivaMarks || 0) + (row.graceMarks || 0),
+                        totalMarks: isAbsent ? 0 : componentsTotal + (row.graceMarks || 0),
                     };
                 }
                 return row;
@@ -177,14 +192,13 @@ export default function MarksGrid({ scheduleId }: Props) {
     const totalPages = Math.ceil(marksData.length / pageSize);
     const isAllLocked = marksData.some((m) => m.isLocked);
 
- 
-    const isFieldDisabled = (row: any) => {
-        if (row.isAbsent) return true;
+    const isFieldDisabled = (row: any, isAttendanceBtn = false) => {
         if (isAllLocked) {
             // Only allow if Admin AND Override is active
             if (isAdmin && adminOverride) return false;
             return true;
         }
+        if (!isAttendanceBtn && row.isAbsent) return true;
         return false;
     };
 
@@ -267,9 +281,37 @@ export default function MarksGrid({ scheduleId }: Props) {
                             <tr>
                                 <th className="px-6 py-4 border-r border-border">Student Details</th>
                                 <th className="px-6 py-4 border-r border-border text-center w-32">Attendance</th>
-                                <th className="px-6 py-4 border-r border-border text-center w-36">Theory</th>
-                                <th className="px-6 py-4 border-r border-border text-center w-36">Practical</th>
-                                <th className="px-6 py-4 border-r border-border text-center w-36">Viva</th>
+                                {components.map((comp: any) => (
+                                    <th key={comp.id} className="px-6 py-4 border-r border-border text-center w-36">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <span>{comp.name}</span>
+                                            <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-950 px-2 py-1 rounded-md ring-1 ring-border mt-1">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`toggle-${comp.id}`}
+                                                    className="h-3 w-3 accent-primary cursor-pointer"
+                                                    checked={!disabledComponents.includes(comp.id)}
+                                                    onChange={(e) => {
+                                                        const isChecked = e.target.checked;
+                                                        setDisabledComponents(prev =>
+                                                            isChecked ? prev.filter(c => c !== comp.id) : [...prev, comp.id]
+                                                        );
+                                                        // Trigger re-calculation of totals for all rows
+                                                        setMarksData(prevData => prevData.map(row => {
+                                                            const componentsTotal = components.reduce((acc: number, c: any) => {
+                                                                const isDisabled = (!isChecked && c.id === comp.id) || (c.id !== comp.id && disabledComponents.includes(c.id));
+                                                                if (isDisabled) return acc;
+                                                                return acc + (row[c.id] || 0);
+                                                            }, 0);
+                                                            return { ...row, totalMarks: row.isAbsent ? 0 : componentsTotal + (row.graceMarks || 0) };
+                                                        }));
+                                                    }}
+                                                />
+                                                <label htmlFor={`toggle-${comp.id}`} className="text-[9px] cursor-pointer tracking-tighter normal-case">Enable</label>
+                                            </div>
+                                        </div>
+                                    </th>
+                                ))}
                                 <th className="px-6 py-4 text-center w-32">Total Score</th>
                             </tr>
                         </thead>
@@ -288,21 +330,27 @@ export default function MarksGrid({ scheduleId }: Props) {
                                     <td className="px-6 py-3 border-r border-border text-center">
                                         <button
                                             onClick={() => toggleAbsent(row.studentId)}
-                                            disabled={isFieldDisabled(row)}
+                                            disabled={isFieldDisabled(row, true)}
                                             className={cn("h-8 w-24 rounded-lg text-[10px] font-black uppercase transition-all ring-1 ring-inset", row.isAbsent ? "bg-rose-600 text-white ring-rose-700 shadow-sm" : "bg-white text-zinc-400 ring-border dark:bg-zinc-950 disabled:opacity-40")}
                                         >
                                             {row.isAbsent ? "Absent" : "Present"}
                                         </button>
                                     </td>
-                                    <td className="px-6 py-3 border-r border-border">
-                                        <Input type="number" value={row.theoryMarks ?? ""} onChange={(e) => handleMarkChange(row.studentId, "theoryMarks", e.target.value)} disabled={isFieldDisabled(row)} className="h-10 rounded-xl bg-transparent border-0 ring-0 text-center font-bold text-zinc-900 dark:text-zinc-100 disabled:opacity-40" placeholder="-" />
-                                    </td>
-                                    <td className="px-6 py-3 border-r border-border">
-                                        <Input type="number" value={row.practicalMarks ?? ""} onChange={(e) => handleMarkChange(row.studentId, "practicalMarks", e.target.value)} disabled={isFieldDisabled(row)} className="h-10 rounded-xl bg-transparent border-0 ring-0 text-center font-bold text-zinc-900 dark:text-zinc-100 disabled:opacity-40" placeholder="-" />
-                                    </td>
-                                    <td className="px-6 py-3 border-r border-border">
-                                        <Input type="number" value={row.vivaMarks ?? ""} onChange={(e) => handleMarkChange(row.studentId, "vivaMarks", e.target.value)} disabled={isFieldDisabled(row)} className="h-10 rounded-xl bg-transparent border-0 ring-0 text-center font-bold text-zinc-900 dark:text-zinc-100 disabled:opacity-40" placeholder="-" />
-                                    </td>
+                                    {components.map((comp: any) => {
+                                        const isDisabledGlobally = disabledComponents.includes(comp.id);
+                                        return (
+                                            <td key={comp.id} className={cn("px-6 py-3 border-r border-border", isDisabledGlobally && "bg-zinc-100/50 dark:bg-zinc-900/20 opacity-60")}>
+                                                <Input
+                                                    type="number"
+                                                    value={row[comp.id] ?? ""}
+                                                    onChange={(e) => handleMarkChange(row.studentId, comp.id, e.target.value)}
+                                                    disabled={isFieldDisabled(row) || isDisabledGlobally}
+                                                    className="h-10 rounded-xl bg-transparent border-0 ring-0 text-center font-bold text-zinc-900 dark:text-zinc-100 disabled:opacity-40"
+                                                    placeholder={isDisabledGlobally ? "N/A" : "-"}
+                                                />
+                                            </td>
+                                        );
+                                    })}
                                     <td className="px-6 py-3 text-center">
                                         <div className={cn("h-10 flex items-center justify-center rounded-xl font-black text-sm", row.totalMarks < data.scheduleInfo.passMarks && !row.isAbsent ? "text-rose-600 bg-rose-50 dark:bg-rose-950/30" : "text-zinc-900 dark:text-zinc-100 bg-zinc-100/50 dark:bg-zinc-900/50 ring-1 ring-inset ring-border/50")}>{row.totalMarks ?? 0}</div>
                                     </td>

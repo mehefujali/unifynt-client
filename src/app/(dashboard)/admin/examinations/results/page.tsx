@@ -9,20 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { 
-    Calculator, 
-    FileText, 
-    Trophy, 
-    Loader2, 
-    ChevronLeft, 
-    ChevronRight, 
+import {
+    Calculator,
+    FileText,
+    Trophy,
+    Loader2,
+    ChevronLeft,
+    ChevronRight,
     Search,
     Medal,
     AlertCircle,
     User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import MarksheetModal from "./marksheet-modal";
+import { DirectPrintHandler } from "./direct-print-handler";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AcademicService } from "@/services/academic.service";
 
@@ -158,7 +158,7 @@ export default function ResultsPage() {
                             Class Rankings
                         </CardTitle>
                         <div className="flex items-center gap-2">
-                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mr-2">Total Students: {resultsList.length}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mr-2">Total Students: {resultsList.length}</span>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -195,9 +195,9 @@ export default function ResultsPage() {
                                                     <div className={cn(
                                                         "h-10 w-10 rounded-xl flex items-center justify-center font-black text-xs mx-auto ring-1 ring-inset shadow-sm",
                                                         res.rankPosition === 1 ? "bg-amber-100 text-amber-700 ring-amber-200" :
-                                                        res.rankPosition === 2 ? "bg-zinc-100 text-zinc-600 ring-zinc-200" :
-                                                        res.rankPosition === 3 ? "bg-orange-50 text-orange-700 ring-orange-200" :
-                                                        "bg-white text-zinc-400 ring-border dark:bg-zinc-900"
+                                                            res.rankPosition === 2 ? "bg-zinc-100 text-zinc-600 ring-zinc-200" :
+                                                                res.rankPosition === 3 ? "bg-orange-50 text-orange-700 ring-orange-200" :
+                                                                    "bg-white text-zinc-400 ring-border dark:bg-zinc-900"
                                                     )}>
                                                         {res.rankPosition <= 3 ? <Medal className="h-4 w-4" /> : `#${res.rankPosition}`}
                                                     </div>
@@ -232,21 +232,22 @@ export default function ResultsPage() {
                                                 <td className="px-8 py-4 border-r border-border/50 text-center">
                                                     <span className={cn(
                                                         "px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ring-1 ring-inset",
-                                                        res.status === "PASS" 
-                                                            ? "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:ring-emerald-900/50" 
+                                                        res.status === "PASS"
+                                                            ? "bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:ring-emerald-900/50"
                                                             : "bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-900/20 dark:text-rose-400 dark:ring-rose-900/50"
                                                     )}>
                                                         {res.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-4 text-right">
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm" 
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={selectedStudentId === res.studentId}
                                                         onClick={() => setSelectedStudentId(res.studentId)}
                                                         className="rounded-xl bg-white hover:bg-zinc-50 dark:text-white text-zinc-900 border-0 ring-1 ring-inset ring-border/50 font-bold text-[11px] uppercase tracking-tight shadow-sm"
                                                     >
-                                                        <FileText className="h-3.5 w-3.5 mr-2 text-zinc-400" />
+                                                        {selectedStudentId === res.studentId ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin text-zinc-400" /> : <FileText className="h-3.5 w-3.5 mr-2 text-zinc-400" />}
                                                         Marksheet
                                                     </Button>
                                                 </td>
@@ -282,8 +283,8 @@ export default function ResultsPage() {
                                             onClick={() => setCurrentPage(p)}
                                             className={cn(
                                                 "h-10 w-10 rounded-xl font-black text-xs border-0 ring-1 transition-all",
-                                                currentPage === p 
-                                                    ? "bg-zinc-900 text-white ring-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 shadow-md" 
+                                                currentPage === p
+                                                    ? "bg-zinc-900 text-white ring-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 shadow-md"
                                                     : "bg-white text-zinc-400 ring-border hover:bg-zinc-50 hover:text-zinc-900"
                                             )}
                                         >
@@ -306,11 +307,10 @@ export default function ResultsPage() {
                 </Card>
             )}
 
-            <MarksheetModal 
-                isOpen={!!selectedStudentId} 
-                onClose={() => setSelectedStudentId(null)} 
-                examId={examId} 
-                studentId={selectedStudentId || ""} 
+            <DirectPrintHandler
+                examId={examId}
+                studentId={selectedStudentId}
+                onComplete={() => setSelectedStudentId(null)}
             />
         </div>
     );

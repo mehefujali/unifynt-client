@@ -57,7 +57,7 @@ export default function Header() {
 
     const userRole = user?.role ? (user.role.toUpperCase() as keyof typeof navItems) : null;
     const currentNavItems = userRole ? (navItems[userRole] || []) : [];
-    
+
     const mainItems = currentNavItems.filter(item => !item.subItems || item.subItems.length === 0);
     const nestedItems = currentNavItems.filter(item => item.subItems && item.subItems.length > 0);
 
@@ -91,99 +91,113 @@ export default function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/40 dark:bg-black/20 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/30 border-b border-white/40 dark:border-white/10 transition-all h-[76px] flex items-center shadow-[0_4px_30px_rgba(0,0,0,0.03)] dark:shadow-none">
+        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-950/60 border-b border-zinc-200/50 dark:border-zinc-800/50 transition-all h-[72px] sm:h-[80px] flex items-center shadow-sm">
             <div className="flex h-full w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+                {/* Mobile Navigation Trigger */}
                 <div className="flex items-center gap-4 lg:hidden">
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-primary bg-primary/5 rounded-xl">
+                            <Button variant="ghost" size="icon" className="h-[42px] w-[42px] text-zinc-600 dark:text-zinc-300 bg-zinc-100/50 dark:bg-zinc-900/50 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all focus:ring-2 focus:ring-primary/20">
                                 <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-[280px] p-0 border-r-0 bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-2xl">
+                        <SheetContent side="left" className="w-[280px] p-0 border-r-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-3xl shadow-2xl">
                             <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
-                             <div className="h-20 flex items-center px-6 border-b border-black/5 dark:border-white/5">
-                                 <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary mr-3">
-                                     <Command className="h-5 w-5" />
-                                 </div>
-                                 <span className="font-bold text-[20px]">Unifynt</span>
-                             </div>
-                             <ScrollArea className="flex-1 py-4 px-4 custom-scrollbar">
-                             </ScrollArea>
+                            <div className="h-20 flex items-center px-6 border-b border-zinc-200/50 dark:border-zinc-800/50">
+                                <div className="flex items-center justify-center h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary border border-primary/20 mr-3 shadow-[0_0_15px_rgba(var(--primary),0.1)]">
+                                    <Command className="h-5 w-5" />
+                                </div>
+                                <span className="font-black text-[22px] tracking-tight text-zinc-900 dark:text-zinc-100">Unifynt</span>
+                            </div>
+                            <ScrollArea className="flex-1 py-4 px-4 custom-scrollbar">
+                                {/* Mobile Nav Items would be rendered here */}
+                            </ScrollArea>
                         </SheetContent>
                     </Sheet>
-
-                    <div className="flex items-center lg:hidden">
-                        <Command className="h-6 w-6 text-primary" />
-                    </div>
                 </div>
 
-                <div className="hidden lg:flex items-center flex-1 max-w-md">
+                {/* Global Search Bar - Premium Pill Design */}
+                <div className="hidden lg:flex items-center flex-1 max-w-xl mx-4">
                     <button
                         onClick={() => setOpen(true)}
-                        className="relative w-full group flex items-center gap-2 px-4 h-10 bg-white/50 dark:bg-black/30 backdrop-blur-md border border-white/60 dark:border-white/10 rounded-full text-[13px] text-slate-500 dark:text-slate-400 transition-all hover:bg-white/80 dark:hover:bg-black/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="relative w-full group flex items-center gap-3 px-5 h-[46px] bg-zinc-100/50 dark:bg-zinc-900/50 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-800/60 rounded-[24px] text-[13px] text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all duration-300 hover:bg-white dark:hover:bg-zinc-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] hover:shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                        <Search className="h-4 w-4 text-slate-400 group-hover:text-primary transition-colors" />
-                        <span className="font-medium">Search menus and pages...</span>
-                        <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm px-1.5 font-mono text-[10px] font-bold text-slate-500 shadow-sm">
-                            ⌘K
+                        <Search className="h-4 w-4 text-zinc-400 group-hover:text-primary transition-colors" />
+                        <span className="font-medium tracking-wide">Quick Search...</span>
+                        <kbd className="ml-auto pointer-events-none inline-flex h-[22px] select-none items-center gap-1 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-800/80 px-2 font-mono text-[10px] font-bold text-zinc-500 shadow-sm transition-colors group-hover:border-zinc-300 dark:group-hover:border-zinc-700">
+                            <span className="text-xs">⌘</span>K
                         </kbd>
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3 ml-auto">
-                    <div className="hidden sm:block">
+                {/* Right Action Group */}
+                <div className="flex items-center gap-2 sm:gap-4 ml-auto">
+                    {/* Action Pills Container */}
+                    <div className="hidden sm:flex items-center gap-1 p-1 bg-zinc-100/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full backdrop-blur-sm">
                         <ModeToggle />
+
+                        <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 mx-1" />
+
+                        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-full text-zinc-500 hover:text-primary hover:bg-white dark:hover:bg-zinc-800 transition-all shadow-sm hover:shadow">
+                            <Bell className="h-[18px] w-[18px]" />
+                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 border border-white dark:border-zinc-900"></span>
+                            </span>
+                        </Button>
                     </div>
 
-                    <Button variant="ghost" size="icon" className="relative h-10 w-10 text-slate-500 hover:text-primary hover:bg-primary/5 rounded-full transition-colors">
-                        <Bell className="h-[18px] w-[18px]" />
-                        <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary border-2 border-white dark:border-[#09090b]"></span>
-                        </span>
-                    </Button>
+                    <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block mx-1" />
 
-                    <div className="h-6 w-px bg-slate-200/50 dark:bg-slate-800/50 hidden sm:block mx-2" />
-
+                    {/* Profile Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 overflow-hidden ring-2 ring-primary/20 hover:ring-primary/50 transition-all focus-visible:ring-primary">
-                                <Avatar className="h-10 w-10 border-2 border-white/50 dark:border-slate-800/50">
+                            <Button variant="ghost" className="relative h-11 w-11 rounded-full p-0 overflow-hidden ring-2 ring-transparent hover:ring-primary/20 transition-all focus-visible:ring-primary/50 group bg-zinc-100 dark:bg-zinc-900">
+                                <Avatar className="h-full w-full border-2 border-white dark:border-zinc-950 shadow-sm transition-transform duration-300 group-hover:scale-110">
                                     <AvatarImage src={profileImage || ""} alt={displayName} className="object-cover" />
-                                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
+                                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-black text-[13px]">
                                         {getInitials(displayName)}
                                     </AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
 
-                        <DropdownMenuContent className="w-72 mt-2 p-1.5 border-white/40 dark:border-white/10 shadow-2xl rounded-2xl bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/60" align="end">
-                            <DropdownMenuLabel className="p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-xl border border-white/60 dark:border-white/5 mb-1">
-                                <div className="flex flex-col space-y-1">
+                        <DropdownMenuContent className="w-72 mt-2 p-2 border border-zinc-200/60 dark:border-zinc-800/60 shadow-2xl rounded-3xl bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60" align="end">
+                            <DropdownMenuLabel className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 mb-2 shadow-sm">
+                                <div className="flex flex-col space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-[14px] font-bold leading-none text-slate-900 dark:text-white truncate pr-2">{displayName}</p>
-                                        <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest bg-primary/10 text-primary border-0">
-                                            {user?.role || "USER"}
+                                        <p className="text-[15px] font-black leading-none text-zinc-900 dark:text-zinc-100 truncate pr-2 tracking-tight">{displayName}</p>
+                                        <Badge variant="secondary" className="text-[9px] font-black uppercase tracking-widest bg-primary/10 text-primary hover:bg-primary/20 border-0 transition-colors">
+                                            {user?.role ? user.role.replace("_", " ") : "USER"}
                                         </Badge>
                                     </div>
-                                    <p className="text-xs font-medium text-slate-500 mt-1 truncate">
+                                    <p className="text-[12px] font-medium text-zinc-500 truncate">
                                         {displayEmail}
                                     </p>
                                 </div>
                             </DropdownMenuLabel>
-                            <DropdownMenuItem asChild className="cursor-pointer py-2.5 px-3 rounded-xl text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-colors">
-                                <Link href={isSchoolLevel ? "/admin/profile" : "/super-admin/profile"} className="flex items-center">
-                                    <UserIcon className="mr-3 h-4 w-4" /> My Profile
+                            <DropdownMenuItem asChild className="cursor-pointer py-3 px-4 rounded-xl text-[13px] font-bold tracking-wide text-zinc-700 dark:text-zinc-300 hover:text-primary dark:hover:text-primary hover:bg-zinc-100 dark:hover:bg-zinc-900/80 transition-all">
+                                <Link href={isSchoolLevel ? "/admin/profile" : "/super-admin/profile"} className="flex items-center group">
+                                    <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-primary/10 group-hover:text-primary transition-colors mr-3">
+                                        <UserIcon className="h-4 w-4" />
+                                    </div>
+                                    My Profile
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild className="cursor-pointer py-2.5 px-3 rounded-xl text-[13px] font-semibold text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-primary/10 transition-colors">
-                                <Link href={isSchoolLevel ? "/admin/settings" : "/super-admin/settings"} className="flex items-center">
-                                    <Settings className="mr-3 h-4 w-4" /> Workspace Settings
+                            <DropdownMenuItem asChild className="cursor-pointer py-3 px-4 rounded-xl text-[13px] font-bold tracking-wide text-zinc-700 dark:text-zinc-300 hover:text-primary dark:hover:text-primary hover:bg-zinc-100 dark:hover:bg-zinc-900/80 transition-all">
+                                <Link href={isSchoolLevel ? "/admin/settings" : "/super-admin/settings"} className="flex items-center group">
+                                    <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-primary/10 group-hover:text-primary transition-colors mr-3">
+                                        <Settings className="h-4 w-4" />
+                                    </div>
+                                    Workspace Settings
                                 </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-black/5 dark:bg-white/5 my-1" />
-                            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-2.5 px-3 rounded-xl text-[13px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                <LogOut className="mr-3 h-4 w-4" /> Log out
+                            <DropdownMenuSeparator className="bg-zinc-200/50 dark:bg-zinc-800/50 my-2 mx-2" />
+                            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer py-3 px-4 rounded-xl text-[13px] font-bold tracking-wide text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all group">
+                                <div className="p-1.5 rounded-lg bg-rose-100/50 dark:bg-rose-500/10 group-hover:bg-rose-200/50 dark:group-hover:bg-rose-500/20 transition-colors mr-3">
+                                    <LogOut className="h-4 w-4" />
+                                </div>
+                                Secure Logout
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -194,7 +208,7 @@ export default function Header() {
                 <CommandInput placeholder="Search your workspace menus..." />
                 <CommandList className="custom-scrollbar">
                     <CommandEmpty>No navigation items found.</CommandEmpty>
-                    
+
                     {mainItems.length > 0 && (
                         <CommandGroup heading="Quick Links">
                             {mainItems.map((item, index) => {

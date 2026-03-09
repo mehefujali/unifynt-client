@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SiteConfigService } from "@/services/site-config.service";
 import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
-import { Header, Hero, Stats, About, Features, Academics, Faculty, Testimonials,  Contact, Footer } from "@/components/templates/enterprise-sections";
+import { Header, Hero, Stats, About, Features, Academics, Testimonials, Contact, Footer } from "@/components/templates/enterprise-sections";
 import { Loader2 } from "lucide-react";
 
 // 🟢 Section Map Update
@@ -15,7 +15,6 @@ const SECTION_MAP: Record<string, any> = {
   about: About,
   features: Features,
   academics: Academics,
-  faculty: Faculty,
   testimonials: Testimonials,
 
   contact: Contact,
@@ -39,7 +38,7 @@ export default function EnterprisePublicSite() {
   useEffect(() => {
     if (siteData) {
       const mergedTheme = { ...DEFAULT_SITE_DATA.theme, ...(siteData.themeSettings || {}) };
-      
+
       const mergedContent = { ...DEFAULT_SITE_DATA.content } as any;
       if (siteData.content) {
         Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {

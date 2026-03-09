@@ -1,4 +1,4 @@
 import { ProfileEditor } from "@/components/dashboard/profile-editor";
-export default function AdminProfilePage() {
+export default function SuperAdminProfilePage() {
     return <ProfileEditor />;
 }
