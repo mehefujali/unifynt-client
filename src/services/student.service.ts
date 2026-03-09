@@ -48,4 +48,12 @@ export const StudentService = {
     const response = await axiosInstance.get("/students/export", { params });
     return response.data;
   },
+  promoteStudent: async (id: string, data: any) => {
+    const response = await axiosInstance.post(`/students/${id}/promote`, data);
+    return response.data;
+  },
+  promoteBulkStudents: async (data: any) => {
+    const response = await axiosInstance.post(`/students/bulk-promote`, data);
+    return response.data;
+  },
 };

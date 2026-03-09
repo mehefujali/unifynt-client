@@ -1,17 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AdmissionService } from "@/services/admission.service";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, AlertCircle, FileUp, School } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, School } from "lucide-react";
+import ProfessionalFileUpload from "@/components/ui/file-upload";
 
 export default function DynamicAdmissionForm({ schoolId }: { schoolId: string }) {
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -23,11 +25,55 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
     });
 
     const form = useForm();
-    const { register, handleSubmit, control, formState: { errors } } = form;
+    const { register, handleSubmit, control, watch, reset } = form;
+    const formValues = watch();
+
+    useEffect(() => {
+        const savedData = localStorage.getItem(`admission_form_${schoolId}`);
+        if (savedData) {
+            try {
+                const parsedData = JSON.parse(savedData);
+                reset(parsedData);
+            } catch (e) {
+                // empty
+            }
+        }
+    }, [schoolId, reset]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const dataToSave = { ...formValues };
+            
+            const fileKeys = [
+                "profileImage", "birthCertificateUrl", "nationalIdDocumentUrl", "tcDocumentUrl", 
+                "previousMarksheetUrl", "casteCertificateUrl", "medicalCertificateUrl", 
+                "incomeCertificateUrl", "fatherPhotoUrl", "motherPhotoUrl", "guardianPhotoUrl"
+            ];
+            
+            fileKeys.forEach(key => delete dataToSave[key]);
+
+            Object.keys(dataToSave).forEach(key => {
+                if (
+                    dataToSave[key] instanceof FileList || 
+                    dataToSave[key] instanceof File || 
+                    (Array.isArray(dataToSave[key]) && dataToSave[key][0] instanceof File)
+                ) {
+                    delete dataToSave[key];
+                }
+            });
+
+            if (Object.keys(dataToSave).length > 0) {
+                localStorage.setItem(`admission_form_${schoolId}`, JSON.stringify(dataToSave));
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [formValues, schoolId]);
 
     const submitMutation = useMutation({
         mutationFn: (formData: FormData) => AdmissionService.submitApplication(schoolId, formData),
         onSuccess: () => {
+            localStorage.removeItem(`admission_form_${schoolId}`);
             setIsSubmitted(true);
             toast.success("Application submitted successfully!");
         },
@@ -144,7 +190,7 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
                                     name="classId"
                                     rules={{ required: true }}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <SelectTrigger className="h-10 bg-background">
                                                 <SelectValue placeholder="Select Class" />
                                             </SelectTrigger>
@@ -164,7 +210,7 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
                                     name="academicYearId"
                                     rules={{ required: true }}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value || ""}>
                                             <SelectTrigger className="h-10 bg-background">
                                                 <SelectValue placeholder="Select Session" />
                                             </SelectTrigger>
@@ -190,9 +236,11 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {parsedFields.map((field) => (
                                     <div key={field.name} className={`space-y-2 ${field.type === 'FILE' ? 'md:col-span-2' : ''}`}>
-                                        <Label className="text-xs font-bold uppercase text-muted-foreground">
-                                            {field.label} {field.required && <span className="text-destructive">*</span>}
-                                        </Label>
+                                        {field.type !== "FILE" && (
+                                            <Label className="text-xs font-bold uppercase text-muted-foreground">
+                                                {field.label} {field.required && <span className="text-destructive">*</span>}
+                                            </Label>
+                                        )}
                                         
                                         {field.type === "TEXT" && <Input {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
                                         {field.type === "NUMBER" && <Input type="number" {...register(field.name, { required: field.required })} className="h-10 bg-background" />}
@@ -203,7 +251,7 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
                                                 name={field.name}
                                                 rules={{ required: field.required }}
                                                 render={({ field: selectField }) => (
-                                                    <Select onValueChange={selectField.onChange} value={selectField.value}>
+                                                    <Select onValueChange={selectField.onChange} value={selectField.value || ""}>
                                                         <SelectTrigger className="h-10 bg-background">
                                                             <SelectValue placeholder={`Select ${field.label}`} />
                                                         </SelectTrigger>
@@ -217,11 +265,17 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
                                             />
                                         )}
                                         {field.type === "FILE" && (
-                                            <div className="relative border-2 border-dashed rounded-xl p-6 hover:bg-muted/30 transition-colors bg-background flex flex-col items-center justify-center text-center">
-                                                <FileUp className="h-8 w-8 text-muted-foreground mb-2" />
-                                                <div className="text-sm font-semibold">Click to upload document</div>
-                                                <input type="file" {...register(field.name, { required: field.required })} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                                            </div>
+                                            <Controller
+                                                control={control}
+                                                name={field.name}
+                                                rules={{ required: field.required }}
+                                                render={({ field: { onChange } }) => (
+                                                    <ProfessionalFileUpload
+                                                        label={`${field.label} ${field.required ? '*' : ''}`}
+                                                        onFileChange={(file) => onChange(file ? [file] : [])}
+                                                    />
+                                                )}
+                                            />
                                         )}
                                     </div>
                                 ))}

@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, UserPlus, FileUp } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
+import ProfessionalFileUpload from "@/components/ui/file-upload";
 
 interface Props {
   isOpen: boolean;
@@ -40,7 +41,7 @@ const extractData = (res: any) => {
   if (res.data && Array.isArray(res.data.data)) return res.data.data;
   return [];
 };
- 
+
 export default function AddStudentModal({ isOpen, onClose }: Props) {
   const queryClient = useQueryClient();
   const {
@@ -338,12 +339,15 @@ export default function AddStudentModal({ isOpen, onClose }: Props) {
                         field.type === "FILE" ? "sm:col-span-2" : ""
                       }`}
                     >
-                      <Label className="text-xs font-bold uppercase text-muted-foreground">
-                        {field.label}{" "}
-                        {field.required && (
-                          <span className="text-destructive">*</span>
-                        )}
-                      </Label>
+                      {field.type !== "FILE" && (
+                        <Label className="text-xs font-bold uppercase text-muted-foreground">
+                          {field.label}{" "}
+                          {field.required && (
+                            <span className="text-destructive">*</span>
+                          )}
+                        </Label>
+                      )}
+                      
                       {field.type === "TEXT" && (
                         <Input
                           {...register(field.name, {
@@ -397,19 +401,17 @@ export default function AddStudentModal({ isOpen, onClose }: Props) {
                         />
                       )}
                       {field.type === "FILE" && (
-                        <div className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed bg-background p-6 text-center transition-colors hover:bg-muted/30">
-                          <FileUp className="mb-2 h-6 w-6 text-muted-foreground" />
-                          <div className="text-sm font-semibold">
-                            Upload {field.label}
-                          </div>
-                          <input
-                            type="file"
-                            {...register(field.name, {
-                              required: field.required,
-                            })}
-                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                          />
-                        </div>
+                        <Controller
+                          control={control}
+                          name={field.name}
+                          rules={{ required: field.required }}
+                          render={({ field: { onChange } }) => (
+                            <ProfessionalFileUpload
+                              label={`${field.label} ${field.required ? '*' : ''}`}
+                              onFileChange={(file) => onChange(file ? [file] : [])}
+                            />
+                          )}
+                        />
                       )}
                     </div>
                   ))}

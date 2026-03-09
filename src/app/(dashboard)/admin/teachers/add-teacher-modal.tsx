@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
@@ -24,20 +23,15 @@ import { TeacherService } from "@/services/teacher.service";
 import { SubjectService } from "@/services/subject.service";
 import api from "@/lib/axios";
 import { addTeacherSchema, AddTeacherFormValues } from "./schema";
-import { ImageCropperModal } from "@/components/ui/image-cropper";
+import ImageCropper from "@/components/ui/image-cropper";
 
 export function AddTeacherModal() {
     const [open, setOpen] = useState(false);
     const queryClient = useQueryClient();
 
     const [activeTab, setActiveTab] = useState("personal");
-    const [isUploadingImg, setIsUploadingImg] = useState(false);
     const [isUploadingDoc, setIsUploadingDoc] = useState(false);
 
-    const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [imageToCrop, setImageToCrop] = useState<string>("");
-
-    const imgInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
 
     const { data: subjectsData } = useQuery({
@@ -48,16 +42,15 @@ export function AddTeacherModal() {
 
     const subjectsList = Array.isArray(subjectsData?.data) ? subjectsData.data : subjectsData?.data?.data || [];
 
-    const { register, handleSubmit, control, setValue, watch, reset, formState: { errors } } = useForm<AddTeacherFormValues>({
+    const { register, handleSubmit, control, setValue, watch, reset, trigger, formState: { errors } } = useForm<AddTeacherFormValues>({
         resolver: zodResolver(addTeacherSchema) as any,
         defaultValues: { employmentType: "FULL_TIME", experienceYears: 0, basicSalary: 0, subjectIds: [] }
     });
 
-    const watchProfileImage = watch("profileImage");
     const watchResumeUrl = watch("resumeUrl");
 
     const mutation = useMutation({
-        mutationFn: TeacherService.createTeacher,
+        mutationFn: (data: FormData) => TeacherService.createTeacher(data as any),
         onSuccess: () => {
             toast.success("Teacher onboarded successfully");
             queryClient.invalidateQueries({ queryKey: ["teachers"] });
@@ -70,59 +63,75 @@ export function AddTeacherModal() {
         },
     });
 
-    const uploadFile = async (file: File | Blob, type: 'image' | 'document') => {
+    const uploadDoc = async (file: File | Blob) => {
         try {
-            type === 'image' ? setIsUploadingImg(true) : setIsUploadingDoc(true);
+            setIsUploadingDoc(true);
             const formData = new FormData();
             formData.append("file", file as File);
 
             const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
 
             if (res.data.success) {
-                if (type === 'image') setValue("profileImage", res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                if (type === 'document') setValue("resumeUrl", res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                toast.success(`${type === 'image' ? 'Profile picture' : 'Resume'} uploaded successfully`);
+                setValue("resumeUrl", res.data.data.url, { shouldValidate: true, shouldDirty: true });
+                toast.success('Resume uploaded successfully');
             }
         } catch (error: any) {
-            toast.error("File upload failed");
+            toast.error("Document upload failed");
         } finally {
-            type === 'image' ? setIsUploadingImg(false) : setIsUploadingDoc(false);
+            setIsUploadingDoc(false);
         }
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'document') => {
+    const handleDocSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        if (type === 'image') {
-            const reader = new FileReader();
-            reader.onload = () => { setImageToCrop(reader.result as string); setCropModalOpen(true); };
-            reader.readAsDataURL(file);
-        } else {
-            uploadFile(file, type);
-        }
+        uploadDoc(file);
         e.target.value = "";
     };
 
-    const handleCropComplete = async (croppedBlob: Blob) => {
-        setCropModalOpen(false);
-        const file = new File([croppedBlob], "teacher-profile.png", { type: "image/png" });
-        await uploadFile(file, 'image');
+    const handleTabChange = async (newTab: string) => {
+        if (activeTab === "personal") {
+            const isPersonalValid = await trigger(["firstName", "lastName", "email", "phone", "gender", "dateOfBirth", "password"] as any);
+            if (!isPersonalValid) {
+                toast.error("Please complete the mandatory fields in Personal tab first.");
+                return;
+            }
+        }
+        
+        if (activeTab === "professional" && newTab !== "personal") {
+            const isProfessionalValid = await trigger(["designation", "qualification", "joiningDate"] as any);
+            if (!isProfessionalValid) {
+                toast.error("Please complete the mandatory fields in Work tab first.");
+                return;
+            }
+        }
+
+        setActiveTab(newTab);
     };
 
-    const onSubmit = (data: AddTeacherFormValues) => mutation.mutate(data);
+    const onSubmit = (data: AddTeacherFormValues) => {
+        const formData = new FormData();
+        const { profileImage, ...restTeacherData } = data;
 
-    const onError = (formErrors: any) => {
-        const errorKeys = Object.keys(formErrors);
-        if (errorKeys.some(key => ['firstName', 'lastName', 'email', 'phone', 'gender', 'dateOfBirth', 'password'].includes(key))) setActiveTab("personal");
-        else if (errorKeys.some(key => ['designation', 'qualification', 'joiningDate', 'subjectIds'].includes(key))) setActiveTab("professional");
-        else if (errorKeys.some(key => ['basicSalary'].includes(key))) setActiveTab("payroll");
-        else setActiveTab("documents");
-        toast.error("Please fill in all mandatory fields correctly.");
+        const payload: any = { ...restTeacherData };
+        if (typeof profileImage === "string" && profileImage.trim() !== "") {
+            payload.profileImage = profileImage;
+        }
+
+        formData.append("data", JSON.stringify(payload));
+
+        if (profileImage && typeof profileImage === "object") {
+            formData.append("profileImage", profileImage as File);
+        }
+
+        mutation.mutate(formData as any);
     };
 
     return (
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet open={open} onOpenChange={(val) => {
+            if (!val) { reset(); setActiveTab("personal"); }
+            setOpen(val);
+        }}>
             <SheetTrigger asChild><Button size="lg" className="px-6 font-bold shadow-md"><Plus className="mr-2 h-5 w-5" /> Onboard Teacher</Button></SheetTrigger>
             <SheetContent className="sm:max-w-[750px] overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
                 <div className="p-8 pb-4 bg-muted/20 border-b shrink-0">
@@ -133,8 +142,8 @@ export function AddTeacherModal() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-8">
-                    <form id="add-teacher-form" onSubmit={handleSubmit(onSubmit, onError)}>
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <form id="add-teacher-form" onSubmit={handleSubmit(onSubmit)}>
+                        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                             <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/40 p-1 rounded-xl">
                                 <TabsTrigger value="personal" className="rounded-lg font-bold"><User className="w-4 h-4 mr-2" /> Personal</TabsTrigger>
                                 <TabsTrigger value="professional" className="rounded-lg font-bold"><Briefcase className="w-4 h-4 mr-2" /> Work</TabsTrigger>
@@ -142,18 +151,46 @@ export function AddTeacherModal() {
                                 <TabsTrigger value="documents" className="rounded-lg font-bold"><FileBadge className="w-4 h-4 mr-2" /> Docs</TabsTrigger>
                             </TabsList>
 
-                            {/* 🔴 PERSONAL TAB */}
                             <TabsContent value="personal" className="space-y-6">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2"><Label>First Name *</Label><Input className={errors.firstName ? 'border-red-500' : ''} {...register("firstName")} /></div>
-                                    <div className="space-y-2"><Label>Last Name *</Label><Input className={errors.lastName ? 'border-red-500' : ''} {...register("lastName")} /></div>
+                                <div className="flex justify-center mb-6">
+                                    <Controller
+                                        control={control}
+                                        name="profileImage"
+                                        render={({ field }) => (
+                                            <ImageCropper
+                                                aspectRatio={1}
+                                                shape="round"
+                                                label="Profile Photo"
+                                                onCrop={(file) => field.onChange(file)}
+                                            />
+                                        )}
+                                    />
                                 </div>
                                 <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2"><Label>Email Address *</Label><Input type="email" className={errors.email ? 'border-red-500' : ''} {...register("email")} /></div>
-                                    <div className="space-y-2"><Label>Phone Number *</Label><Input className={errors.phone ? 'border-red-500' : ''} {...register("phone")} /></div>
+                                    <div className="space-y-2">
+                                        <Label>First Name *</Label>
+                                        <Input className={errors.firstName ? 'border-red-500' : ''} {...register("firstName")} />
+                                        {errors.firstName && <span className="text-xs text-red-500">{errors.firstName.message}</span>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Last Name *</Label>
+                                        <Input className={errors.lastName ? 'border-red-500' : ''} {...register("lastName")} />
+                                        {errors.lastName && <span className="text-xs text-red-500">{errors.lastName.message}</span>}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label>Email Address *</Label>
+                                        <Input type="email" className={errors.email ? 'border-red-500' : ''} {...register("email")} />
+                                        {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Phone Number *</Label>
+                                        <Input className={errors.phone ? 'border-red-500' : ''} {...register("phone")} />
+                                        {errors.phone && <span className="text-xs text-red-500">{errors.phone.message}</span>}
+                                    </div>
                                 </div>
 
-                                {/* NEW PASSWORD FIELD */}
                                 <div className="space-y-2 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
                                     <Label className="font-bold text-amber-700 dark:text-amber-500 flex items-center justify-between mb-2">
                                         <span className="flex items-center gap-1.5"><KeySquare className="h-4 w-4"/> Account Password</span>
@@ -177,15 +214,18 @@ export function AddTeacherModal() {
                                                 <SelectContent><SelectItem value="MALE">Male</SelectItem><SelectItem value="FEMALE">Female</SelectItem><SelectItem value="OTHER">Other</SelectItem></SelectContent>
                                             </Select>
                                         )} />
+                                        {errors.gender && <span className="text-xs text-red-500">{errors.gender.message}</span>}
                                     </div>
-                                    <div className="space-y-2"><Label>Date of Birth *</Label><Input type="date" className={errors.dateOfBirth ? 'border-red-500' : ''} {...register("dateOfBirth")} /></div>
+                                    <div className="space-y-2">
+                                        <Label>Date of Birth *</Label>
+                                        <Input type="date" className={errors.dateOfBirth ? 'border-red-500' : ''} {...register("dateOfBirth")} />
+                                        {errors.dateOfBirth && <span className="text-xs text-red-500">{errors.dateOfBirth.message}</span>}
+                                    </div>
                                 </div>
                                 <div className="space-y-2"><Label>Residential Address</Label><Input {...register("address")} /></div>
                             </TabsContent>
 
-                            {/* 🔴 PROFESSIONAL TAB */}
                             <TabsContent value="professional" className="space-y-6">
-                                {/* INFO NOTIFICATION */}
                                 <div className="mt-2 mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-700 dark:text-blue-400 text-xs font-medium flex gap-3 items-start">
                                     <Briefcase className="h-5 w-5 shrink-0" />
                                     <p className="leading-relaxed">The <strong className="font-black">Employee ID</strong> will be automatically generated by the system (e.g., UNIF-TCH-001-4921) to prevent conflicts, upon successful onboarding.</p>
@@ -243,10 +283,18 @@ export function AddTeacherModal() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2"><Label>Department</Label><Input {...register("department")} /></div>
-                                    <div className="space-y-2"><Label>Designation *</Label><Input className={errors.designation ? 'border-red-500' : ''} {...register("designation")} /></div>
+                                    <div className="space-y-2">
+                                        <Label>Designation *</Label>
+                                        <Input className={errors.designation ? 'border-red-500' : ''} {...register("designation")} />
+                                        {errors.designation && <span className="text-xs text-red-500">{errors.designation.message}</span>}
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2"><Label>Highest Qualification *</Label><Input className={errors.qualification ? 'border-red-500' : ''} {...register("qualification")} /></div>
+                                    <div className="space-y-2">
+                                        <Label>Highest Qualification *</Label>
+                                        <Input className={errors.qualification ? 'border-red-500' : ''} {...register("qualification")} />
+                                        {errors.qualification && <span className="text-xs text-red-500">{errors.qualification.message}</span>}
+                                    </div>
                                     <div className="space-y-2">
                                         <Label>Employment Type</Label>
                                         <Controller control={control} name="employmentType" render={({ field }) => (
@@ -259,12 +307,15 @@ export function AddTeacherModal() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2"><Label>Experience (Years)</Label><Input type="number" {...register("experienceYears")} /></div>
-                                    <div className="space-y-2"><Label>Joining Date *</Label><Input type="date" className={errors.joiningDate ? 'border-red-500' : ''} {...register("joiningDate")} /></div>
+                                    <div className="space-y-2">
+                                        <Label>Joining Date *</Label>
+                                        <Input type="date" className={errors.joiningDate ? 'border-red-500' : ''} {...register("joiningDate")} />
+                                        {errors.joiningDate && <span className="text-xs text-red-500">{errors.joiningDate.message}</span>}
+                                    </div>
                                 </div>
                                 <div className="space-y-2"><Label>LinkedIn Profile</Label><Input {...register("linkedinUrl")} /></div>
                             </TabsContent>
 
-                            {/* 🔴 PAYROLL TAB */}
                             <TabsContent value="payroll" className="space-y-6">
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2"><Label className="font-bold text-primary">Basic Salary (Monthly)</Label><Input type="number" {...register("basicSalary")} /></div>
@@ -277,24 +328,12 @@ export function AddTeacherModal() {
                                 </div>
                             </TabsContent>
 
-                            {/* 🔴 DOCUMENTS TAB */}
                             <TabsContent value="documents" className="space-y-8">
-                                <div className="flex items-center gap-6 p-5 border rounded-xl bg-muted/5">
-                                    <Avatar className="h-20 w-20 border-2 shadow-sm"><AvatarImage src={watchProfileImage} className="object-cover" /><AvatarFallback><User className="h-8 w-8" /></AvatarFallback></Avatar>
-                                    <div className="space-y-2 flex-1">
-                                        <h4 className="font-bold text-sm uppercase">Profile Picture</h4>
-                                        <input type="file" ref={imgInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'image')} />
-                                        <Button type="button" variant="outline" size="sm" onClick={() => imgInputRef.current?.click()} disabled={isUploadingImg}>
-                                            {isUploadingImg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />} {isUploadingImg ? "Uploading..." : "Browse Image"}
-                                        </Button>
-                                    </div>
-                                </div>
-
                                 <div className="flex items-center gap-6 p-5 border rounded-xl bg-muted/5">
                                     <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary"><FileText className="h-8 w-8" /></div>
                                     <div className="space-y-2 flex-1">
                                         <h4 className="font-bold text-sm uppercase">Curriculum Vitae (CV)</h4>
-                                        <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleFileSelect(e, 'document')} />
+                                        <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.doc,.docx" onChange={handleDocSelect} />
                                         <Button type="button" variant="outline" size="sm" onClick={() => docInputRef.current?.click()} disabled={isUploadingDoc}>
                                             {isUploadingDoc ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />} {isUploadingDoc ? "Uploading..." : (watchResumeUrl ? "Change Document" : "Upload Document")}
                                         </Button>
@@ -315,13 +354,11 @@ export function AddTeacherModal() {
 
                 <div className="p-6 border-t bg-background/90 backdrop-blur shrink-0 flex justify-between">
                     <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="add-teacher-form" className="font-bold px-8" disabled={mutation.isPending || isUploadingImg || isUploadingDoc}>
+                    <Button type="submit" form="add-teacher-form" className="font-bold px-8" disabled={mutation.isPending || isUploadingDoc}>
                         {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Complete Onboarding
                     </Button>
                 </div>
             </SheetContent>
-
-            <ImageCropperModal open={cropModalOpen} imageSrc={imageToCrop} onClose={() => setCropModalOpen(false)} onCropComplete={handleCropComplete} />
         </Sheet>
     );
 }

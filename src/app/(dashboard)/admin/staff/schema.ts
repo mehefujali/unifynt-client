@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const staffSchema = z.object({
     staffData: z.object({
-        employeeId: z.string().min(1, "Employee ID is required"),
         firstName: z.string().min(1, "First name is required"),
         lastName: z.string().min(1, "Last name is required"),
         email: z.string().email("Invalid email").optional().or(z.literal("")),
@@ -13,15 +12,16 @@ export const staffSchema = z.object({
         designation: z.string().min(1, "Designation is required"),
         department: z.string().min(1, "Department is required"),
         basicSalary: z.coerce.number().min(0, "Salary cannot be negative"),
-        bankName: z.string().optional(),
-        accountNumber: z.string().optional(),
-        ifscCode: z.string().optional(),
-        address: z.string().optional(),
+        bankName: z.string().optional().or(z.literal("")),
+        accountNumber: z.string().optional().or(z.literal("")),
+        ifscCode: z.string().optional().or(z.literal("")),
+        address: z.string().optional().or(z.literal("")),
+        profileImage: z.any().optional(),
     }),
     userData: z.object({
         createAccount: z.boolean().default(false),
-        password: z.string().min(6).optional().or(z.literal("")),
-        role: z.enum(["ACCOUNTANT", "SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER", "STAFF"]).optional(),
+        password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
+        role: z.enum(["ACCOUNTANT", "SUPER_ADMIN", "SCHOOL_ADMIN", "TEACHER"]).optional(),
         permissions: z.array(z.string()).optional(),
     }).optional()
 }).refine(

@@ -1,14 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, UploadCloud, FileText, User, Briefcase, FileBadge, Save, Banknote, Check, ChevronsUpDown, X } from "lucide-react";
+import { Loader2, UploadCloud, FileText, User, Briefcase, Save, Banknote, Check, ChevronsUpDown, X, FileBadge } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -17,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +23,7 @@ import { TeacherService } from "@/services/teacher.service";
 import { SubjectService } from "@/services/subject.service";
 import api from "@/lib/axios";
 import { editTeacherSchema, EditTeacherFormValues } from "./schema";
-import { ImageCropperModal } from "@/components/ui/image-cropper";
+import ImageCropper from "@/components/ui/image-cropper";
 
 interface EditTeacherModalProps { teacherId: string | null; open: boolean; onOpenChange: (open: boolean) => void; }
 
@@ -68,12 +65,8 @@ export function EditTeacherModal({ teacherId, open, onOpenChange }: EditTeacherM
 function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId: string, teacher: any, onOpenChange: (open: boolean) => void, open: boolean }) {
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState("personal");
-    const [isUploadingImg, setIsUploadingImg] = useState(false);
     const [isUploadingDoc, setIsUploadingDoc] = useState(false);
-    const [cropModalOpen, setCropModalOpen] = useState(false);
-    const [imageToCrop, setImageToCrop] = useState<string>("");
 
-    const imgInputRef = useRef<HTMLInputElement>(null);
     const docInputRef = useRef<HTMLInputElement>(null);
 
     const { data: subjectsData } = useQuery({
@@ -101,14 +94,13 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
         }
     });
 
-    const { register, handleSubmit, control, setValue, watch, formState: { errors } } = form;
+    const { register, handleSubmit, control, setValue, watch, trigger, formState: { errors } } = form;
 
-    const watchProfileImage = watch("profileImage");
     const watchResumeUrl = watch("resumeUrl");
 
     const mutation = useMutation({
-        mutationFn: async (data: EditTeacherFormValues) => {
-            return await TeacherService.updateTeacher(teacherId, data);
+        mutationFn: async (data: FormData) => {
+            return await TeacherService.updateTeacher(teacherId, data as any);
         },
         onSuccess: () => {
             toast.success("Teacher profile updated successfully");
@@ -119,53 +111,70 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
         onError: (error: any) => toast.error(error.response?.data?.message || "Failed to update teacher"),
     });
 
-    const uploadFile = async (file: File | Blob, type: 'image' | 'document') => {
+    const uploadDoc = async (file: File | Blob) => {
         try {
-            type === 'image' ? setIsUploadingImg(true) : setIsUploadingDoc(true);
+            setIsUploadingDoc(true);
             const formData = new FormData();
             formData.append("file", file as File);
             const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
             if (res.data.success) {
-                if (type === 'image') setValue("profileImage", res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                if (type === 'document') setValue("resumeUrl", res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                toast.success(`${type === 'image' ? 'Profile picture' : 'Resume'} updated successfully`);
+                setValue("resumeUrl", res.data.data.url, { shouldValidate: true, shouldDirty: true });
+                toast.success('Resume updated successfully');
             }
-        } catch (error: any) { toast.error("File upload failed"); } finally { type === 'image' ? setIsUploadingImg(false) : setIsUploadingDoc(false); }
+        } catch (error: any) { toast.error("Document upload failed"); } finally { setIsUploadingDoc(false); }
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'document') => {
+    const handleDocSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (type === 'image') {
-            const reader = new FileReader();
-            reader.onload = () => { setImageToCrop(reader.result as string); setCropModalOpen(true); };
-            reader.readAsDataURL(file);
-        } else { uploadFile(file, type); }
+        uploadDoc(file);
         e.target.value = "";
     };
 
-    const handleCropComplete = async (croppedBlob: Blob) => {
-        setCropModalOpen(false);
-        const file = new File([croppedBlob], "teacher-profile.png", { type: "image/png" });
-        await uploadFile(file, 'image');
+    const handleTabChange = async (newTab: string) => {
+        if (activeTab === "personal") {
+            const isPersonalValid = await trigger(["firstName", "lastName", "email", "phone", "gender", "dateOfBirth"] as any);
+            if (!isPersonalValid) {
+                toast.error("Please complete the mandatory fields in Personal tab first.");
+                return;
+            }
+        }
+        
+        if (activeTab === "professional" && newTab !== "personal") {
+            const isProfessionalValid = await trigger(["designation", "qualification", "joiningDate"] as any);
+            if (!isProfessionalValid) {
+                toast.error("Please complete the mandatory fields in Work tab first.");
+                return;
+            }
+        }
+
+        setActiveTab(newTab);
     };
 
-    const onSubmit = (data: EditTeacherFormValues) => mutation.mutate(data);
+    const onSubmit = (data: EditTeacherFormValues) => {
+        const formData = new FormData();
+        const { profileImage, ...restTeacherData } = data;
 
-    const onError = (formErrors: any) => {
-        const errorKeys = Object.keys(formErrors);
-        if (errorKeys.some(key => ['firstName', 'lastName', 'email', 'phone', 'gender', 'dateOfBirth'].includes(key))) setActiveTab("personal");
-        else if (errorKeys.some(key => ['designation', 'qualification', 'joiningDate', 'subjectIds'].includes(key))) setActiveTab("professional");
-        else if (errorKeys.some(key => ['basicSalary'].includes(key))) setActiveTab("payroll");
-        else setActiveTab("documents");
-        toast.error("Please fill in all mandatory fields correctly.");
+        const payload: any = { ...restTeacherData };
+
+        if (typeof profileImage === "string" && profileImage.trim() !== "") {
+            payload.profileImage = profileImage;
+        }
+
+        formData.append("data", JSON.stringify(payload));
+
+        if (profileImage && typeof profileImage === "object") {
+            formData.append("profileImage", profileImage as File);
+        }
+
+        mutation.mutate(formData as any);
     };
 
     return (
         <>
             <div className="flex-1 overflow-y-auto p-8">
-                <form id="edit-teacher-form" onSubmit={handleSubmit(onSubmit, onError)}>
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <form id="edit-teacher-form" onSubmit={handleSubmit(onSubmit)}>
+                    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                         <TabsList className="grid w-full grid-cols-4 mb-8 bg-muted/40 p-1 rounded-xl">
                             <TabsTrigger value="personal" className="rounded-lg font-bold"><User className="w-4 h-4 mr-2" /> Personal</TabsTrigger>
                             <TabsTrigger value="professional" className="rounded-lg font-bold"><Briefcase className="w-4 h-4 mr-2" /> Work</TabsTrigger>
@@ -174,13 +183,43 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                         </TabsList>
 
                         <TabsContent value="personal" className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2"><Label>First Name *</Label><Input className={errors.firstName ? 'border-red-500' : ''} {...register("firstName")} /></div>
-                                <div className="space-y-2"><Label>Last Name *</Label><Input className={errors.lastName ? 'border-red-500' : ''} {...register("lastName")} /></div>
+                            <div className="flex justify-center mb-6">
+                                <Controller
+                                    control={control}
+                                    name="profileImage"
+                                    render={({ field }) => (
+                                        <ImageCropper
+                                            aspectRatio={1}
+                                            shape="round"
+                                            label="Change Photo"
+                                            previewUrl={typeof field.value === "string" ? field.value : null}
+                                            onCrop={(file) => field.onChange(file)}
+                                        />
+                                    )}
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2"><Label>Email Address *</Label><Input type="email" disabled className="bg-muted/30 cursor-not-allowed" {...register("email")} /></div>
-                                <div className="space-y-2"><Label>Phone Number *</Label><Input className={errors.phone ? 'border-red-500' : ''} {...register("phone")} /></div>
+                                <div className="space-y-2">
+                                    <Label>First Name *</Label>
+                                    <Input className={errors.firstName ? 'border-red-500' : ''} {...register("firstName")} />
+                                    {errors.firstName && <span className="text-xs text-red-500">{errors.firstName.message}</span>}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Last Name *</Label>
+                                    <Input className={errors.lastName ? 'border-red-500' : ''} {...register("lastName")} />
+                                    {errors.lastName && <span className="text-xs text-red-500">{errors.lastName.message}</span>}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label>Email Address *</Label>
+                                    <Input type="email" disabled className="bg-muted/30 cursor-not-allowed" {...register("email")} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Phone Number *</Label>
+                                    <Input className={errors.phone ? 'border-red-500' : ''} {...register("phone")} />
+                                    {errors.phone && <span className="text-xs text-red-500">{errors.phone.message}</span>}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
@@ -191,8 +230,13 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                                             <SelectContent><SelectItem value="MALE">Male</SelectItem><SelectItem value="FEMALE">Female</SelectItem><SelectItem value="OTHER">Other</SelectItem></SelectContent>
                                         </Select>
                                     )} />
+                                    {errors.gender && <span className="text-xs text-red-500">{errors.gender.message}</span>}
                                 </div>
-                                <div className="space-y-2"><Label>Date of Birth *</Label><Input type="date" className={errors.dateOfBirth ? 'border-red-500' : ''} {...register("dateOfBirth")} /></div>
+                                <div className="space-y-2">
+                                    <Label>Date of Birth *</Label>
+                                    <Input type="date" className={errors.dateOfBirth ? 'border-red-500' : ''} {...register("dateOfBirth")} />
+                                    {errors.dateOfBirth && <span className="text-xs text-red-500">{errors.dateOfBirth.message}</span>}
+                                </div>
                             </div>
                             <div className="space-y-2"><Label>Residential Address</Label><Input {...register("address")} /></div>
                         </TabsContent>
@@ -258,10 +302,18 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2"><Label>Department</Label><Input {...register("department")} /></div>
-                                <div className="space-y-2"><Label>Designation *</Label><Input className={errors.designation ? 'border-red-500' : ''} {...register("designation")} /></div>
+                                <div className="space-y-2">
+                                    <Label>Designation *</Label>
+                                    <Input className={errors.designation ? 'border-red-500' : ''} {...register("designation")} />
+                                    {errors.designation && <span className="text-xs text-red-500">{errors.designation.message}</span>}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2"><Label>Highest Qualification *</Label><Input className={errors.qualification ? 'border-red-500' : ''} {...register("qualification")} /></div>
+                                <div className="space-y-2">
+                                    <Label>Highest Qualification *</Label>
+                                    <Input className={errors.qualification ? 'border-red-500' : ''} {...register("qualification")} />
+                                    {errors.qualification && <span className="text-xs text-red-500">{errors.qualification.message}</span>}
+                                </div>
                                 <div className="space-y-2">
                                     <Label>Employment Type</Label>
                                     <Controller control={control} name="employmentType" render={({ field }) => (
@@ -274,7 +326,11 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2"><Label>Experience (Years)</Label><Input type="number" {...register("experienceYears")} /></div>
-                                <div className="space-y-2"><Label>Joining Date *</Label><Input type="date" className={errors.joiningDate ? 'border-red-500' : ''} {...register("joiningDate")} /></div>
+                                <div className="space-y-2">
+                                    <Label>Joining Date *</Label>
+                                    <Input type="date" className={errors.joiningDate ? 'border-red-500' : ''} {...register("joiningDate")} />
+                                    {errors.joiningDate && <span className="text-xs text-red-500">{errors.joiningDate.message}</span>}
+                                </div>
                             </div>
                             <div className="space-y-2"><Label>LinkedIn Profile</Label><Input {...register("linkedinUrl")} /></div>
                         </TabsContent>
@@ -293,13 +349,24 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
 
                         <TabsContent value="documents" className="space-y-8">
                             <div className="flex items-center gap-6 p-5 border rounded-xl bg-muted/5">
-                                <Avatar className="h-20 w-20 border-2 shadow-sm"><AvatarImage src={watchProfileImage} className="object-cover" /><AvatarFallback><User className="h-8 w-8" /></AvatarFallback></Avatar>
+                                <Controller
+                                    control={control}
+                                    name="profileImage"
+                                    render={({ field }) => (
+                                        <ImageCropper
+                                            aspectRatio={1}
+                                            shape="round"
+                                            label="Change Photo"
+                                            previewUrl={typeof field.value === "string" ? field.value : null}
+                                            onCrop={(file) => field.onChange(file)}
+                                        />
+                                    )}
+                                />
                                 <div className="space-y-2 flex-1">
-                                    <h4 className="font-bold text-sm uppercase">Profile Picture</h4>
-                                    <input type="file" ref={imgInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'image')} />
-                                    <Button type="button" variant="outline" size="sm" onClick={() => imgInputRef.current?.click()} disabled={isUploadingImg}>
-                                        {isUploadingImg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />} {isUploadingImg ? "Uploading..." : "Change Image"}
-                                    </Button>
+                                    <h4 className="font-bold text-sm uppercase text-primary">Profile Picture</h4>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        Upload a clear, professional photo. 1:1 aspect ratio recommended.
+                                    </p>
                                 </div>
                             </div>
 
@@ -307,7 +374,7 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
                                 <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary"><FileText className="h-8 w-8" /></div>
                                 <div className="space-y-2 flex-1">
                                     <h4 className="font-bold text-sm uppercase">Curriculum Vitae (CV)</h4>
-                                    <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.doc,.docx" onChange={(e) => handleFileSelect(e, 'document')} />
+                                    <input type="file" ref={docInputRef} className="hidden" accept=".pdf,.doc,.docx" onChange={handleDocSelect} />
                                     <Button type="button" variant="outline" size="sm" onClick={() => docInputRef.current?.click()} disabled={isUploadingDoc}>
                                         {isUploadingDoc ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />} {isUploadingDoc ? "Uploading..." : (watchResumeUrl ? "Change Document" : "Upload Document")}
                                     </Button>
@@ -328,12 +395,10 @@ function EditTeacherForm({ teacherId, teacher, onOpenChange, open }: { teacherId
 
             <div className="p-6 border-t bg-background/90 backdrop-blur shrink-0 flex justify-between">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" form="edit-teacher-form" className="font-bold px-8" disabled={mutation.isPending || isUploadingImg || isUploadingDoc}>
+                <Button type="submit" form="edit-teacher-form" className="font-bold px-8" disabled={mutation.isPending || isUploadingDoc}>
                     {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Changes
                 </Button>
             </div>
-
-            <ImageCropperModal open={cropModalOpen} imageSrc={imageToCrop} onClose={() => setCropModalOpen(false)} onCropComplete={handleCropComplete} />
         </>
     );
 }

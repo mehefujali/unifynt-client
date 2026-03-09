@@ -1,54 +1,63 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ImageOff } from "lucide-react";
+"use client";
 
-export default function TemplateSelection({ templates, activeId, onChange }: any) {
-  if (!templates || templates.length === 0) {
-    return (
-      <div className="py-24 text-center border border-dashed rounded-xl bg-muted/10">
-        <p className="text-muted-foreground font-medium">No templates available at the moment.</p>
-      </div>
-    );
-  }
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Loader2, LayoutTemplate, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { SiteTemplateService } from "@/services/site-template.service";
+import { SiteConfigService } from "@/services/site-config.service";
+import { Badge } from "@/components/ui/badge";
+
+export function TemplateSelection({ currentConfig }: { currentConfig: any }) {
+  const queryClient = useQueryClient();
+  const { data: templates, isLoading } = useQuery({
+    queryKey: ["active-site-templates"],
+    queryFn: () => SiteTemplateService.getAllTemplates({ isActive: "true" }),
+  });
+
+  const mutation = useMutation({
+    mutationFn: (templateCode: string) => SiteConfigService.updateMyConfig({ activeTemplateId: templateCode }),
+    onSuccess: () => {
+      toast.success("Architectural blueprint switched successfully");
+      queryClient.invalidateQueries({ queryKey: ["site-config"] });
+    },
+  });
+
+  if (isLoading) return <div className="p-10 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary/50" /></div>;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {templates.map((template: any) => {
-        const isActive = template.templateCode === activeId;
-        return (
-          <Card 
-            key={template.id} 
-            className={`relative cursor-pointer overflow-hidden transition-all duration-200 ${isActive ? 'ring-2 ring-primary border-primary shadow-md' : 'hover:border-primary/40 hover:shadow-sm'}`}
-            onClick={() => onChange(template.templateCode)}
-          >
-            {isActive && (
-              <div className="absolute top-3 right-3 z-10">
-                <CheckCircle2 className="h-7 w-7 text-primary bg-background rounded-full shadow-sm" />
+    <div className="p-6 space-y-8">
+      <div>
+        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary">Site Blueprints</h3>
+        <p className="text-[11px] font-bold text-muted-foreground mt-1">Choose a layout structure for your institution.</p>
+      </div>
+
+      <div className="grid gap-6">
+        {templates?.map((template: any) => {
+          const isActive = template.templateCode === currentConfig?.activeTemplate?.templateCode;
+          return (
+            <div
+              key={template.id}
+              className={`group relative rounded-3xl border-2 transition-all duration-500 overflow-hidden cursor-pointer ${isActive ? "border-primary shadow-2xl scale-[1.02]" : "border-transparent hover:border-primary/30"}`}
+              onClick={() => !isActive && mutation.mutate(template.templateCode)}
+            >
+              <div className="aspect-[16/10] relative bg-muted">
+                {template.thumbnailUrl && <Image src={template.thumbnailUrl} alt={template.name} fill className="object-cover" />}
+                {isActive && (
+                  <div className="absolute inset-0 bg-primary/10 backdrop-blur-[2px] flex items-center justify-center">
+                    <Badge className="px-4 py-2 rounded-full font-black uppercase tracking-widest shadow-2xl animate-in zoom-in-50"><CheckCircle2 className="h-4 w-4 mr-2" /> Current blueprint</Badge>
+                  </div>
+                )}
               </div>
-            )}
-            <div className="aspect-[16/10] w-full bg-muted/30 relative overflow-hidden border-b">
-              {template.thumbnailUrl ? (
-                <img src={template.thumbnailUrl} alt={template.name} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground gap-2">
-                  <ImageOff className="h-8 w-8 opacity-20" />
-                  <span className="text-sm font-medium opacity-50">No Preview</span>
-                </div>
-              )}
+              <div className="p-5 bg-card border-t">
+                <h4 className="font-black text-sm uppercase tracking-tight">{template.name}</h4>
+                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase opacity-60 leading-relaxed line-clamp-2">{template.description}</p>
+              </div>
             </div>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-lg text-foreground">{template.name}</h3>
-                {isActive && <Badge variant="default" className="shadow-none">Active</Badge>}
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                {template.description || "A professional template designed for modern educational institutions."}
-              </p>
-            </CardContent>
-          </Card>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

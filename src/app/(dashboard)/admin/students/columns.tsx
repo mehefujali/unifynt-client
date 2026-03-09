@@ -3,15 +3,13 @@
 
 import { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { 
-    MoreHorizontal, 
-    Eye, 
-    Edit, 
-    Trash2, 
-    UserCircle, 
-    GraduationCap, 
-    Phone, 
-    ShieldCheck 
+import {
+    MoreHorizontal,
+    Eye,
+    Edit,
+    UserCircle,
+    GraduationCap,
+    Phone,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,23 +22,16 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 
-import { DeleteStudentModal } from "./delete-student-modal";
 import ViewStudentModal from "./view-student-modal";
 import EditStudentModal from "./edit-student-modal";
 
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
-import { usePermission } from "@/hooks/use-permission";
 
 const StudentActions = ({ student }: { student: any }) => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-    const { hasPermission } = usePermission();
-    const canModify = hasPermission([PERMISSIONS.STUDENT_EDIT, PERMISSIONS.STUDENT_DELETE]);
 
     return (
         <>
@@ -58,8 +49,8 @@ const StudentActions = ({ student }: { student: any }) => {
                     <DropdownMenuSeparator className="opacity-50" />
 
                     <PermissionGate required={PERMISSIONS.STUDENT_VIEW}>
-                        <DropdownMenuItem 
-                            onClick={() => setIsViewModalOpen(true)} 
+                        <DropdownMenuItem
+                            onClick={() => setIsViewModalOpen(true)}
                             className="cursor-pointer font-bold text-[13px] py-2.5"
                         >
                             <Eye className="mr-2.5 h-4 w-4 text-slate-400" /> View Profile
@@ -67,22 +58,11 @@ const StudentActions = ({ student }: { student: any }) => {
                     </PermissionGate>
 
                     <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                        <DropdownMenuItem 
-                            onClick={() => setIsEditModalOpen(true)} 
+                        <DropdownMenuItem
+                            onClick={() => setIsEditModalOpen(true)}
                             className="cursor-pointer font-bold text-[13px] py-2.5 text-blue-600 focus:text-blue-700 focus:bg-blue-50"
                         >
                             <Edit className="mr-2.5 h-4 w-4" /> Edit Details
-                        </DropdownMenuItem>
-                    </PermissionGate>
-
-                    {canModify && <DropdownMenuSeparator className="opacity-50" />}
-
-                    <PermissionGate required={PERMISSIONS.STUDENT_DELETE}>
-                        <DropdownMenuItem 
-                            onClick={() => setIsDeleteModalOpen(true)} 
-                            className="cursor-pointer font-bold text-[13px] py-2.5 text-rose-600 focus:text-rose-700 focus:bg-rose-50"
-                        >
-                            <Trash2 className="mr-2.5 h-4 w-4" /> Remove Student
                         </DropdownMenuItem>
                     </PermissionGate>
                 </DropdownMenuContent>
@@ -98,12 +78,6 @@ const StudentActions = ({ student }: { student: any }) => {
                 studentId={student.id}
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
-            />
-
-            <DeleteStudentModal
-                student={student}
-                open={isDeleteModalOpen}
-                onOpenChange={setIsDeleteModalOpen}
             />
         </>
     );
