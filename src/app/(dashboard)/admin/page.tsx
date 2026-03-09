@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Chart } from "react-google-charts";
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
+import { AnnouncementModal } from "@/components/dashboard/announcement-modal";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -205,6 +206,7 @@ export default function AdminDashboard() {
             }
         >
             <div className="p-4 md:p-8 space-y-8 bg-zinc-50/30 dark:bg-zinc-950/20 min-h-screen">
+                <AnnouncementModal />
 
                 {/* header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
