@@ -8,7 +8,7 @@ import api from "@/lib/axios";
 import {
     Users, TrendingUp, GraduationCap, Wallet, Bell,
     Clock, ShieldAlert, Lock, MoreHorizontal, UserCheck,
-    BookOpen, CalendarDays
+    BookOpen, CalendarDays, LayoutDashboard, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Chart } from "react-google-charts";
@@ -20,6 +20,7 @@ import { format } from "date-fns";
 export default function AdminDashboard() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isDark, setIsDark] = useState(false);
+    const [userName, setUserName] = useState("");
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -31,15 +32,27 @@ export default function AdminDashboard() {
         const observer = new MutationObserver(checkDark);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
+        try {
+            const token = localStorage.getItem("accessToken");
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload?.email) {
+                    const namePart = payload.email.split('@')[0];
+                    setUserName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+                }
+            }
+        } catch (e) {
+            setUserName("");
+        }
+
         return () => {
             clearInterval(timer);
             observer.disconnect();
         };
     }, []);
 
-    // Theme specific colors for Google Charts
-    const textColor = isDark ? "#a1a1aa" : "#52525b"; // zinc-400 : zinc-600
-    const gridColor = isDark ? "#27272a" : "#e4e4e7"; // zinc-800 : zinc-200
+    const textColor = isDark ? "#a1a1aa" : "#52525b";
+    const gridColor = isDark ? "#27272a" : "#e4e4e7";
     const chartBg = "transparent";
 
     const { data: response, isLoading } = useQuery({
@@ -49,6 +62,9 @@ export default function AdminDashboard() {
             return res.data?.data;
         }
     });
+
+    const hour = currentTime.getHours();
+    const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
     if (isLoading) {
         return (
@@ -71,7 +87,6 @@ export default function AdminDashboard() {
         ? Math.max(...classDistribution.map((c: any) => c.students || 0))
         : 1;
 
-    // 🟢 Google Chart: Attendance (Donut Chart)
     const attendanceChartData = [
         ["Status", "Count"],
         ...(todaysAttendance?.length > 0
@@ -82,10 +97,10 @@ export default function AdminDashboard() {
     const getAttendanceColors = () => {
         if (!todaysAttendance || todaysAttendance.length === 0) return [gridColor];
         return todaysAttendance.map((item: any) => {
-            if (item.status === 'PRESENT') return "#10b981"; // emerald-500
-            if (item.status === 'ABSENT') return "#f43f5e"; // rose-500
-            if (item.status === 'LATE') return "#f59e0b"; // amber-500
-            return "#6366f1"; // fallback
+            if (item.status === 'PRESENT') return "#10b981";
+            if (item.status === 'ABSENT') return "#f43f5e";
+            if (item.status === 'LATE') return "#f59e0b";
+            return "#6366f1";
         });
     }
 
@@ -101,7 +116,6 @@ export default function AdminDashboard() {
         tooltip: { textStyle: { fontName: 'Inter, sans-serif' } },
     };
 
-    // 🟢 Google Chart: Financial Overview (Donut Chart)
     const revenueChartData = [
         ["Type", "Amount"],
         ["Collected Fees", overview?.totalCollected || 0],
@@ -120,10 +134,6 @@ export default function AdminDashboard() {
         tooltip: { textStyle: { fontName: 'Inter, sans-serif' } },
     };
 
-    const hour = currentTime.getHours();
-    const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
-
-    // --- Clean Reusable Stat Card Component ---
     const StatCard = ({ title, value, icon: Icon, color, bg, isProtected = false, permission = "" }: any) => {
         const content = (
             <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 p-6 rounded-xl shadow-sm flex flex-col justify-between group transition-all hover:shadow-md h-full">
@@ -158,20 +168,38 @@ export default function AdminDashboard() {
         <PermissionGate
             required={PERMISSIONS.DASHBOARD_VIEW}
             fallback={
-                <div className="flex flex-col items-center justify-center min-h-[80vh] text-center">
-                    <div className="h-20 w-20 bg-rose-50 dark:bg-rose-500/10 text-rose-600 rounded-full flex items-center justify-center mb-4">
-                        <ShieldAlert className="h-10 w-10" />
+                <div className="flex flex-col items-center justify-center min-h-[85vh] text-center px-4 animate-in fade-in zoom-in duration-700">
+                    <div className="relative mb-8">
+                        <div className="absolute -inset-4 bg-emerald-500/20 rounded-full blur-xl animate-pulse"></div>
+                        <div className="relative h-24 w-24 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-500/30 rotate-3">
+                            <Sparkles className="h-10 w-10 text-white" />
+                        </div>
                     </div>
-                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">Access Restricted</h2>
-                    <p className="text-muted-foreground mt-2 max-w-md mx-auto text-sm">
-                        You don&apos;t have permission to view the administrative analytics dashboard.
+
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-4">
+                        {greeting}{userName ? `, ${userName}` : "!"}
+                    </h1>
+
+                    <p className="text-lg text-zinc-500 dark:text-zinc-400 mb-10 max-w-lg mx-auto font-medium leading-relaxed">
+                        Welcome to your unified workspace. Navigate through the sidebar menu to access your daily tools, classes, and tasks.
                     </p>
+
+                    <div className="flex items-center gap-4 px-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+                        <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                            <CalendarDays className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
+                        </div>
+                        <div className="text-left">
+                            <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-0.5">Today&apos;s Date</p>
+                            <p className="font-bold text-zinc-700 dark:text-zinc-200">
+                                {format(currentTime, 'EEEE, MMMM do, yyyy')}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             }
         >
             <div className="p-4 md:p-8 space-y-6 bg-zinc-50/50 dark:bg-[#09090b] min-h-screen">
 
-                {/* --- Clean Header Section --- */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
@@ -196,7 +224,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* --- Solid Stat Cards --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                     <StatCard
                         title="Total Students"
@@ -230,10 +257,8 @@ export default function AdminDashboard() {
                     />
                 </div>
 
-                {/* --- Middle Section (Academics & Attendance) --- */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-                    {/* Class Enrollment Grid */}
                     <div className="xl:col-span-2 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm flex flex-col min-h-[380px]">
                         <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between shrink-0">
                             <div>
@@ -282,7 +307,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    {/* Attendance Google Donut Chart */}
                     <div className="xl:col-span-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm flex flex-col min-h-[380px]">
                         <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between shrink-0">
                             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
@@ -317,10 +341,8 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* --- Bottom Section (Finance & Notices) --- */}
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-                    {/* Finance Google Chart (Protected) */}
                     <PermissionGate required={PERMISSIONS.FEE_VIEW} fallback={
                         <div className="xl:col-span-2 bg-zinc-50 dark:bg-zinc-900/50 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl flex flex-col items-center justify-center text-center p-12 opacity-70">
                             <Lock className="h-6 w-6 text-zinc-400 mb-2" />
@@ -352,7 +374,6 @@ export default function AdminDashboard() {
                         </div>
                     </PermissionGate>
 
-                    {/* Clean Bulletin Board */}
                     <div className="xl:col-span-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm flex flex-col h-[380px]">
                         <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/50 flex items-center justify-between shrink-0">
                             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">

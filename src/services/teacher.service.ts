@@ -16,13 +16,21 @@ export const TeacherService = {
 
   // Create a new teacher (For Add Modal)
   createTeacher: async (data: any) => {
-    const response = await api.post("/teachers", data);
+    const response = await api.post("/teachers", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data?.data;
   },
 
   // Update an existing teacher (For Edit Modal)
   updateTeacher: async (id: string, data: any) => {
-    const response = await api.patch(`/teachers/${id}`, data);
+    const response = await api.patch(`/teachers/${id}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data?.data;
   },
 

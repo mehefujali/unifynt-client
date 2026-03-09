@@ -1,14 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, ExternalLink, School, Globe, ShieldAlert } from "lucide-react";
+import { Eye, ExternalLink, School } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-// --- Import Permissions and Hooks ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
 
@@ -18,37 +14,27 @@ export type SchoolColumn = {
     subdomain: string;
     email: string;
     logo?: string;
-    plan?: {
-        name: string;
-    };
+    plan?: { name: string };
     isActive: boolean;
     studentLimit: number;
     createdAt: string;
-    _count?: {
-        students: number;
-        teachers: number;
-    };
+    _count?: { students: number; teachers: number };
 };
 
-/**
- * ActionCell handles navigation and permissions logic outside the column definition 
- * to adhere to React Hook rules and maintain clean architecture.
- */
 const ActionCell = ({ school }: { school: SchoolColumn }) => {
     const router = useRouter();
     const pathname = usePathname();
 
     return (
-        <div className="flex justify-end pr-2">
+        <div className="flex justify-end">
             <PermissionGate required={PERMISSIONS.SCHOOL_EDIT}>
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => router.push(`${pathname}?schoolId=${school.id}`)}
-                    className="h-9 px-4 rounded-xl hover:bg-primary/10 hover:text-primary font-black text-[11px] uppercase tracking-widest transition-all border border-transparent hover:border-primary/20"
+                    className="h-8 px-3 rounded-lg text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm"
                 >
-                    <Eye className="mr-2 h-4 w-4" />
-                    Manage
+                    <Eye className="mr-2 h-3.5 w-3.5 text-zinc-500" /> Manage
                 </Button>
             </PermissionGate>
         </div>
@@ -58,23 +44,23 @@ const ActionCell = ({ school }: { school: SchoolColumn }) => {
 export const columns: ColumnDef<SchoolColumn>[] = [
     {
         accessorKey: "name",
-        header: () => <span className="pl-2">Institution Identity</span>,
+        header: "Institution Identity",
         cell: ({ row }) => {
             const school = row.original;
             return (
-                <div className="flex items-center gap-4 py-1 pl-2">
-                    <Avatar className="h-11 w-11 border-2 border-background shadow-sm ring-1 ring-border/50 bg-white">
-                        <AvatarImage src={school.logo} alt={school.name} className="object-contain p-1.5" />
-                        <AvatarFallback className="bg-primary/5 text-primary font-black text-[10px]">
-                            <School className="h-5 w-5 opacity-40" />
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+                        <AvatarImage src={school.logo} alt={school.name} className="object-contain p-1" />
+                        <AvatarFallback className="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold text-xs rounded-lg">
+                            <School className="h-4 w-4" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col min-w-0">
-                        <span className="font-black text-[14px] text-slate-900 dark:text-white tracking-tight leading-none mb-1">
+                        <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]">
                             {school.name}
                         </span>
-                        <span className="text-[11px] font-bold text-slate-400 truncate max-w-[180px]">
-                            {school.email || "Contact email missing"}
+                        <span className="text-xs text-zinc-500 truncate max-w-[200px]">
+                            {school.email || "No email provided"}
                         </span>
                     </div>
                 </div>
@@ -91,11 +77,10 @@ export const columns: ColumnDef<SchoolColumn>[] = [
                     href={`https://${subdomain}.unifynt.com`}
                     target="_blank"
                     rel="noreferrer"
-                    className="group text-[11px] font-black text-slate-500 hover:text-primary transition-all flex items-center gap-2 bg-slate-100 dark:bg-white/5 w-fit px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10"
+                    className="group flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
-                    <Globe className="h-3.5 w-3.5 text-slate-400 group-hover:text-primary transition-colors" />
-                    <span className="tracking-widest uppercase">{subdomain}</span>
-                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all" />
+                    {subdomain}.unifynt.com
+                    <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </a>
             );
         },
@@ -108,17 +93,9 @@ export const columns: ColumnDef<SchoolColumn>[] = [
             const isPremium = !planName.toLowerCase().includes("free") && !planName.toLowerCase().includes("trial");
 
             return (
-                <Badge 
-                    variant="outline" 
-                    className={cn(
-                        "font-black text-[9px] uppercase tracking-[1px] px-2.5 py-0.5 border shadow-none",
-                        isPremium 
-                            ? "bg-indigo-500/10 text-indigo-600 border-indigo-500/20" 
-                            : "bg-slate-500/10 text-slate-600 border-slate-500/20"
-                    )}
-                >
+                <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider border ${isPremium ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20' : 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'}`}>
                     {planName}
-                </Badge>
+                </span>
             );
         },
     },
@@ -133,20 +110,14 @@ export const columns: ColumnDef<SchoolColumn>[] = [
             const isWarning = percentage >= 80;
 
             return (
-                <div className="flex flex-col gap-2 w-[130px]">
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-tight">
-                        <span className={isCritical ? "text-rose-600" : isWarning ? "text-amber-600" : "text-slate-500"}>
-                            {current.toLocaleString()} / {limit.toLocaleString()}
-                        </span>
-                        <span className="text-slate-400 tabular-nums">{percentage}%</span>
+                <div className="flex flex-col gap-1.5 w-32">
+                    <div className="flex items-center justify-between text-xs font-medium">
+                        <span className="text-zinc-900 dark:text-zinc-100">{current} <span className="text-zinc-400">/ {limit}</span></span>
+                        <span className="text-zinc-500">{percentage}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden p-[1px]">
+                    <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                         <div
-                            className={cn(
-                                "h-full rounded-full transition-all duration-1000",
-                                isCritical ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 
-                                isWarning ? 'bg-amber-500' : 'bg-emerald-500'
-                            )}
+                            className={`h-full rounded-full transition-all duration-500 ${isCritical ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}`}
                             style={{ width: `${percentage}%` }}
                         />
                     </div>
@@ -156,22 +127,13 @@ export const columns: ColumnDef<SchoolColumn>[] = [
     },
     {
         accessorKey: "isActive",
-        header: "System Status",
+        header: "Status",
         cell: ({ row }) => {
             const isActive = row.original.isActive;
             return (
                 <div className="flex items-center gap-2">
-                    <div className="relative flex h-2 w-2">
-                        {isActive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
-                        <span className={cn(
-                            "relative inline-flex rounded-full h-2 w-2",
-                            isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
-                        )}></span>
-                    </div>
-                    <span className={cn(
-                        "text-[10px] font-black tracking-[1.5px] uppercase",
-                        isActive ? 'text-emerald-600' : 'text-rose-600'
-                    )}>
+                    <div className={`h-2 w-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                         {isActive ? "Active" : "Suspended"}
                     </span>
                 </div>
@@ -180,12 +142,7 @@ export const columns: ColumnDef<SchoolColumn>[] = [
     },
     {
         id: "actions",
-        header: () => <div className="text-right pr-6 font-black text-[11px] uppercase text-slate-400 tracking-[2px]">Operations</div>,
+        header: () => <div className="text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Operations</div>,
         cell: ({ row }) => <ActionCell school={row.original} />,
     },
 ];
-
-// Utility for conditional class names
-function cn(...classes: (string | boolean | undefined)[]) {
-    return classes.filter(Boolean).join(" ");
-}

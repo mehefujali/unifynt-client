@@ -212,6 +212,14 @@ export default function Sidebar() {
         }, []);
     }, [user, userPermissions]);
 
+    // 🟢 Generate Dynamic Route for User Profile based on their Role
+    const profileRoute = useMemo(() => {
+        if (!user?.role) return "#";
+        if (user.role === "SUPER_ADMIN") return "/super-admin/user-profile";
+        if (user.role === "SCHOOL_ADMIN") return "/admin/user-profile";
+        return `/admin/user-profile`;
+    }, [user]);
+
     if (!isMounted || isLoading) {
         return (
             <div className="hidden h-screen w-65 shrink-0 flex-col items-center justify-center border-r border-white/40 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-2xl lg:flex z-50">
@@ -221,12 +229,12 @@ export default function Sidebar() {
     }
 
     // Determine user display name and profile image
-    const displayName = user?.details?.firstName 
-        ? `${user.details.firstName} ${user.details.lastName || ""}`.trim() 
+    const displayName = user?.details?.firstName
+        ? `${user.details.firstName} ${user.details.lastName || ""}`.trim()
         : user?.name || "Admin User";
-        
+
     const profileImage = user?.details?.profileImage || (user as any)?.profileImage || "";
-    
+
     // Function to get initials for avatar fallback
     const getInitials = (name: string) => {
         if (!name) return "UN";
@@ -315,11 +323,14 @@ export default function Sidebar() {
                         isCollapsed ? "justify-center flex-col gap-2" : "justify-between"
                     )}
                 >
-                    <div
+                    {/* 🟢 Clickable Profile Section */}
+                    <Link
+                        href={profileRoute}
                         className={cn(
-                            "flex items-center overflow-hidden",
+                            "flex items-center overflow-hidden flex-1 group cursor-pointer hover:opacity-80 transition-opacity",
                             isCollapsed ? "justify-center w-full" : "gap-3.5"
                         )}
+                        title="View Personal Profile"
                     >
                         <Avatar className="h-10 w-10 rounded-xl border border-black/5 dark:border-white/10 shadow-sm transition-transform duration-300 group-hover:scale-105">
                             <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
@@ -338,7 +349,7 @@ export default function Sidebar() {
                                 </span>
                             </div>
                         )}
-                    </div>
+                    </Link>
 
                     <Button
                         variant="ghost"

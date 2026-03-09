@@ -1,23 +1,19 @@
 import api from "@/lib/axios";
-import { ISchoolSiteConfig, IUpdateSiteConfigPayload } from "@/types/site-builder";
-
-const getMyConfig = async (): Promise<ISchoolSiteConfig> => {
-  const response = await api.get("/site-config/me");
-  return response.data.data;
-};
-
-const updateConfig = async (payload: IUpdateSiteConfigPayload): Promise<ISchoolSiteConfig> => {
-  const response = await api.post("/site-config/update", payload);
-  return response.data.data;
-};
-
-const getPublicConfig = async (schoolId: string): Promise<ISchoolSiteConfig> => {
-  const response = await api.get(`/site-config/public/${schoolId}`);
-  return response.data.data;
-};
 
 export const SiteConfigService = {
-  getMyConfig,
-  updateConfig,
-  getPublicConfig,
+  getMyConfig: async () => {
+    const response = await api.get("/site-config/my-config");
+    return response.data?.data;
+  },
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateMyConfig: async (data: any) => {
+    const response = await api.patch("/site-config/my-config", data);
+    return response.data?.data;
+  },
+  
+  getPublicSiteData: async (domain: string) => {
+    const response = await api.get(`/site-config/public/${domain}`);
+    return response.data?.data;
+  }
 };

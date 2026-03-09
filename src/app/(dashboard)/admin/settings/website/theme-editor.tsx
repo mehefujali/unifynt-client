@@ -1,123 +1,58 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Input } from "@/components/ui/input";
+"use client";
+
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
-export default function ThemeEditor({ theme, onChange }: any) {
-  const handleColorChange = (key: string, value: string) => {
-    onChange({
-      ...theme,
-      colors: { ...theme.colors, [key]: value }
-    });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function ThemeEditor({ theme, onChange }: any) {
+  if (!theme) return null;
+  const updateTheme = (key: string, val: string) => {
+    onChange({ ...theme, [key]: val });
   };
-
-  const toggleSection = (sectionId: string, checked: boolean) => {
-    let newHidden = [...(theme.hiddenSections || [])];
-    if (checked) {
-      newHidden = newHidden.filter((id: string) => id !== sectionId);
-    } else {
-      if (!newHidden.includes(sectionId)) newHidden.push(sectionId);
-    }
-    onChange({ ...theme, hiddenSections: newHidden });
-  };
-
-  const isVisible = (sectionId: string) => !(theme.hiddenSections || []).includes(sectionId);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Brand Colors</CardTitle>
-          <CardDescription>Customize the primary and secondary colors of your website.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 space-y-3">
-              <Label className="text-sm font-semibold">Primary Color</Label>
-              <div className="flex gap-3 items-center">
-                <div className="relative overflow-hidden rounded-md border h-10 w-14 shrink-0 shadow-sm">
-                  <input 
-                    type="color" 
-                    value={theme.colors?.primary || "#4f46e5"} 
-                    onChange={(e) => handleColorChange("primary", e.target.value)}
-                    className="absolute -inset-2 h-20 w-20 cursor-pointer"
-                  />
-                </div>
-                <Input 
-                  type="text" 
-                  value={theme.colors?.primary || "#4f46e5"} 
-                  onChange={(e) => handleColorChange("primary", e.target.value)}
-                  className="uppercase font-mono tracking-wider"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex-1 space-y-3">
-              <Label className="text-sm font-semibold">Secondary Color</Label>
-              <div className="flex gap-3 items-center">
-                <div className="relative overflow-hidden rounded-md border h-10 w-14 shrink-0 shadow-sm">
-                  <input 
-                    type="color" 
-                    value={theme.colors?.secondary || "#7c3aed"} 
-                    onChange={(e) => handleColorChange("secondary", e.target.value)}
-                    className="absolute -inset-2 h-20 w-20 cursor-pointer"
-                  />
-                </div>
-                <Input 
-                  type="text" 
-                  value={theme.colors?.secondary || "#7c3aed"} 
-                  onChange={(e) => handleColorChange("secondary", e.target.value)}
-                  className="uppercase font-mono tracking-wider"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="p-8 space-y-10 pb-32">
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary">Brand Identity</h3>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Configure institutional palette</p>
+        </div>
 
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Section Visibility</CardTitle>
-          <CardDescription>Toggle which sections should be visible on your public website.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">Hero Section</Label>
-              <p className="text-sm text-muted-foreground">The main banner at the top of the site.</p>
+        <div className="grid gap-4">
+          {[
+            { label: "Primary Color", key: "primary" },
+            { label: "Secondary Color", key: "secondary" },
+            { label: "Site Background", key: "background" },
+            { label: "Typography Base", key: "textPrimary" }
+          ].map((c) => (
+            <div key={c.key} className="flex items-center justify-between p-4 rounded-2xl border bg-card shadow-sm">
+              <div className="space-y-1">
+                <Label className="font-black text-[10px] uppercase tracking-widest opacity-60">{c.label}</Label>
+                <p className="font-mono text-[10px] font-bold uppercase">{theme[c.key]}</p>
+              </div>
+              <div className="relative h-12 w-12 group">
+                <div className="absolute inset-0 rounded-xl border-2 border-white shadow-xl ring-1 ring-black/5" style={{ backgroundColor: theme[c.key] }} />
+                <Input 
+                  type="color" 
+                  value={theme[c.key]} 
+                  onChange={(e) => updateTheme(c.key, e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+              </div>
             </div>
-            <Switch 
-              checked={isVisible("hero")} 
-              onCheckedChange={(c) => toggleSection("hero", c)} 
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">About Us Section</Label>
-              <p className="text-sm text-muted-foreground">Information about your institution.</p>
-            </div>
-            <Switch 
-              checked={isVisible("about")} 
-              onCheckedChange={(c) => toggleSection("about", c)} 
-            />
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">Facilities Section</Label>
-              <p className="text-sm text-muted-foreground">Grid showing campus facilities.</p>
-            </div>
-            <Switch 
-              checked={isVisible("facilities")} 
-              onCheckedChange={(c) => toggleSection("facilities", c)} 
-            />
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </div>
+
+      <Separator className="opacity-50" />
+
+      <div className="space-y-4">
+        <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Architectural Font</Label>
+        <div className="p-4 rounded-xl bg-zinc-50 font-black text-sm uppercase tracking-tighter border">
+          Inter Global Sans (Standard)
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,148 +2,121 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, MonitorSmartphone, Save, ExternalLink, LayoutTemplate, Palette } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Save, Loader2, LayoutTemplate, Palette, FileText, Globe } from "lucide-react";
-import TemplateSelection from "./template-selection";
-import ThemeEditor from "./theme-editor";
-import ContentEditor from "./content-editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteConfigService } from "@/services/site-config.service";
-import { SiteTemplateService } from "@/services/site-template.service";
-
-const defaultThemeSettings = {
-  colors: { primary: "#4f46e5", secondary: "#7c3aed" },
-  hiddenSections: [] as string[],
-};
-
-const defaultSiteContent = {
-  hero: {
-    badgeText: "Admissions Open",
-    titlePart1: "Empowering",
-    titleHighlight: "Minds",
-    titlePart2: ", Shaping Futures.",
-    description: "Welcome to our school. We provide world-class education.",
-    primaryButtonText: "Start Admission",
-    primaryButtonLink: "/admission",
-    secondaryButtonText: "Learn More",
-    secondaryButtonLink: "#facilities",
-    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop",
-  },
-  footer: {
-    poweredBy: "Unifynt ERP"
-  }
-};
+import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
+import { ThemeEditor } from "./theme-editor";
+import { ContentEditor } from "./content-editor";
+import { TemplateSelection } from "./template-selection";
 
 export default function WebsiteSettingsPage() {
-  const [formData, setFormData] = useState({
-    activeTemplateId: "template_modern_01",
-    themeSettings: defaultThemeSettings,
-    content: defaultSiteContent,
-  });
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("content");
+  
+  const [localTheme, setLocalTheme] = useState<any>(DEFAULT_SITE_DATA.theme);
+  const [localContent, setLocalContent] = useState<any>(DEFAULT_SITE_DATA.content);
 
-  const { data: configRes, isLoading: configLoading } = useQuery({
+  // 🟢 Data Fetching (Without state update inside)
+  const { data: config, isLoading } = useQuery({
     queryKey: ["site-config"],
     queryFn: () => SiteConfigService.getMyConfig(),
   });
 
-  const { data: templatesRes, isLoading: templatesLoading } = useQuery({
-    queryKey: ["site-templates"],
-    queryFn: () => SiteTemplateService.getAllTemplates(),
+  // 🟢 Deep Merge Logic in useEffect (Fixes reload issue)
+  useEffect(() => {
+    if (config) {
+      const mergedTheme = { ...DEFAULT_SITE_DATA.theme, ...(config.themeSettings || {}) };
+      
+      const mergedContent = { ...DEFAULT_SITE_DATA.content } as any;
+      if (config.content) {
+        Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {
+          mergedContent[key] = {
+            ...(DEFAULT_SITE_DATA.content as any)[key],
+            ...(config.content[key] || {})
+          };
+        });
+      }
+
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalTheme(mergedTheme);
+      setLocalContent(mergedContent);
+    }
+  }, [config]);
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => SiteConfigService.updateMyConfig(data),
+    onSuccess: () => {
+      toast.success("Site architecture deployed successfully");
+      queryClient.invalidateQueries({ queryKey: ["site-config"] });
+    },
   });
 
   useEffect(() => {
-    if (configRes) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFormData({
-        activeTemplateId: (configRes as any).activeTemplateId || "template_modern_01",
-        themeSettings: (configRes as any).themeSettings || defaultThemeSettings,
-        content: (configRes as any).content || defaultSiteContent,
-      });
+    const iframe = document.getElementById('preview-frame') as HTMLIFrameElement;
+    if (iframe?.contentWindow) {
+      iframe.contentWindow.postMessage({
+        type: 'UPDATE_PREVIEW',
+        payload: { themeSettings: localTheme, content: localContent }
+      }, '*');
     }
-  }, [configRes]);
+  }, [localTheme, localContent]);
 
-  const mutation = useMutation({
-    mutationFn: async (data: any) => {
-      return await SiteConfigService.updateConfig(data);
-    },
-    onSuccess: () => {
-      toast.success("Website settings updated successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to update settings");
-    },
-  });
-
-  if (configLoading || templatesLoading) {
-    return (
-      <div className="flex h-[400px] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const templates = templatesRes || [];
+  if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6 p-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Website Builder</h1>
-          <p className="text-sm text-muted-foreground">Manage your public website appearance and content.</p>
+    <div className="flex flex-col h-[calc(100vh-80px)] -m-6 overflow-hidden bg-background">
+      <div className="h-16 border-b px-6 flex items-center justify-between bg-card z-20 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-primary/10 rounded-xl"><MonitorSmartphone className="h-5 w-5 text-primary" /></div>
+          <div>
+            <h1 className="text-xs font-black uppercase tracking-[0.2em]">Visual Engine</h1>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Session: {user?.school?.name}</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="gap-2 shadow-sm" onClick={() => window.open('/', '_blank')}>
-            <Globe className="h-4 w-4" />
-            Preview Site
+          <Button variant="ghost" size="sm" className="font-bold text-[10px] uppercase" asChild>
+            <a href={`/sites/${user?.school?.subdomain}`} target="_blank"><ExternalLink className="h-3.5 w-3.5 mr-2" /> Live Preview</a>
           </Button>
-          <Button 
-            onClick={() => mutation.mutate(formData)}
-            disabled={mutation.isPending}
-            className="gap-2 shadow-sm"
-          >
-            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Changes
+          <Button size="sm" className="font-black px-8 shadow-xl uppercase text-[10px] tracking-widest" onClick={() => mutation.mutate({ themeSettings: localTheme, content: localContent })} disabled={mutation.isPending}>
+            {mutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
+            Publish Changes
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="template" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8 h-12 shadow-sm">
-          <TabsTrigger value="template" className="gap-2 font-medium">
-            <LayoutTemplate className="h-4 w-4"/> Templates
-          </TabsTrigger>
-          <TabsTrigger value="theme" className="gap-2 font-medium">
-            <Palette className="h-4 w-4"/> Theme Settings
-          </TabsTrigger>
-          <TabsTrigger value="content" className="gap-2 font-medium">
-            <FileText className="h-4 w-4"/> Content Data
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="template" className="mt-0">
-          <TemplateSelection 
-            templates={templates} 
-            activeId={formData.activeTemplateId} 
-            onChange={(id: string) => setFormData({ ...formData, activeTemplateId: id })} 
-          />
-        </TabsContent>
-
-        <TabsContent value="theme" className="mt-0">
-          <ThemeEditor 
-            theme={formData.themeSettings} 
-            onChange={(theme: any) => setFormData({ ...formData, themeSettings: theme })} 
-          />
-        </TabsContent>
-
-        <TabsContent value="content" className="mt-0">
-          <ContentEditor 
-            content={formData.content} 
-            onChange={(content: any) => setFormData({ ...formData, content })} 
-          />
-        </TabsContent>
-      </Tabs>
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="w-[420px] flex-shrink-0 border-r bg-background flex flex-col h-full z-10">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+            <div className="px-4 py-3 border-b bg-muted/20">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl">
+                <TabsTrigger value="template" className="text-[9px] font-black uppercase tracking-widest"><LayoutTemplate className="h-3.5 w-3.5 mr-1.5" /> Template</TabsTrigger>
+                <TabsTrigger value="content" className="text-[9px] font-black uppercase tracking-widest"><MonitorSmartphone className="h-3.5 w-3.5 mr-1.5" /> Content</TabsTrigger>
+                <TabsTrigger value="theme" className="text-[9px] font-black uppercase tracking-widest"><Palette className="h-3.5 w-3.5 mr-1.5" /> Styling</TabsTrigger>
+              </TabsList>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-50/30">
+              <TabsContent value="template" className="m-0 p-0"><TemplateSelection currentConfig={config} /></TabsContent>
+              <TabsContent value="content" className="m-0 p-0"><ContentEditor content={localContent} onChange={setLocalContent} /></TabsContent>
+              <TabsContent value="theme" className="m-0 p-0"><ThemeEditor theme={localTheme} onChange={setLocalTheme} /></TabsContent>
+            </div>
+          </Tabs>
+        </aside>
+        <main className="flex-1 bg-zinc-100 p-8 flex items-center justify-center relative">
+          <div className="w-full h-full max-w-[1400px] border-4 border-white rounded-[2.5rem] bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ring-1 ring-black/5">
+            <div className="h-10 bg-zinc-50 border-b flex items-center px-6 gap-4 shrink-0">
+               <div className="flex gap-1.5"><div className="h-2 w-2 rounded-full bg-zinc-300" /><div className="h-2 w-2 rounded-full bg-zinc-300" /><div className="h-2 w-2 rounded-full bg-zinc-300" /></div>
+               <div className="flex-1 max-w-md bg-zinc-200/50 rounded-lg h-6 flex items-center px-4"><span className="text-[9px] font-bold text-muted-foreground uppercase truncate tracking-widest">https://{user?.school?.subdomain}.unifynt.com</span></div>
+            </div>
+            <iframe id="preview-frame" src={`/sites/${user?.school?.subdomain}?preview=true`} className="w-full h-full border-none" />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

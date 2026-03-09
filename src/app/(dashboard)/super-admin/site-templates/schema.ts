@@ -1,23 +1,31 @@
-import { z } from "zod/v3";
+import { z } from "zod";
 
-const MAX_FILE_SIZE = 5000000;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
-export const templateSchema = z.object({
+export const siteTemplateSchema = z.object({
   templateCode: z.string().min(1, "Template code is required"),
   name: z.string().min(1, "Template name is required"),
-  description: z.string().optional(),
-  defaultThemeSettings: z.string().optional(),
-  defaultContent: z.string().optional(),
-  isActive: z.boolean(),
-  thumbnail: z
-    .any()
-    .refine((files) => !files || files?.length === 0 || files?.[0]?.size <= MAX_FILE_SIZE, "Max file size is 5MB.")
-    .refine(
-      (files) => !files || files?.length === 0 || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      "Only .jpg, .jpeg, .png and .webp formats are supported."
-    )
-    .optional(),
+  description: z.string().optional().or(z.literal("")),
+  isActive: z.boolean().default(true),
+  thumbnailUrl: z.any().optional(),
+  
+  defaultThemeSettingsString: z.string().refine((val) => {
+    try {
+      if (!val) return true;
+      JSON.parse(val);
+      return true;
+    } catch {
+      return false;
+    }
+  }, { message: "Invalid JSON format" }).optional(),
+  
+  defaultContentString: z.string().refine((val) => {
+    try {
+      if (!val) return true;
+      JSON.parse(val);
+      return true;
+    } catch {
+      return false;
+    }
+  }, { message: "Invalid JSON format" }).optional(),
 });
 
-export type TemplateFormValues = z.infer<typeof templateSchema>;
+export type SiteTemplateFormValues = z.infer<typeof siteTemplateSchema>;

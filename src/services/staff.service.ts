@@ -13,12 +13,22 @@ export const StaffService = {
   },
 
   createStaff: async (data: any) => {
-    const response = await api.post("/staff", data);
+
+    const response = await api.post("/staff", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data.data;
   },
 
   updateStaff: async (id: string, data: any) => {
-    const response = await api.patch(`/staff/${id}`, data);
+
+    const response = await api.patch(`/staff/${id}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data.data;
   },
 

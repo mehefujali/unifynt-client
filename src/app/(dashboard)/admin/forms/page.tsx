@@ -10,7 +10,6 @@ import { Plus, Edit, LayoutTemplate, ExternalLink, Copy, CheckCircle2, Search, F
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CustomFormService } from "@/services/form.service";
@@ -55,155 +54,152 @@ export default function FormsPage() {
     };
 
     return (
-        <div className="p-6 space-y-6 animate-in fade-in zoom-in-[0.99] duration-500 ease-out">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/40 dark:bg-slate-800/40 backdrop-blur-xl rounded-[20px] shadow-sm border border-white/60 dark:border-white/10 ring-1 ring-black/5">
-                        <LayoutTemplate className="h-7 w-7 text-primary" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Form Builder Studio</h2>
-                        <p className="text-muted-foreground text-[14px] font-bold opacity-80 uppercase tracking-wide">Manage dynamic custom forms</p>
-                    </div>
+        <div className="p-4 md:p-8 space-y-6 min-h-screen">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <LayoutTemplate className="h-6 w-6 text-zinc-700 dark:text-zinc-400" />
+                        Form Builder Studio
+                    </h2>
+                    <p className="text-sm text-zinc-500 mt-1">Manage, deploy and analyze dynamic forms and surveys.</p>
                 </div>
                 <Button 
                     onClick={() => { setSelectedForm(null); setIsModalOpen(true); }} 
-                    className="rounded-2xl font-black px-8 h-12 shadow-xl shadow-primary/20 transition-all hover:shadow-2xl hover:-translate-y-0.5 bg-primary hover:bg-primary/90 text-white dark:text-slate-900"
+                    className="h-10 px-5 rounded-lg font-semibold text-xs transition-colors shadow-sm w-full md:w-auto"
                 >
-                    <Plus className="mr-2 h-5 w-5 stroke-[3]" /> Create Form
+                    <Plus className="mr-2 h-4 w-4" /> Create Form
                 </Button>
             </div>
 
-            <Card className="rounded-[32px] bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden flex flex-col">
-                <CardHeader className="bg-white/30 dark:bg-white/5 border-b border-black/5 dark:border-white/5 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h3 className="text-[16px] font-black text-slate-800 dark:text-slate-200">Active Forms & Surveys</h3>
-                    <div className="relative w-full md:w-[300px]">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+                <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/50 flex flex-col sm:flex-row items-center justify-between gap-4 bg-zinc-50/50 dark:bg-zinc-900/20">
+                    <div className="relative w-full sm:max-w-md">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                         <Input
                             placeholder="Search forms..."
-                            className="pl-11 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-sm focus-visible:ring-primary/20 font-bold text-[13px] h-10 rounded-xl transition-all"
+                            className="pl-9 h-10 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-sm text-sm"
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         />
                     </div>
-                </CardHeader>
+                </div>
 
-                <CardContent className="p-0 flex-1">
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <Table>
-                            <TableHeader className="bg-slate-50/50 dark:bg-white/5">
-                                <TableRow className="hover:bg-transparent border-b-black/5 dark:border-b-white/5">
-                                    <TableHead className="pl-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Form Details</TableHead>
-                                    <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Status</TableHead>
-                                    <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Responses</TableHead>
-                                    <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Google Sheet</TableHead>
-                                    <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Public Link</TableHead>
-                                    <TableHead className="text-right pr-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Actions</TableHead>
+                <div className="flex-1 overflow-x-auto custom-scrollbar">
+                    <Table>
+                        <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
+                            <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                                <TableHead className="h-11 px-5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Form Details</TableHead>
+                                <TableHead className="h-11 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Status</TableHead>
+                                <TableHead className="h-11 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Responses</TableHead>
+                                <TableHead className="h-11 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Integration</TableHead>
+                                <TableHead className="h-11 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Public Link</TableHead>
+                                <TableHead className="h-11 px-5 text-right text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                            {isLoading ? (
+                                <TableRow><TableCell colSpan={6} className="h-64 text-center text-zinc-400 font-medium animate-pulse">Loading forms...</TableCell></TableRow>
+                            ) : forms.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-80 text-center">
+                                        <div className="flex flex-col items-center justify-center space-y-3 opacity-60">
+                                            <LayoutTemplate className="h-8 w-8 text-zinc-400" />
+                                            <p className="text-sm font-medium text-zinc-500">No forms found</p>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-400 font-bold animate-pulse">Loading forms...</TableCell></TableRow>
-                                ) : forms.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="h-80 text-center">
-                                            <div className="flex flex-col items-center justify-center space-y-4">
-                                                <div className="p-6 bg-slate-100 dark:bg-white/5 rounded-[32px] border border-dashed border-slate-300 dark:border-white/10 shadow-inner"><LayoutTemplate className="h-12 w-12 text-slate-300 dark:text-slate-700" /></div>
-                                                <p className="text-[16px] font-black text-slate-600 dark:text-slate-400">No Forms Found</p>
+                            ) : (
+                                forms.map((item: any) => (
+                                    <TableRow key={item.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors border-0">
+                                        <TableCell className="px-5 py-3">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">{item.title}</span>
+                                                <span className="text-xs text-zinc-500">Created: {new Date(item.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            {item.status === "PUBLISHED" ? <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">Published</span> 
+                                            : item.status === "DRAFT" ? <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">Draft</span> 
+                                            : <span className="bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">Closed</span>}
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            <div onClick={() => router.push(`/admin/forms/${item.slug}/submissions`)} className="flex items-center gap-2 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 p-1.5 -ml-1.5 rounded-lg transition-colors w-fit group">
+                                                <div className="h-6 w-6 rounded bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 flex items-center justify-center font-bold text-xs">{item._count?.submissions || 0}</div>
+                                                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">Submissions</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            {item.googleSheetUrl ? (
+                                                <a href={item.googleSheetUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline w-fit"><FileSpreadsheet className="h-3.5 w-3.5" /> View Sheet</a>
+                                            ) : <span className="text-xs text-zinc-400 italic">Not Synced</span>}
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-mono text-zinc-500 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 max-w-[150px] truncate rounded py-1 px-2" title={schoolSubdomain ? `${schoolSubdomain}.${rootDomain}/f/${item.slug}` : `/f/${item.slug}`}>
+                                                    /{item.slug}
+                                                </span>
+                                                <Button variant="ghost" size="icon" onClick={() => copyToClipboard(item.slug, item.id)} className="h-7 w-7 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500">
+                                                    {copiedId === item.id ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-5 py-3 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button variant="outline" size="icon" title="View Submissions" className="h-8 w-8 rounded-lg border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-sm" onClick={() => router.push(`/admin/forms/${item.slug}/submissions`)}>
+                                                    <ListChecks className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="outline" size="icon" title="Edit Form" className="h-8 w-8 rounded-lg border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-sm" onClick={() => { setSelectedForm(item); setIsModalOpen(true); }}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="outline" size="icon" title="View Public Link" className="h-8 w-8 rounded-lg border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-sm" onClick={() => {
+                                                    const url = schoolSubdomain ? `${protocol}${schoolSubdomain}.${rootDomain}/f/${item.slug}` : `${window.location.origin}/f/${item.slug}`;
+                                                    window.open(url, "_blank");
+                                                }}>
+                                                    <ExternalLink className="h-4 w-4" />
+                                                </Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : (
-                                    forms.map((item: any) => (
-                                        <TableRow key={item.id} className="group hover:bg-white/80 dark:hover:bg-white/5 transition-all border-b-black/5 dark:border-b-white/5">
-                                            <TableCell className="pl-8 py-5">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <span className="font-black text-[15px] text-slate-900 dark:text-white leading-none">{item.title}</span>
-                                                    <span className="text-[11px] font-bold text-slate-400 uppercase">Created: {new Date(item.createdAt).toLocaleDateString()}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-5">
-                                                {item.status === "PUBLISHED" ? <Badge className="bg-emerald-500/10 text-emerald-600 border-0 font-black text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-lg">Published</Badge> : item.status === "DRAFT" ? <Badge className="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-0 font-black text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-lg">Draft</Badge> : <Badge className="bg-red-500/10 text-red-600 border-0 font-black text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-lg">Closed</Badge>}
-                                            </TableCell>
-                                            <TableCell className="py-5">
-                                                <div onClick={() => router.push(`/admin/forms/${item.slug}/submissions`)} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 p-1.5 -ml-1.5 rounded-xl transition-all w-fit">
-                                                    <div className="h-8 w-8 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center font-black text-[12px]">{item._count?.submissions || 0}</div>
-                                                    <span className="text-[12px] font-bold text-slate-500 hover:text-blue-600 transition-colors">Submissions</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-5">
-                                                {item.googleSheetUrl ? (
-                                                    <a href={item.googleSheetUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[12px] font-bold text-green-600 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 px-3 py-1.5 rounded-lg w-fit transition-colors"><FileSpreadsheet className="h-3.5 w-3.5" /> View Sheet</a>
-                                                ) : <span className="text-[12px] font-bold text-slate-400 italic">Not Synced</span>}
-                                            </TableCell>
-                                            <TableCell className="py-5">
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline" className="text-[11px] font-medium border-slate-200 dark:border-white/10 text-slate-500 bg-white dark:bg-white/5 max-w-[120px] truncate rounded-lg py-1 px-2.5" title={schoolSubdomain ? `${schoolSubdomain}.${rootDomain}/f/${item.slug}` : `/f/${item.slug}`}>
-                                                        {schoolSubdomain ? `${schoolSubdomain}.${rootDomain}/f/${item.slug}` : `/f/${item.slug}`}
-                                                    </Badge>
-                                                    <Button variant="ghost" size="icon" onClick={() => copyToClipboard(item.slug, item.id)} className="h-7 w-7 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 transition-all">
-                                                        {copiedId === item.id ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right pr-8 py-5">
-                                                <div className="flex justify-end gap-2.5">
-                                                    <Button variant="ghost" size="icon" title="View Submissions" className="h-10 w-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-500/20 shadow-sm transition-all" onClick={() => router.push(`/admin/forms/${item.slug}/submissions`)}>
-                                                        <ListChecks className="h-[18px] w-[18px] stroke-[2.5]" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" title="Edit Form" className="h-10 w-10 rounded-xl bg-white/50 dark:bg-slate-800/50 hover:bg-blue-500/10 text-slate-600 dark:text-slate-400 hover:text-blue-600 border border-black/5 dark:border-white/10 shadow-sm transition-all" onClick={() => { setSelectedForm(item); setIsModalOpen(true); }}>
-                                                        <Edit className="h-[18px] w-[18px] stroke-[2.5]" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" title="View Public Link" className="h-10 w-10 rounded-xl bg-white/50 dark:bg-slate-800/50 hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 border border-black/5 dark:border-white/10 shadow-sm transition-all" onClick={() => {
-                                                        const url = schoolSubdomain ? `${protocol}${schoolSubdomain}.${rootDomain}/f/${item.slug}` : `${window.location.origin}/f/${item.slug}`;
-                                                        window.open(url, "_blank");
-                                                    }}>
-                                                        <ExternalLink className="h-[18px] w-[18px] stroke-[2.5]" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
 
                 {meta && meta.total > 0 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                        <div className="text-[13px] font-bold text-slate-500">
-                            Showing <span className="text-slate-900 dark:text-white">{(currentPage - 1) * limit + 1}</span> to <span className="text-slate-900 dark:text-white">{Math.min(currentPage * limit, meta.total)}</span> of <span className="text-slate-900 dark:text-white">{meta.total}</span> records
+                    <div className="p-3 border-t border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/30 dark:bg-zinc-900/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-xs font-medium text-zinc-500 px-2">
+                            Showing <span className="font-bold text-zinc-900 dark:text-zinc-100">{(currentPage - 1) * limit + 1}</span> to <span className="font-bold text-zinc-900 dark:text-zinc-100">{Math.min(currentPage * limit, meta.total)}</span> of <span className="font-bold text-zinc-900 dark:text-zinc-100">{meta.total}</span> records
                         </div>
-                        <div className="flex items-center gap-6 mt-4 sm:mt-0">
+                        <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-bold text-slate-500">Rows per page:</span>
+                                <span className="text-xs font-medium text-zinc-500">Rows:</span>
                                 <Select value={`${limit}`} onValueChange={(val) => { setLimit(Number(val)); setCurrentPage(1); }}>
-                                    <SelectTrigger className="h-9 w-[70px] rounded-xl font-bold bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800">
+                                    <SelectTrigger className="h-8 w-[70px] rounded-lg text-xs font-medium border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="10" className="font-semibold">10</SelectItem>
-                                        <SelectItem value="20" className="font-semibold">20</SelectItem>
-                                        <SelectItem value="50" className="font-semibold">50</SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="10" className="text-xs">10</SelectItem>
+                                        <SelectItem value="20" className="text-xs">20</SelectItem>
+                                        <SelectItem value="50" className="text-xs">50</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-                                    <ChevronLeft className="h-4 w-4" />
+                                <Button variant="outline" size="sm" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="h-8 px-3 rounded-lg text-xs font-medium border-zinc-200 dark:border-zinc-800">
+                                    Previous
                                 </Button>
-                                <div className="px-3 h-9 flex items-center justify-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white rounded-xl font-black text-[13px] shadow-sm">
+                                <span className="text-xs font-medium text-zinc-500 px-1">
                                     {currentPage} / {meta.totalPage || 1}
-                                </div>
-                                <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(meta.totalPage || 1, prev + 1))} disabled={currentPage === (meta.totalPage || 1)} className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-                                    <ChevronRight className="h-4 w-4" />
+                                </span>
+                                <Button variant="outline" size="sm" onClick={() => setCurrentPage(prev => Math.min(meta.totalPage || 1, prev + 1))} disabled={currentPage === (meta.totalPage || 1)} className="h-8 px-3 rounded-lg text-xs font-medium border-zinc-200 dark:border-zinc-800">
+                                    Next
                                 </Button>
                             </div>
                         </div>
                     </div>
                 )}
-            </Card>
+            </div>
             <FormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialData={selectedForm} />
         </div>
     );

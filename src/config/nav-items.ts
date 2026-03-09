@@ -14,6 +14,7 @@ import {
   FileText,
   Award,
   ShieldAlert,
+  TrendingUp,
 } from "lucide-react";
 
 export type SubItem = {
@@ -133,6 +134,7 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
       "ROUTINE_CREATE",
       "ROUTINE_EDIT",
       "ROUTINE_DELETE",
+      "STUDENT_EDIT", // Required for Promotion
     ],
     subItems: [
       {
@@ -156,6 +158,13 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
           "ROUTINE_CREATE",
           "ROUTINE_EDIT",
           "ROUTINE_DELETE",
+        ],
+      },
+      {
+        title: "Student Promotion",
+        href: "/admin/academics/promotion",
+        requiredPermissions: [
+          "STUDENT_EDIT",
         ],
       },
     ],

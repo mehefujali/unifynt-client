@@ -1,111 +1,153 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import Cropper from "react-easy-crop";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Camera, Image as ImageIcon, UploadCloud, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { getCroppedImg } from "@/lib/cropImage";
 
 interface ImageCropperProps {
-    open: boolean;
-    imageSrc: string;
-    onClose: () => void;
-    onCropComplete: (croppedBlob: Blob) => void;
+  aspectRatio?: number;
+  onCrop: (file: File | null) => void;
+  previewUrl?: string | null;
+  label?: string;
+  shape?: "rect" | "round";
 }
 
-const createImage = (url: string): Promise<HTMLImageElement> =>
-    new Promise((resolve, reject) => {
-        const image = new Image();
-        image.addEventListener("load", () => resolve(image));
-        image.addEventListener("error", (error) => reject(error));
-        image.setAttribute("crossOrigin", "anonymous");
-        image.src = url;
-    });
+export default function ImageCropper({
+  aspectRatio = 1,
+  onCrop,
+  previewUrl: initialPreview,
+  label = "Upload Image",
+  shape = "round"
+}: ImageCropperProps) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [preview, setPreview] = useState<string | null>(initialPreview || null);
 
-async function getCroppedImg(
-    imageSrc: string,
-    pixelCrop: { x: number; y: number; width: number; height: number }
-): Promise<Blob | null> {
-    const image = await createImage(imageSrc);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    if (!ctx) return null;
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const imageDataUrl = URL.createObjectURL(file);
+      setImageSrc(imageDataUrl);
+      setIsModalOpen(true);
+    }
+  };
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
 
-    ctx.drawImage(
-        image,
-        pixelCrop.x,
-        pixelCrop.y,
-        pixelCrop.width,
-        pixelCrop.height,
-        0,
-        0,
-        pixelCrop.width,
-        pixelCrop.height
-    );
-
-    return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-            resolve(blob);
-        }, "image/png");
-    });
-}
-
-export function ImageCropperModal({ open, imageSrc, onClose, onCropComplete }: ImageCropperProps) {
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
-    const [isProcessing, setIsProcessing] = useState(false);
-
-    const handleCropComplete = useCallback((_: any, croppedPixels: any) => {
-        setCroppedAreaPixels(croppedPixels);
-    }, []);
-
-    const handleSave = async () => {
-        if (!croppedAreaPixels) return;
-        setIsProcessing(true);
-        try {
-            const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
-            if (croppedBlob) {
-                onCropComplete(croppedBlob);
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsProcessing(false);
+  const showCroppedImage = useCallback(async () => {
+    try {
+      if (imageSrc && croppedAreaPixels) {
+        const croppedImageFile = await getCroppedImg(imageSrc, croppedAreaPixels, "profile.jpg");
+        if (croppedImageFile) {
+          const previewUrl = URL.createObjectURL(croppedImageFile);
+          setPreview(previewUrl);
+          onCrop(croppedImageFile);
+          setIsModalOpen(false);
         }
-    };
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [imageSrc, croppedAreaPixels, onCrop]);
 
-    return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
-                <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>Crop Profile Picture</DialogTitle>
-                </DialogHeader>
-                <div className="relative w-full h-[400px] bg-black">
-                    <Cropper
-                        image={imageSrc}
-                        crop={crop}
-                        zoom={zoom}
-                        aspect={1}
-                        cropShape="rect"
-                        onCropChange={setCrop}
-                        onZoomChange={setZoom}
-                        onCropComplete={handleCropComplete}
-                    />
-                </div>
-                <DialogFooter className="p-6 pt-4 bg-background border-t">
-                    <Button variant="outline" onClick={onClose} disabled={isProcessing}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={isProcessing} className="font-bold">
-                        {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Crop & Save
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreview(null);
+    setImageSrc(null);
+    onCrop(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={onFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+      
+      <div 
+        onClick={() => fileInputRef.current?.click()}
+        className={`relative group cursor-pointer border-2 border-dashed flex items-center justify-center overflow-hidden transition-all bg-muted/20 hover:bg-muted/50 border-border hover:border-primary/50
+          ${shape === "round" ? "rounded-full w-28 h-28" : "rounded-xl w-full h-32"}
+        `}
+      >
+        {preview ? (
+          <>
+            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Camera className="text-white h-6 w-6" />
+            </div>
+            <button 
+              onClick={handleRemove}
+              className="absolute top-1 right-1 p-1 bg-rose-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600 shadow-sm"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col items-center text-muted-foreground group-hover:text-primary transition-colors">
+            <UploadCloud className="h-7 w-7 mb-1" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{label}</span>
+          </div>
+        )}
+      </div>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden bg-background border-border shadow-2xl">
+          <DialogHeader className="p-4 border-b border-border/50 bg-muted/20">
+            <DialogTitle className="text-lg font-black flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-primary" /> Crop Image
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="relative w-full h-[350px] bg-black/5">
+            {imageSrc && (
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={aspectRatio}
+                cropShape={shape}
+                showGrid={true}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            )}
+          </div>
+          
+          <div className="p-4 bg-muted/10 border-t border-border/50 flex items-center justify-between gap-4">
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              aria-labelledby="Zoom"
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="flex-1 accent-primary"
+            />
+            <div className="flex gap-2 shrink-0">
+              <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button size="sm" className="font-bold shadow-md" onClick={showCroppedImage}>Crop & Save</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

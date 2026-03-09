@@ -19,7 +19,7 @@ const baseTeacherSchema = z.object({
   joiningDate: z.string().min(1, "Joining date is required"),
   linkedinUrl: z.string().optional().or(z.literal("")),
 
-  profileImage: z.string().optional().or(z.literal("")),
+  profileImage: z.any().optional(),
   resumeUrl: z.string().optional().or(z.literal("")),
   emergencyContactName: z.string().optional().or(z.literal("")),
   emergencyContactPhone: z.string().optional().or(z.literal("")),
@@ -33,14 +33,12 @@ const baseTeacherSchema = z.object({
   subjectIds: z.array(z.string()).optional(),
 });
 
-// Create form e password thakbe
 export const addTeacherSchema = baseTeacherSchema.extend({
   password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
 });
 
 export type AddTeacherFormValues = z.infer<typeof addTeacherSchema>;
 
-// Edit form e password ba employee ID dorkar nei
 export const editTeacherSchema = baseTeacherSchema;
 
 export type EditTeacherFormValues = z.infer<typeof editTeacherSchema>;
