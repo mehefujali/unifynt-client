@@ -11,6 +11,7 @@ import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, ShieldCheck, ArrowLeft, R
 import { toast } from "sonner";
 import Image from "next/image";
 import api from "@/lib/axios";
+import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,16 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [userEmail, setUserEmail] = useState("");
     const [cooldown, setCooldown] = useState(0);
+
+    const { user, isLoading: isAuthLoading } = useAuth();
+
+    useEffect(() => {
+        if (user && user.role && !isAuthLoading) {
+            if (user.role === "SUPER_ADMIN") router.push("/super-admin");
+            else if (user.role === "STUDENT") router.push("/student");
+            else router.push("/admin");
+        }
+    }, [user, isAuthLoading, router]);
 
     const loginForm = useForm<z.infer<typeof loginSchema>>({
         resolver: zodResolver(loginSchema),
@@ -152,7 +163,7 @@ export default function LoginPage() {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</Label>
-                                        <Link href="/forgot-password"  className="text-xs font-bold text-emerald-600 hover:text-emerald-700">Forgot password?</Link>
+                                        <Link href="/forgot-password" className="text-xs font-bold text-emerald-600 hover:text-emerald-700">Forgot password?</Link>
                                     </div>
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />

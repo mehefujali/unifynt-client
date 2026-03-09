@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, Building2, User, Mail, Phone, MapPin, Lock, Globe, ArrowRight, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import api from "@/lib/axios";
+import { useAuth } from "@/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,16 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [cooldown, setCooldown] = useState(0);
+
+    const { user, isLoading: isAuthLoading } = useAuth();
+
+    useEffect(() => {
+        if (user && user.role && !isAuthLoading) {
+            if (user.role === "SUPER_ADMIN") router.push("/super-admin");
+            else if (user.role === "STUDENT") router.push("/student");
+            else router.push("/admin");
+        }
+    }, [user, isAuthLoading, router]);
 
     const form = useForm<z.infer<typeof registerSchema>>({
         resolver: zodResolver(registerSchema),

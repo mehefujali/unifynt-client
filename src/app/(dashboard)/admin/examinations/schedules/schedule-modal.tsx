@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { AcademicService } from "@/services/academic.service";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   isOpen: boolean;
@@ -23,9 +24,12 @@ interface Props {
 
 export default function ScheduleModal({ isOpen, onClose, examId, classId, scheduleToEdit }: Props) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({ subjectId: "", examDate: "", startTime: "", endTime: "", fullMarks: "100", passMarks: "40" });
+  const [formData, setFormData] = useState({
+    subjectId: "", examDate: "", startTime: "", endTime: "", fullMarks: "100", passMarks: "40",
+    hasTheory: true, hasPractical: true, hasViva: true
+  });
 
-  
+
   const { data: subjectsResponse, isFetching: isSubjectsLoading } = useQuery({
     queryKey: ["subjects", classId],
     queryFn: () => AcademicService.getAllSubjects({ classId }),
@@ -44,9 +48,15 @@ export default function ScheduleModal({ isOpen, onClose, examId, classId, schedu
         endTime: scheduleToEdit.endTime,
         fullMarks: scheduleToEdit.fullMarks.toString(),
         passMarks: scheduleToEdit.passMarks.toString(),
+        hasTheory: scheduleToEdit.hasTheory ?? true,
+        hasPractical: scheduleToEdit.hasPractical ?? true,
+        hasViva: scheduleToEdit.hasViva ?? true,
       });
     } else {
-      setFormData({ subjectId: "", examDate: "", startTime: "", endTime: "", fullMarks: "100", passMarks: "40" });
+      setFormData({
+        subjectId: "", examDate: "", startTime: "", endTime: "", fullMarks: "100", passMarks: "40",
+        hasTheory: true, hasPractical: true, hasViva: true
+      });
     }
   }, [scheduleToEdit, isOpen]);
 
@@ -69,6 +79,9 @@ export default function ScheduleModal({ isOpen, onClose, examId, classId, schedu
       examDate: new Date(formData.examDate).toISOString(),
       fullMarks: Number(formData.fullMarks),
       passMarks: Number(formData.passMarks),
+      hasTheory: formData.hasTheory,
+      hasPractical: formData.hasPractical,
+      hasViva: formData.hasViva,
     });
   };
 
@@ -98,7 +111,7 @@ export default function ScheduleModal({ isOpen, onClose, examId, classId, schedu
               <Input type="date" required value={formData.examDate} onChange={(e) => setFormData({ ...formData, examDate: e.target.value })} className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-500">Start Time</label>
                 <Input type="time" required value={formData.startTime} onChange={(e) => setFormData({ ...formData, startTime: e.target.value })} className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50" />
               </div>
@@ -115,6 +128,25 @@ export default function ScheduleModal({ isOpen, onClose, examId, classId, schedu
               <div className="space-y-2">
                 <label className="text-sm font-medium text-zinc-500">Pass Marks</label>
                 <Input type="number" required value={formData.passMarks} onChange={(e) => setFormData({ ...formData, passMarks: e.target.value })} className="h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50" />
+              </div>
+            </div>
+
+            {/* Component Enables */}
+            <div className="space-y-4 pt-2 pb-2">
+              <label className="text-sm font-medium text-zinc-500">Enable Exam Components</label>
+              <div className="flex flex-wrap gap-6">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="hasTheory" checked={formData.hasTheory} onCheckedChange={(c) => setFormData({ ...formData, hasTheory: !!c })} />
+                  <label htmlFor="hasTheory" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Theory</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="hasPractical" checked={formData.hasPractical} onCheckedChange={(c) => setFormData({ ...formData, hasPractical: !!c })} />
+                  <label htmlFor="hasPractical" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Practical</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="hasViva" checked={formData.hasViva} onCheckedChange={(c) => setFormData({ ...formData, hasViva: !!c })} />
+                  <label htmlFor="hasViva" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Viva</label>
+                </div>
               </div>
             </div>
           </div>

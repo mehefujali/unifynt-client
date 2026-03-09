@@ -17,7 +17,6 @@ import {
     Lock,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 const SidebarItemNode = ({
@@ -68,38 +67,38 @@ const SidebarItemNode = ({
     };
 
     return (
-        <div className="flex flex-col mb-1">
+        <div className="flex flex-col mb-1.5">
             <Link
                 href={item.href}
                 onClick={handleGroupClick}
                 title={isCollapsed ? item.title : undefined}
                 className={cn(
-                    "group relative flex items-center rounded-xl transition-all duration-300 ease-out font-medium text-[14px] cursor-pointer outline-none",
+                    "group relative flex items-center rounded-lg transition-all duration-200 ease-in-out font-medium text-[14px] cursor-pointer outline-none",
                     isCollapsed
-                        ? "justify-center h-11.5 w-11.5 mx-auto"
-                        : "justify-between px-3.5 py-3",
+                        ? "justify-center h-10 w-10 mx-auto"
+                        : "justify-between px-3 py-2.5",
                     isActive && !hasSubItems
-                        ? "bg-white/80 dark:bg-white/10 text-primary font-bold shadow-sm border border-white/60 dark:border-white/5 backdrop-blur-md"
+                        ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-semibold"
                         : isActive && hasSubItems
-                            ? "bg-transparent text-primary font-bold"
-                            : "text-slate-500 hover:bg-white/50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100"
+                            ? "bg-transparent text-zinc-900 dark:text-zinc-50 font-semibold"
+                            : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-zinc-200"
                 )}
             >
                 {isActive && !isCollapsed && !hasSubItems && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-zinc-900 dark:bg-zinc-200 rounded-r-md" />
                 )}
 
-                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3.5")}>
+                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
                     <Icon
                         className={cn(
-                            "flex-shrink-0 transition-transform duration-300 ease-out group-hover:scale-110",
-                            isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
-                            isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                            "flex-shrink-0 transition-transform duration-200",
+                            isCollapsed ? "h-[18px] w-[18px]" : "h-4 w-4",
+                            isActive ? "text-zinc-900 dark:text-zinc-200" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
                         )}
                         strokeWidth={isActive ? 2.5 : 2}
                     />
                     {!isCollapsed && (
-                        <span className="tracking-tight whitespace-nowrap">
+                        <span className="tracking-tight whitespace-nowrap text-sm">
                             {item.title}
                         </span>
                     )}
@@ -108,11 +107,11 @@ const SidebarItemNode = ({
                 {hasSubItems && !isCollapsed && (
                     <ChevronRight
                         className={cn(
-                            "h-[14px] w-[14px] transition-transform duration-300 ease-out",
-                            isActive ? "text-primary" : "text-slate-400",
+                            "h-4 w-4 transition-transform duration-200 ease-out",
+                            isActive ? "text-zinc-900 dark:text-zinc-200" : "text-zinc-400",
                             isOpen && "rotate-90"
                         )}
-                        strokeWidth={2.5}
+                        strokeWidth={2}
                     />
                 )}
             </Link>
@@ -125,8 +124,8 @@ const SidebarItemNode = ({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <div className="flex flex-col gap-1 pl-[38px] pr-2 py-1 relative">
-                            <div className="absolute left-[21px] top-0 bottom-3 w-px bg-gradient-to-b from-black/5 to-transparent dark:from-white/10" />
+                        <div className="flex flex-col gap-0.5 pl-[34px] pr-2 py-1 relative">
+                            <div className="absolute left-[19px] top-0 bottom-2 w-px bg-zinc-200 dark:bg-zinc-800" />
 
                             {item.subItems!.map((sub, idx) => {
                                 const isSubActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
@@ -135,24 +134,16 @@ const SidebarItemNode = ({
                                         key={idx}
                                         href={sub.href}
                                         className={cn(
-                                            "relative flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200 group/sub",
+                                            "relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-200 group/sub",
                                             isSubActive
-                                                ? "text-primary font-bold bg-primary/5 dark:bg-primary/10 backdrop-blur-sm"
-                                                : "text-slate-500 font-medium hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/40 dark:hover:bg-white/5"
+                                                ? "text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/50 dark:bg-zinc-800/50"
+                                                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
                                         )}
                                     >
                                         <div
                                             className={cn(
-                                                "absolute -left-[18.5px] top-1/2 -translate-y-1/2 w-3 h-px transition-all duration-300",
-                                                isSubActive ? "bg-primary" : "bg-black/10 dark:bg-white/10"
-                                            )}
-                                        />
-                                        <div
-                                            className={cn(
-                                                "absolute -left-[19.5px] top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full transition-all duration-300 z-10",
-                                                isSubActive
-                                                    ? "bg-primary scale-125 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
-                                                    : "bg-white dark:bg-[#09090b] border-[1.5px] border-slate-300 dark:border-slate-600 group-hover/sub:border-primary"
+                                                "absolute -left-[15px] top-1/2 -translate-y-1/2 w-2 h-px transition-all duration-200",
+                                                isSubActive ? "bg-zinc-900 dark:bg-zinc-200" : "bg-zinc-200 dark:bg-zinc-800 group-hover/sub:bg-zinc-400"
                                             )}
                                         />
                                         <span>{sub.title}</span>
@@ -212,7 +203,6 @@ export default function Sidebar() {
         }, []);
     }, [user, userPermissions]);
 
-    // 🟢 Generate Dynamic Route for User Profile based on their Role
     const profileRoute = useMemo(() => {
         if (!user?.role) return "#";
         if (user.role === "SUPER_ADMIN") return "/super-admin/user-profile";
@@ -222,20 +212,18 @@ export default function Sidebar() {
 
     if (!isMounted || isLoading) {
         return (
-            <div className="hidden h-screen w-65 shrink-0 flex-col items-center justify-center border-r border-white/40 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-2xl lg:flex z-50">
-                <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
+            <div className="hidden h-screen w-64 shrink-0 flex-col items-center justify-center border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 lg:flex z-50">
+                <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
             </div>
         );
     }
 
-    // Determine user display name and profile image
     const displayName = user?.details?.firstName
         ? `${user.details.firstName} ${user.details.lastName || ""}`.trim()
         : user?.name || "Admin User";
 
     const profileImage = user?.details?.profileImage || (user as any)?.profileImage || "";
 
-    // Function to get initials for avatar fallback
     const getInitials = (name: string) => {
         if (!name) return "UN";
         return name
@@ -249,29 +237,29 @@ export default function Sidebar() {
     return (
         <aside
             className={cn(
-                "hidden h-screen flex-col border-r border-white/40 dark:border-white/10 bg-white/40 dark:bg-black/20 backdrop-blur-2xl supports-backdrop-filter:bg-white/30 transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none",
-                isCollapsed ? "w-22" : "w-70"
+                "hidden h-screen flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0a0a0a] transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0",
+                isCollapsed ? "w-20" : "w-64"
             )}
         >
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3.5 top-7 z-50 flex h-7 w-7 items-center justify-center rounded-full border border-white/60 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm transition-all duration-300 hover:scale-110 focus:outline-none text-slate-500 hover:text-primary"
+                className="absolute -right-3 top-6 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-200 hover:scale-105 focus:outline-none text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
             >
                 {isCollapsed ? (
-                    <PanelLeft className="h-[14px] w-[14px]" />
+                    <PanelLeft className="h-3.5 w-3.5" />
                 ) : (
-                    <PanelLeftClose className="h-[14px] w-[14px]" />
+                    <PanelLeftClose className="h-3.5 w-3.5" />
                 )}
             </button>
 
             <div
                 className={cn(
-                    "h-20 flex items-center border-b border-black/5 dark:border-white/5 flex-shrink-0",
+                    "h-16 flex items-center flex-shrink-0 mt-2",
                     isCollapsed ? "justify-center px-0" : "px-6"
                 )}
             >
-                <Link href="/" className="flex items-center gap-1.5 overflow-hidden group">
-                    <div className="relative flex items-center justify-center h-10 w-10 transition-all duration-300">
+                <Link href="/" className="flex items-center gap-2 overflow-hidden group">
+                    <div className="relative flex items-center justify-center h-8 w-8">
                         <Image
                             src="/unifynt-logo.png"
                             alt="Unifynt Logo"
@@ -282,19 +270,16 @@ export default function Sidebar() {
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col whitespace-nowrap">
-                            <span className="font-extrabold text-[22px] tracking-tight text-slate-900 dark:text-white leading-none">
+                            <span className="font-bold text-[18px] tracking-tight text-zinc-900 dark:text-zinc-50 leading-none">
                                 Unifynt
-                            </span>
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest opacity-90">
-                                Workspace
                             </span>
                         </div>
                     )}
                 </Link>
             </div>
 
-            <ScrollArea className="flex-1 py-6 custom-scrollbar overflow-hidden">
-                <nav className="flex flex-col px-4 gap-0.5">
+            <ScrollArea className="flex-1 py-4 custom-scrollbar overflow-hidden">
+                <nav className="flex flex-col px-3">
                     {authorizedNavItems.length > 0 ? (
                         authorizedNavItems.map((item, index) => (
                             <SidebarItemNode
@@ -307,62 +292,59 @@ export default function Sidebar() {
                         ))
                     ) : (
                         <div className="p-4 text-center mt-10 flex flex-col items-center justify-center gap-2">
-                            <Lock className="h-8 w-8 text-slate-300 opacity-50 mb-2" />
-                            <p className="text-xs text-slate-400 font-medium px-4 text-balance">
-                                You do not have permission to view any modules.
+                            <Lock className="h-6 w-6 text-zinc-300 dark:text-zinc-700 mb-2" />
+                            <p className="text-xs text-zinc-500 font-medium px-4 text-balance">
+                                No modules available.
                             </p>
                         </div>
                     )}
                 </nav>
             </ScrollArea>
 
-            <div className="p-4 flex-shrink-0">
+            <div className="p-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-900">
                 <div
                     className={cn(
-                        "flex items-center rounded-2xl bg-white/60 dark:bg-white/5 p-2 border border-white/60 dark:border-white/10 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-md",
+                        "flex items-center rounded-xl transition-all duration-200",
                         isCollapsed ? "justify-center flex-col gap-2" : "justify-between"
                     )}
                 >
-                    {/* 🟢 Clickable Profile Section */}
                     <Link
                         href={profileRoute}
                         className={cn(
-                            "flex items-center overflow-hidden flex-1 group cursor-pointer hover:opacity-80 transition-opacity",
-                            isCollapsed ? "justify-center w-full" : "gap-3.5"
+                            "flex items-center overflow-hidden flex-1 group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 p-2 rounded-lg transition-colors -ml-2",
+                            isCollapsed ? "justify-center w-full p-0 hover:bg-transparent" : "gap-3"
                         )}
                         title="View Personal Profile"
                     >
-                        <Avatar className="h-10 w-10 rounded-xl border border-black/5 dark:border-white/10 shadow-sm transition-transform duration-300 group-hover:scale-105">
+                        <Avatar className="h-9 w-9 border border-zinc-200 dark:border-zinc-800">
                             <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
-                            <AvatarFallback className="bg-blue-50 dark:bg-blue-500/10 text-primary font-bold text-xs rounded-xl">
+                            <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-300 font-semibold text-xs">
                                 {getInitials(displayName)}
                             </AvatarFallback>
                         </Avatar>
 
                         {!isCollapsed && (
                             <div className="flex flex-col whitespace-nowrap">
-                                <span className="text-[13.5px] font-bold text-slate-900 dark:text-white truncate max-w-[110px] leading-tight">
+                                <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[110px] leading-tight">
                                     {displayName}
                                 </span>
-                                <span className="text-[11px] font-medium text-slate-500 truncate max-w-[110px] mt-0.5">
-                                    {user?.role || "USER"}
+                                <span className="text-[11px] font-medium text-zinc-500 truncate max-w-[110px]">
+                                    {user?.role ? user.role.replace("_", " ") : "USER"}
                                 </span>
                             </div>
                         )}
                     </Link>
 
-                    <Button
-                        variant="ghost"
-                        size="icon"
+                    <button
                         onClick={logout}
                         className={cn(
-                            "text-slate-400 hover:text-red-600 hover:bg-red-50/50 dark:hover:bg-red-500/10 shrink-0 transition-colors backdrop-blur-sm",
-                            isCollapsed ? "h-10 w-10 rounded-xl" : "h-8 w-8 rounded-lg mr-1"
+                            "flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors",
+                            isCollapsed ? "h-9 w-9 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 mt-2" : "h-8 w-8 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         )}
                         title="Logout"
                     >
-                        <LogOut className="h-4 w-4" strokeWidth={2.5} />
-                    </Button>
+                        <LogOut className="h-4 w-4" />
+                    </button>
                 </div>
             </div>
         </aside>

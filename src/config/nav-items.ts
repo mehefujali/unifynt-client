@@ -163,9 +163,7 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
       {
         title: "Student Promotion",
         href: "/admin/academics/promotion",
-        requiredPermissions: [
-          "STUDENT_EDIT",
-        ],
+        requiredPermissions: ["STUDENT_EDIT"],
       },
     ],
   },
@@ -235,6 +233,11 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
           "RESULT_EDIT",
           "RESULT_DELETE",
         ],
+      },
+      {
+        title: "Marksheet Builder",
+        href: "/admin/examinations/marksheet-builder",
+        requiredPermissions: ["EXAM_EDIT"],
       },
     ],
   },

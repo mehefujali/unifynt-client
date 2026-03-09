@@ -3,11 +3,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { examService } from "@/services/exam.service";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Printer, GraduationCap, Award } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2, Printer, FileText } from "lucide-react";
+import { MarksheetPreview } from "../marksheet-builder/marksheet-preview";
+import { MarksheetConfig, defaultMarksheetConfig } from "@/types/marksheet-config";
+import { useState, useEffect } from "react";
 
 interface Props {
   isOpen: boolean;
@@ -17,138 +18,89 @@ interface Props {
 }
 
 export default function MarksheetModal({ isOpen, onClose, examId, studentId }: Props) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["marksheet", examId, studentId],
-    queryFn: () => examService.getStudentMarksheet({ examId, studentId }),
-    enabled: isOpen && !!examId && !!studentId,
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["studentMarksheet", studentId, examId],
+    queryFn: () =>
+      examService.getStudentMarksheet({
+        studentId,
+        examId,
+      }),
+    enabled: !!studentId && !!examId && isOpen,
   });
 
+  const [config, setConfig] = useState<MarksheetConfig>(defaultMarksheetConfig);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("marksheetConfig");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setTimeout(() => setConfig(parsed), 0);
+      } catch (e) {
+        console.error("Failed to parse marksheet config", e);
+      }
+    }
+  }, [isOpen]);
+
   const handlePrint = () => {
-    window.print();
+    if (data && data.studentInfo && data.config) {
+      const originalTitle = document.title;
+      // Construct dynamic filename matching "Student Name - School Name - Student ID"
+      const studentName = data.studentInfo.name || "Student";
+      const schoolName = data.config.schoolName || "School";
+      const sId = data.studentInfo.studentId || "ID_N_A";
+
+      document.title = `${studentName} - ${schoolName} - ${sId}`;
+      window.print();
+
+      // Delay restoration so the print spooler has time to read the spoofed title
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    } else {
+      window.print();
+    }
   };
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-zinc-950 rounded-[24px] border-0 ring-1 ring-border/50 shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 bg-zinc-50/50 dark:bg-zinc-900/50 print:hidden">
-          <DialogTitle className="text-lg font-medium flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-primary" />
-            Student Marksheet
+      <DialogContent className="max-w-[1000px] w-[95vw] p-0 overflow-hidden bg-zinc-100/50 dark:bg-zinc-950 rounded-2xl border-0 ring-1 ring-border shadow-2xl print:w-full print:max-w-none print:transform-none print:static print:absolute-none print:fixed-none print:shadow-none print:border-none print:ring-0 print:rounded-none overflow-y-auto max-h-[90vh] print:max-h-none print:overflow-visible">
+        {/* Header Action Bar - Hidden in Print */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-white dark:bg-zinc-900 print:hidden z-10 relative shadow-sm">
+          <DialogTitle className="text-lg font-bold flex items-center gap-2 text-zinc-800 dark:text-zinc-100 uppercase tracking-tight">
+            <FileText className="h-5 w-5 text-primary" />
+            Report Card Preview
           </DialogTitle>
-          <Button onClick={handlePrint} variant="outline" className="rounded-xl bg-white shadow-sm ring-1 ring-inset ring-border/50 border-0 h-9">
+          <Button onClick={handlePrint} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-md font-bold tracking-wide transition-all h-10 px-6">
             <Printer className="mr-2 h-4 w-4" />
-            Print Result
+            Print Marksheet
           </Button>
         </div>
 
-        {isLoading || !data ? (
-          <div className="flex h-[500px] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="p-8 overflow-y-auto max-h-[80vh] print:p-0 print:max-h-none print:overflow-visible marksheet-print-area bg-white">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold uppercase tracking-wider text-zinc-900">{data.config?.schoolName || "INTERNATIONAL SCHOOL ERP"}</h1>
-              <p className="text-sm text-zinc-500 mt-1">{data.config?.schoolAddress || "Excellence in Education"}</p>
-              <div className="inline-block mt-4 px-4 py-1.5 rounded-full bg-zinc-100 ring-1 ring-inset ring-zinc-200">
-                <h2 className="text-sm font-semibold text-zinc-800 uppercase tracking-wide">{data.examInfo.examName}</h2>
-              </div>
+        {/* Content Area */}
+        <div className="relative bg-zinc-100 dark:bg-zinc-950/50 print:bg-white min-h-[500px]">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center p-24">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="mt-4 text-sm font-medium text-zinc-500">Loading student marksheet...</p>
             </div>
-
-            <div className="flex items-center justify-between mb-8 p-6 rounded-2xl ring-1 ring-inset ring-zinc-200 bg-zinc-50/50">
-              <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20 ring-4 ring-white shadow-sm">
-                  <AvatarImage src={data.studentInfo.profilePicture} />
-                  <AvatarFallback className="bg-zinc-200 text-zinc-600 text-xl font-medium">
-                    {data.studentInfo.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-zinc-900">{data.studentInfo.name}</h3>
-                  <div className="flex gap-4 text-sm text-zinc-600">
-                    <p><span className="font-medium text-zinc-900">Class:</span> {data.studentInfo.className}</p>
-                    <p><span className="font-medium text-zinc-900">Section:</span> {data.studentInfo.sectionName}</p>
-                    <p><span className="font-medium text-zinc-900">Roll No:</span> {data.studentInfo.rollNumber}</p>
-                  </div>
-                </div>
+          ) : isError || !data ? (
+            <div className="flex flex-col items-center justify-center p-24 text-center">
+              <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <Loader2 className="h-6 w-6 text-red-600" />
               </div>
-              <div className="text-right space-y-1">
-                <div className="flex items-center justify-end gap-2 text-primary font-semibold">
-                  <Award className="h-5 w-5" />
-                  <span>Class Rank: {data.resultSummary.rankPosition}</span>
-                </div>
-                <p className="text-sm text-zinc-600">Section Rank: {data.resultSummary.sectionRank}</p>
-              </div>
+              <p className="text-red-600 font-medium text-center max-w-sm">
+                {(error as any)?.message || "Failed to load marksheet data. Please try again."}
+              </p>
             </div>
-
-            <table className="w-full text-sm text-left mb-8 ring-1 ring-inset ring-zinc-200 rounded-xl overflow-hidden border-collapse">
-              <thead className="text-xs uppercase bg-zinc-100 text-zinc-600">
-                <tr>
-                  <th className="px-4 py-3 font-semibold border-b border-zinc-200">Subject</th>
-                  <th className="px-4 py-3 font-semibold border-b border-zinc-200 text-center">Full Marks</th>
-                  <th className="px-4 py-3 font-semibold border-b border-zinc-200 text-center">Pass Marks</th>
-                  <th className="px-4 py-3 font-semibold border-b border-zinc-200 text-center">Theory</th>
-                  <th className="px-4 py-3 font-semibold border-b border-zinc-200 text-center">Practical</th>
-                  <th className="px-4 py-3 font-semibold border-b border-zinc-200 text-center bg-zinc-50">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200 bg-white">
-                {data.subjectWiseMarks.map((sub: any, idx: number) => (
-                  <tr key={idx}>
-                    <td className="px-4 py-3 font-medium text-zinc-900">
-                      {sub.subjectName} <span className="text-xs text-zinc-400 font-normal">({sub.subjectCode})</span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-zinc-600">{sub.fullMarks}</td>
-                    <td className="px-4 py-3 text-center text-zinc-600">{sub.passMarks}</td>
-                    <td className="px-4 py-3 text-center text-zinc-600">{sub.theoryMarks ?? "-"}</td>
-                    <td className="px-4 py-3 text-center text-zinc-600">{sub.practicalMarks ?? "-"}</td>
-                    <td className={cn("px-4 py-3 text-center font-bold bg-zinc-50", sub.totalObtained < sub.passMarks || sub.isAbsent ? "text-red-600" : "text-zinc-900")}>
-                      {sub.isAbsent ? "ABSENT" : sub.totalObtained}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex justify-end">
-              <div className="w-72 rounded-2xl ring-1 ring-inset ring-zinc-200 bg-zinc-50/50 p-5 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Total Marks</span>
-                  <span className="font-semibold text-zinc-900">{data.resultSummary.totalMarks}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Marks Obtained</span>
-                  <span className="font-semibold text-zinc-900">{data.resultSummary.marksObtained}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Percentage</span>
-                  <span className="font-semibold text-zinc-900">{data.resultSummary.percentage}%</span>
-                </div>
-                <div className="h-px bg-zinc-200 w-full my-2"></div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-zinc-900">Final Result</span>
-                  <div className="flex items-center gap-2">
-                    <span className={cn("px-2.5 py-1 rounded-lg text-xs font-bold", data.resultSummary.status === "PASS" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
-                      {data.resultSummary.status}
-                    </span>
-                    <span className="text-xl font-black text-zinc-900">{data.resultSummary.grade}</span>
-                  </div>
-                </div>
-              </div>
+          ) : (
+            <div className="w-full flex justify-center p-4 md:p-8 print:p-0">
+              <MarksheetPreview data={data} config={config} />
             </div>
-
-            <div className="mt-16 flex justify-between items-end px-8 print:mt-24">
-              <div className="text-center">
-                <div className="w-40 border-b border-zinc-400 mb-2"></div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Class Teacher</p>
-              </div>
-              <div className="text-center">
-                <div className="w-40 border-b border-zinc-400 mb-2"></div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Principal</p>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
