@@ -109,7 +109,7 @@ export default function AttendancePage() {
                   <SelectValue placeholder="Select Section" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  {sections?.map((s: any) => (
+                  {(Array.isArray(sections) ? sections : sections?.data?.data || sections?.data || [])?.map((s: any) => (
                     <SelectItem key={s.id} value={s.id} className="rounded-lg">
                       {s.name}
                     </SelectItem>

@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone } from "lucide-react";
+import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone, KeyRound } from "lucide-react";
 
 import ViewStudentModal from "./view-student-modal";
 import AddStudentModal from "./add-student-modal";
@@ -73,6 +73,26 @@ export default function StudentsPage() {
             sectionId: sectionId === "ALL" ? undefined : sectionId
         }),
     });
+
+    const handleResetPassword = async (stdId: string) => {
+        if (confirm("Are you sure you want to reset this student's password? An auto-generated password will be returned.")) {
+            try {
+                const toastId = toast.loading("Resetting password...");
+                const res = await StudentService.resetPassword(stdId);
+                if (res.success && res.data) {
+                    toast.success("Password Reset Successful", {
+                        id: toastId,
+                        description: `New Password for ${res.data.email} is: ${res.data.plainPassword}`,
+                        duration: 15000,
+                    });
+                } else {
+                    toast.success("Password Reset", { id: toastId });
+                }
+            } catch (err: any) {
+                toast.error(err?.response?.data?.message || "Failed to reset password");
+            }
+        }
+    };
 
     const handleExport = async (format: 'excel' | 'csv') => {
         try {
@@ -279,6 +299,12 @@ export default function StudentsPage() {
                                                         <PermissionGate required={PERMISSIONS.STUDENT_VIEW}>
                                                             <Button variant="ghost" size="icon" onClick={() => setSelectedStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
                                                                 <Eye className="h-5 w-5" />
+                                                            </Button>
+                                                        </PermissionGate>
+                                                        
+                                                        <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
+                                                            <Button title="Reset Password" variant="ghost" size="icon" onClick={() => handleResetPassword(std.id)} className="h-10 w-10 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all">
+                                                                <KeyRound className="h-5 w-5" />
                                                             </Button>
                                                         </PermissionGate>
                                                         
