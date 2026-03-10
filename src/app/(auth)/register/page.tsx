@@ -65,6 +65,18 @@ export default function RegisterPage() {
         }
     }, [cooldown]);
 
+    useEffect(() => {
+        if (showOtp && email) {
+            const fetchStatus = async () => {
+                try {
+                    const { data } = await api.get("/auth/otp-status", { params: { email, type: "REGISTRATION" } });
+                    if (data?.data?.nextResendIn) setCooldown(data.data.nextResendIn);
+                } catch { /* ignore */ }
+            };
+            fetchStatus();
+        }
+    }, [showOtp, email]);
+
     const onRequestOTP = async (values: z.infer<typeof registerSchema>) => {
         setIsLoading(true);
         try {
@@ -190,11 +202,23 @@ export default function RegisterPage() {
                                 <Button type="submit" className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase shadow-lg shadow-emerald-500/20" disabled={isLoading}>
                                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Finalize Registration"}
                                 </Button>
-                                <div className="flex flex-col gap-3 pt-2 text-center">
-                                    <button type="button" disabled={cooldown > 0 || isLoading} onClick={handleResend} className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-emerald-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
-                                        <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
-                                        {cooldown > 0 ? `Resend Code in ${cooldown}s` : "Resend Verification Code"}
-                                    </button>
+                                <div className="flex flex-col gap-3 pt-2 text-center h-10 justify-center">
+                                    {cooldown > 0 ? (
+                                        <div className="text-[11px] font-bold text-zinc-400 flex items-center justify-center gap-1.5 select-none">
+                                            <span className="relative flex h-2 w-2 mr-1">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-zinc-500"></span>
+                                            </span>
+                                            {Math.floor(cooldown / 60)}:{(cooldown % 60).toString().padStart(2, '0')}s
+                                        </div>
+                                    ) : (
+                                        <button type="button" disabled={isLoading} onClick={handleResend} className="text-[11px] font-bold text-zinc-500 hover:text-emerald-600 transition-colors flex items-center justify-center gap-1.5">
+                                            <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                                            Resend code.
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex justify-center">
                                     <button type="button" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-zinc-600 flex items-center justify-center gap-2" onClick={() => setShowOtp(false)}>
                                         <ArrowLeft className="h-3 w-3" /> Edit Details
                                     </button>

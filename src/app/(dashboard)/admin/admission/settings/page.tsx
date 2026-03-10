@@ -16,7 +16,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, Plus, Trash2, Save, Settings2, Sparkles, FileText, Image as ImageIcon, Lock, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Settings2, Sparkles, FileText, Image as ImageIcon, Lock, CheckCircle2, CreditCard, ExternalLink, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { FinancialService } from "@/services/financial.service";
 
 // --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
@@ -183,9 +195,19 @@ export default function FormBuilderSettingsPage() {
         queryFn: AdmissionService.getConfig,
     });
 
+    // Fetch payment gateway status to check if it's configured
+    const { data: gatewayStatus } = useQuery({
+        queryKey: ["payment-gateway-status"],
+        queryFn: FinancialService.getGatewayStatus,
+    });
+
+    const [showGatewayModal, setShowGatewayModal] = useState(false);
+
     const form = useForm({
         defaultValues: {
             isActive: true,
+            collectAdmissionFee: false,
+            admissionFeeAmount: "" as any,
             fields: [] as any[],
         }
     });
@@ -203,6 +225,8 @@ export default function FormBuilderSettingsPage() {
             }
             reset({
                 isActive: configRes.data.isActive,
+                collectAdmissionFee: configRes.data.collectAdmissionFee ?? false,
+                admissionFeeAmount: configRes.data.admissionFeeAmount ?? "",
                 fields: parsedFields,
             });
         }
@@ -225,7 +249,21 @@ export default function FormBuilderSettingsPage() {
             ...f,
             options: f.type === "DROPDOWN" ? (Array.isArray(f.options) ? f.options : f.options?.split(",").map((o: string) => o.trim()).filter(Boolean)) : undefined
         }));
-        saveMutation.mutate({ isActive: data.isActive, fields: JSON.stringify(cleanedFields) });
+        saveMutation.mutate({
+            isActive: data.isActive,
+            fields: JSON.stringify(cleanedFields),
+            collectAdmissionFee: data.collectAdmissionFee,
+            admissionFeeAmount: data.collectAdmissionFee ? parseFloat(data.admissionFeeAmount) || null : null,
+        });
+    };
+
+    // Handler for the fee toggle — block if gateway not configured
+    const handleFeeToggle = (checked: boolean, onChange: (val: boolean) => void) => {
+        if (checked && (!gatewayStatus?.isConfigured || !gatewayStatus?.isPaymentEnabled)) {
+            setShowGatewayModal(true);
+            return;
+        }
+        onChange(checked);
     };
 
     const addSuggestedField = (suggested: any) => {
@@ -292,6 +330,7 @@ export default function FormBuilderSettingsPage() {
     }
 
     return (
+        <>
         <div className="p-6 md:p-8 max-w-[1500px] mx-auto space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-6 border-b">
                 <div>
@@ -488,6 +527,62 @@ export default function FormBuilderSettingsPage() {
                             </CardContent>
                         </Card>
 
+                        {/* Online Admission Fee Card */}
+                        <Card className="shrink-0 shadow-none border-border">
+                            <CardHeader className="pb-4 border-b bg-muted/30">
+                                <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                                    <CreditCard className="h-3.5 w-3.5 text-primary" /> Online Admission Fee
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-5 space-y-4">
+                                {/* Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5">
+                                        <Label className="text-sm font-bold text-foreground">Collect Fee Online</Label>
+                                        <p className="text-xs text-muted-foreground">Applicants must pay before submitting.</p>
+                                    </div>
+                                    <Controller
+                                        control={control}
+                                        name="collectAdmissionFee"
+                                        render={({ field: { onChange, value } }) => (
+                                            <Switch
+                                                checked={value}
+                                                onCheckedChange={(checked) => handleFeeToggle(checked, onChange)}
+                                                className="data-[state=checked]:bg-primary"
+                                                disabled={!canEditSettings}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Amount input — only shows when enabled */}
+                                {watch("collectAdmissionFee") && (
+                                    <div className="space-y-2 pt-1 border-t">
+                                        <Label className="text-xs font-bold text-muted-foreground uppercase">Fee Amount (₹)</Label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-bold">₹</span>
+                                            <Controller
+                                                control={control}
+                                                name="admissionFeeAmount"
+                                                render={({ field }) => (
+                                                    <Input
+                                                        {...field}
+                                                        type="number"
+                                                        min="1"
+                                                        step="0.01"
+                                                        placeholder="e.g. 500"
+                                                        className="pl-7 h-10 text-sm"
+                                                        disabled={!canEditSettings}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground">This amount will be charged to every applicant via Razorpay.</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
                         <Card className="flex-1 shadow-none border-border flex flex-col overflow-hidden">
                             <CardHeader className="shrink-0 pb-4 border-b bg-muted/30">
                                 <CardTitle className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
@@ -535,5 +630,29 @@ export default function FormBuilderSettingsPage() {
                 </div>
             </div>
         </div>
+
+        {/* Gateway Not Configured Modal */}
+        <AlertDialog open={showGatewayModal} onOpenChange={setShowGatewayModal}>
+            <AlertDialogContent className="max-w-sm">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-amber-500" /> Payment Gateway Required
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2 text-sm">
+                        <p>To collect admission fees online, you need to first connect your school&apos;s Razorpay account.</p>
+                        <p className="text-muted-foreground">Go to <strong className="text-foreground">Administration → Payment Gateway</strong> and enter your Razorpay Key ID and Secret.</p>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                        <Link href="/admin/settings/payment" className="inline-flex items-center gap-2">
+                            <ExternalLink className="h-3.5 w-3.5" /> Setup Payment Gateway
+                        </Link>
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }

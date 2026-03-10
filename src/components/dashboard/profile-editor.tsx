@@ -18,10 +18,12 @@ import {
     UploadCloud,
     KeyRound,
     User as UserIcon,
-    Image as ImageIcon
+    Image as ImageIcon,
+    ShieldCheck,
+    ShieldAlert
 } from "lucide-react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 import api from "@/lib/axios";
 import { useAuth } from "@/hooks/use-auth";
@@ -47,9 +50,10 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const passwordSchema = z.object({
-    password: z.string().min(6, "New password must be at least 6 characters"),
+    oldPassword: z.string().min(6, "Current password must be provided"),
+    newPassword: z.string().min(6, "New password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Please confirm your new password"),
-}).refine((data) => data.password === data.confirmPassword, {
+}).refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
 });
@@ -110,13 +114,17 @@ export function ProfileEditor() {
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
+    // 2FA States
+    const [isTwoFactorModalOpen, setIsTwoFactorModalOpen] = useState(false);
+    const [otpCode, setOtpCode] = useState("");
+
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
     });
 
     const passwordForm = useForm<PasswordFormValues>({
         resolver: zodResolver(passwordSchema),
-        defaultValues: { password: "", confirmPassword: "" }
+        defaultValues: { oldPassword: "", newPassword: "", confirmPassword: "" }
     });
 
     useEffect(() => {
@@ -139,7 +147,6 @@ export function ProfileEditor() {
             const formData = new FormData();
             formData.append("firstName", data.firstName);
             if (data.lastName) formData.append("lastName", data.lastName);
-            formData.append("email", data.email);
             if (data.phone) formData.append("phone", data.phone);
             if (data.gender) formData.append("gender", data.gender);
 
@@ -154,15 +161,51 @@ export function ProfileEditor() {
 
     const updatePasswordMutation = useMutation({
         mutationFn: async (data: PasswordFormValues) => {
-            const formData = new FormData();
-            formData.append("password", data.password);
-            return api.patch("/users/me", formData, { headers: { "Content-Type": "multipart/form-data" } });
+            return api.post("/auth/change-password", {
+                oldPassword: data.oldPassword,
+                newPassword: data.newPassword,
+            });
         },
         onSuccess: () => {
             toast.success("Password updated successfully!");
             passwordForm.reset();
         },
         onError: (error: any) => toast.error(error.response?.data?.message || "Failed to update password"),
+    });
+
+    const request2FAMutation = useMutation({
+        mutationFn: async () => {
+            return api.post("/auth/2fa/request-enable");
+        },
+        onSuccess: () => {
+            toast.success("OTP sent to your email!");
+            setIsTwoFactorModalOpen(true);
+        },
+        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to request 2FA"),
+    });
+
+    const verify2FAMutation = useMutation({
+        mutationFn: async () => {
+            return api.post("/auth/2fa/verify-enable", { email: user?.email, otp: otpCode });
+        },
+        onSuccess: () => {
+            toast.success("Two-Factor Authentication Enabled!");
+            queryClient.invalidateQueries({ queryKey: ["authUser"] });
+            setIsTwoFactorModalOpen(false);
+            setOtpCode("");
+        },
+        onError: (error: any) => toast.error(error.response?.data?.message || "Invalid OTP code"),
+    });
+
+    const disable2FAMutation = useMutation({
+        mutationFn: async () => {
+            return api.post("/auth/2fa/disable");
+        },
+        onSuccess: () => {
+            toast.success("Two-Factor Authentication Disabled");
+            queryClient.invalidateQueries({ queryKey: ["authUser"] });
+        },
+        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to disable 2FA"),
     });
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -286,10 +329,10 @@ export function ProfileEditor() {
                                             <div className="space-y-2 md:col-span-2">
                                                 <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Current Email Address</Label>
                                                 <div className="relative">
-                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="h-12 pl-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 font-medium text-[15px]" type="email" {...form.register("email")} />
+                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                                                    <Input disabled className="h-12 pl-12 shadow-sm bg-zinc-100 dark:bg-zinc-900/80 text-muted-foreground rounded-xl border-zinc-200 dark:border-zinc-800 cursor-not-allowed font-medium text-[15px]" type="email" {...form.register("email")} />
                                                 </div>
-                                                {form.formState.errors.email && <p className="text-red-500 text-xs mt-1 font-semibold">{form.formState.errors.email.message}</p>}
+                                                <p className="text-[11px] text-muted-foreground font-medium mt-1 uppercase tracking-wider pl-1 font-semibold">* Emails are securely linked to your profile and cannot be changed.</p>
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
@@ -332,7 +375,51 @@ export function ProfileEditor() {
 
                     {/* TAB: SECURITY */}
                     {activeTab === "security" && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                            
+                            {/* Two-Factor Authentication Block */}
+                            <Card className="border-border/60 shadow-sm overflow-hidden rounded-2xl bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
+                                <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-200/50 dark:border-zinc-800/50 px-8 py-6 flex flex-row items-center justify-between">
+                                    <div>
+                                        <CardTitle className="text-xl flex items-center gap-2">
+                                            {user?.isTwoFactorEnabled ? <ShieldCheck className="text-green-500 h-5 w-5" /> : <ShieldAlert className="text-orange-500 h-5 w-5" />}
+                                            Two-Factor Authentication (2FA)
+                                        </CardTitle>
+                                        <CardDescription className="mt-1">Add an extra layer of security to your account.</CardDescription>
+                                    </div>
+                                    <div>
+                                        <Switch
+                                            checked={user?.isTwoFactorEnabled}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    request2FAMutation.mutate();
+                                                } else {
+                                                    disable2FAMutation.mutate();
+                                                }
+                                            }}
+                                            disabled={request2FAMutation.isPending || disable2FAMutation.isPending}
+                                            className="data-[state=checked]:bg-green-500"
+                                        />
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-8">
+                                    <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-3xl">
+                                        When Two-Factor Authentication is enabled, you will be required to enter a secure 6-digit OTP code sent to your registered email address every time you log in. This heavily restricts unauthorized access to your institution&apos;s data.
+                                    </p>
+                                    <div className="mt-6">
+                                        {user?.isTwoFactorEnabled ? (
+                                            <div className="inline-flex items-center gap-2 text-sm font-extrabold text-green-600 dark:text-green-500 bg-green-50 dark:bg-green-500/10 px-4 py-2 rounded-lg border border-green-200 dark:border-green-500/20">
+                                                <CheckCircle2 className="h-4 w-4" /> 2FA is currently Active
+                                            </div>
+                                        ) : (
+                                            <div className="inline-flex items-center gap-2 text-sm font-extrabold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-4 py-2 rounded-lg border border-orange-200 dark:border-orange-500/20">
+                                                <ShieldAlert className="h-4 w-4" /> 2FA is currently Disabled
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
                             <Card className="border-border/60 shadow-sm overflow-hidden rounded-2xl bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
                                 <CardHeader className="bg-red-50/50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30 px-8 py-6">
                                     <CardTitle className="text-xl text-red-600 dark:text-red-400 flex items-center gap-2"><Lock className="h-5 w-5" /> Account Credentials</CardTitle>
@@ -341,9 +428,14 @@ export function ProfileEditor() {
                                 <CardContent className="p-8">
                                     <form onSubmit={passwordForm.handleSubmit((data) => updatePasswordMutation.mutate(data))} className="space-y-6 max-w-xl">
                                         <div className="space-y-2">
+                                            <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Current Password</Label>
+                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 font-mono text-lg tracking-widest focus-visible:ring-primary/20" {...passwordForm.register("oldPassword")} />
+                                            {passwordForm.formState.errors.oldPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.oldPassword.message}</p>}
+                                        </div>
+                                        <div className="space-y-2">
                                             <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" /> New Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 font-mono text-lg tracking-widest focus-visible:ring-primary/20" {...passwordForm.register("password")} />
-                                            {passwordForm.formState.errors.password && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.password.message}</p>}
+                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 font-mono text-lg tracking-widest focus-visible:ring-primary/20" {...passwordForm.register("newPassword")} />
+                                            {passwordForm.formState.errors.newPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.newPassword.message}</p>}
                                         </div>
                                         <div className="space-y-2">
                                             <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Confirm New Password</Label>
@@ -363,6 +455,51 @@ export function ProfileEditor() {
                     )}
                 </div>
             </div>
+
+            {/* TWO FACTOR AUTH MODAL */}
+            <Dialog open={isTwoFactorModalOpen} onOpenChange={(open) => {
+                if (!open && !verify2FAMutation.isPending) setIsTwoFactorModalOpen(false);
+            }}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-primary" /> Setup Verification
+                        </DialogTitle>
+                        <DialogDescription>
+                            We have sent a secure 6-digit OTP code to <strong className="text-foreground">{user?.email}</strong>. Enter it below to enable Two-Factor Authentication.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6 space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verification Code</Label>
+                            <Input 
+                                value={otpCode}
+                                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
+                                placeholder="000000"
+                                className="h-14 text-center text-3xl font-mono tracking-[0.5em] bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/30"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsTwoFactorModalOpen(false)} 
+                            disabled={verify2FAMutation.isPending}
+                            className="font-bold border-zinc-200 dark:border-zinc-800"
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={() => verify2FAMutation.mutate()} 
+                            disabled={otpCode.length !== 6 || verify2FAMutation.isPending}
+                            className="font-extrabold shadow-lg hover:shadow-primary/50"
+                        >
+                            {verify2FAMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                            Verify & Enable 2FA
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* SMART IMAGE PROCESSING MODAL */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

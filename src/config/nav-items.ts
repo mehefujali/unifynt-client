@@ -319,6 +319,16 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
         requiredPermissions: ["SMS_VIEW", "SMS_SEND", "SMS_MANAGE"],
       },
       {
+        title: "Email Center",
+        href: "/admin/email",
+        requiredPermissions: ["SMS_VIEW", "SMS_SEND", "SMS_MANAGE"],
+      },
+      {
+        title: "Payment Gateway",
+        href: "/admin/settings/payment",
+        requiredPermissions: ["SCHOOL_EDIT"],
+      },
+      {
         title: "Billing & Sub",
         href: "/admin/billing",
         requiredPermissions: ["SCHOOL_EDIT"],
@@ -343,6 +353,7 @@ export const navItems: Record<string, NavItem[]> = {
       subItems: [
         { title: "Plans", href: "/super-admin/plans" },
         { title: "SMS Packages", href: "/super-admin/sms-packages" },
+        { title: "Email Packages", href: "/super-admin/email-packages" },
       ],
     },
     { title: "Schools", href: "/super-admin/schools", icon: School },
