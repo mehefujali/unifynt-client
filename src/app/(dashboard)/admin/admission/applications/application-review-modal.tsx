@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AdmissionService } from "@/services/admission.service";
 import axiosInstance from "@/lib/axios";
@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, CheckCircle2, User, Link as LinkIcon, Mail, Phone, GraduationCap, CalendarDays } from "lucide-react";
+import { Loader2, CheckCircle2, User, Link as LinkIcon, Mail, Phone, GraduationCap, CalendarDays, CreditCard, XCircle } from "lucide-react";
 
 interface Props {
     applicationId: string | null;
@@ -23,7 +23,7 @@ interface Props {
 
 const EXCLUDED_KEYS = [
     "id", "schoolId", "studentId", "classId", "academicYearId", 
-    "customData", "createdAt", "updatedAt", "status", "school", 
+    "customData", "createdAt", "updatedAt", "status", "paymentStatus", "school", 
     "className", "academicYearName", "applicantName", "applicantEmail", 
     "firstName", "lastName", "email", "phone", "profileImage"
 ];
@@ -45,6 +45,15 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
     });
 
     const application = appRes?.data;
+
+    const [paymentStatus, setPaymentStatus] = useState<string>("");
+
+    useEffect(() => {
+        if (application?.paymentStatus) {
+            // eslint-disable-next-line react-compiler/react-compiler
+            setPaymentStatus(application.paymentStatus);
+        }
+    }, [application]);
 
     const { data: sectionsRes, isLoading: loadingSections } = useQuery({
         queryKey: ["sections", application?.classId],
@@ -71,6 +80,35 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
     const handleApprove = () => {
         if (!sectionId) return toast.error("Please assign a section to the student.");
         approveMutation.mutate();
+    };
+
+    const updateStatusMutation = useMutation({
+        mutationFn: (data: { status?: string; paymentStatus?: string }) => AdmissionService.updateStatus(applicationId!, data),
+        onSuccess: (data, variables) => {
+            if (variables.status === "REJECTED") {
+                toast.success("Application rejected successfully.");
+                onClose();
+                setSectionId("");
+            } else if (variables.paymentStatus) {
+                toast.success("Payment status updated successfully.");
+            }
+            queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
+            queryClient.invalidateQueries({ queryKey: ["applications"] });
+        },
+        onError: (error: any) => {
+            toast.error(error?.response?.data?.message || "Failed to update status");
+        }
+    });
+
+    const handleReject = () => {
+        if (confirm("Are you sure you want to reject this application? This action cannot be undone.")) {
+            updateStatusMutation.mutate({ status: "REJECTED" });
+        }
+    };
+
+    const handlePaymentUpdate = (newStatus: string) => {
+        setPaymentStatus(newStatus);
+        updateStatusMutation.mutate({ paymentStatus: newStatus });
     };
 
     const renderDataFields = (dataObj: any) => {
@@ -177,6 +215,23 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
                                     {renderDataFields(application.customData)}
                                 </div>
                             )}
+
+                            <div className="space-y-4 pt-4 border-t">
+                                <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><CreditCard className="h-4 w-4"/> Payment Status</h3>
+                                <div className="max-w-xs">
+                                    <Select value={paymentStatus} onValueChange={handlePaymentUpdate} disabled={updateStatusMutation.isPending}>
+                                        <SelectTrigger className="h-10 bg-background">
+                                            <SelectValue placeholder="Update Payment Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="PENDING">Pending</SelectItem>
+                                            <SelectItem value="PAID">Paid</SelectItem>
+                                            <SelectItem value="FAILED">Failed</SelectItem>
+                                            <SelectItem value="REFUNDED">Refunded</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </div>
                     ) : null}
                 </div>
@@ -198,14 +253,25 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
                             <p className="text-[10px] text-muted-foreground font-medium">A new student profile and secure portal account will be automatically generated upon approval.</p>
                         </div>
                         
-                        <Button 
-                            onClick={handleApprove} 
-                            disabled={!sectionId || approveMutation.isPending} 
-                            className="w-full h-11 font-bold text-sm shadow-sm"
-                        >
-                            {approveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                            Approve & Admit Student
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            <Button 
+                                variant="outline"
+                                onClick={handleReject} 
+                                disabled={approveMutation.isPending || updateStatusMutation.isPending} 
+                                className="w-full sm:w-1/3 h-11 font-bold text-sm shadow-sm text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                            >
+                                {updateStatusMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                                Reject
+                            </Button>
+                            <Button 
+                                onClick={handleApprove} 
+                                disabled={!sectionId || approveMutation.isPending || updateStatusMutation.isPending} 
+                                className="w-full sm:w-2/3 h-11 font-bold text-sm shadow-sm"
+                            >
+                                {approveMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                Approve & Admit Student
+                            </Button>
+                        </div>
                     </div>
                 )}
             </SheetContent>

@@ -56,4 +56,12 @@ export const StudentService = {
     const response = await axiosInstance.post(`/students/bulk-promote`, data);
     return response.data;
   },
+  getPromotionPreview: async (params: { academicYearId: string; classId: string; sectionId?: string }) => {
+    const response = await axiosInstance.get(`/students/promotion-preview`, { params });
+    return response.data;
+  },
+  resetPassword: async (id: string) => {
+    const response = await axiosInstance.post(`/students/${id}/reset-password`);
+    return response.data;
+  },
 };

@@ -210,6 +210,9 @@ export default function ApplicationsPage() {
                   Applied On
                 </TableHead>
                 <TableHead className="font-semibold text-foreground">
+                  Payment
+                </TableHead>
+                <TableHead className="font-semibold text-foreground">
                   Status
                 </TableHead>
                 {canReview && (
@@ -222,14 +225,14 @@ export default function ApplicationsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={canReview ? 5 : 4} className="h-64 text-center">
+                  <TableCell colSpan={canReview ? 6 : 5} className="h-64 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                   </TableCell>
                 </TableRow>
               ) : applications.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={canReview ? 5 : 4}
+                    colSpan={canReview ? 6 : 5}
                     className="h-64 text-center text-muted-foreground"
                   >
                     <Inbox className="mx-auto mb-4 h-12 w-12 opacity-20" />
@@ -265,6 +268,24 @@ export default function ApplicationsPage() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {format(new Date(app.createdAt), "dd MMM yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const ps = app.paymentStatus || "PENDING";
+                        const psStyle =
+                          ps === "PAID"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : ps === "FAILED"
+                              ? "border-red-200 bg-red-50 text-red-700"
+                              : ps === "REFUNDED"
+                                ? "border-purple-200 bg-purple-50 text-purple-700"
+                                : "border-amber-200 bg-amber-50 text-amber-700"; // PENDING / PARTIAL / OVERDUE
+                        return (
+                          <Badge variant="outline" className={psStyle}>
+                            {ps}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Badge

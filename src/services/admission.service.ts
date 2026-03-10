@@ -65,4 +65,17 @@ export const AdmissionService = {
     });
     return res.data;
   },
+
+  verifyPayment: async (schoolId: string, data: any) => {
+    const res = await axiosInstance.post(
+      `/admission/verify-payment/${schoolId}`,
+      data
+    );
+    return res.data;
+  },
+
+  updateStatus: async (id: string, data: { status?: string; paymentStatus?: string }) => {
+    const res = await axiosInstance.patch(`/admission/status/${id}`, data);
+    return res.data;
+  },
 };

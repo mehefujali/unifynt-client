@@ -1,9 +1,10 @@
-import { prisma } from "@/app/config/db";
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { notFound } from "next/navigation";
-import Link from "next/link";
-
-import { ModeToggle } from "@/components/mode-toggle";
+import { SiteConfigService } from "@/services/site-config.service";
+import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
+import { Header, Footer } from "@/components/templates/enterprise-sections";
 import DynamicAdmissionForm from "@/components/admission/DynamicAdmissionForm";
+import { prisma } from "@/app/config/db";
 
 interface AdmissionPageProps {
     params: Promise<{
@@ -15,6 +16,7 @@ export default async function AdmissionPage({ params }: AdmissionPageProps) {
     const resolvedParams = await params;
     const domain = decodeURIComponent(resolvedParams.domain);
 
+    // Fetch school to ensure it exists and get ID for the form
     const school = await prisma.school.findFirst({
         where: {
             OR: [
@@ -29,43 +31,46 @@ export default async function AdmissionPage({ params }: AdmissionPageProps) {
         return notFound();
     }
 
+    // Fetch site config for Header/Footer styling
+    let siteData = null;
+    try {
+        siteData = await SiteConfigService.getPublicSiteData(domain);
+    } catch (e) {
+        siteData = null;
+    }
+
+    const liveTheme = siteData?.themeSettings ? { ...DEFAULT_SITE_DATA.theme, ...siteData.themeSettings } : DEFAULT_SITE_DATA.theme;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const liveContent = { ...DEFAULT_SITE_DATA.content } as any;
+    
+    if (siteData?.content) {
+        Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {
+            liveContent[key] = {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ...(DEFAULT_SITE_DATA.content as any)[key],
+                ...(siteData?.content[key] || {})
+            };
+        });
+    }
+
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-300">
-            <header className="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3 transition-transform hover:scale-105">
-                        {school.logo ? (
-                            <img src={school.logo} alt={school.name} className="h-12 w-auto object-contain" />
-                        ) : (
-                            <div className="h-12 w-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-black shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20">
-                                {school.name.charAt(0)}
-                            </div>
-                        )}
-                        <span className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{school.name}</span>
-                    </Link>
-                    <div className="flex items-center gap-6">
-                        <Link
-                            href="/"
-                            className="text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                        >
-                            Back to Home
-                        </Link>
-                        <ModeToggle />
-                    </div>
-                </div>
-            </header>
+        <div style={{ backgroundColor: liveTheme.background }} className="min-h-screen flex flex-col font-sans transition-colors duration-300">
+            <Header data={liveContent.header} theme={liveTheme} school={siteData?.school || school} />
 
             <main className="flex-grow py-12 px-4 sm:px-6 lg:px-8 relative">
-                <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-indigo-100/50 dark:from-indigo-900/20 to-transparent -z-10"></div>
+                <div className="absolute top-0 left-0 w-full h-96 opacity-20 -z-10" style={{ background: `linear-gradient(to bottom, ${liveTheme.primary}, transparent)` }}></div>
 
                 <div className="max-w-4xl mx-auto mb-10 text-center">
-                    <div className="inline-flex items-center justify-center px-4 py-1.5 mb-4 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-semibold text-sm border border-indigo-100 dark:border-indigo-500/20 tracking-wide">
+                    <div 
+                        className="inline-flex items-center justify-center px-4 py-1.5 mb-4 rounded-full font-semibold text-sm tracking-wide"
+                        style={{ backgroundColor: `${liveTheme.primary}20`, color: liveTheme.primary, borderColor: `${liveTheme.primary}40`, borderWidth: '1px' }}    
+                    >
                         Admissions Open
                     </div>
-                    <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight sm:text-5xl mb-4">
+                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl mb-4" style={{ color: liveTheme.text }}>
                         Application for Admission
                     </h1>
-                    <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: liveTheme.text, opacity: 0.8 }}>
                         Join {school.name} for the upcoming academic session. Please complete the application form below with accurate information to initiate your admission process.
                     </p>
                 </div>
@@ -75,11 +80,7 @@ export default async function AdmissionPage({ params }: AdmissionPageProps) {
                 </div>
             </main>
 
-            <footer className="bg-white dark:bg-slate-900 py-8 text-center border-t border-slate-200 dark:border-slate-800 mt-auto transition-colors duration-300">
-                <p className="text-slate-500 dark:text-slate-400 font-medium">
-                    &copy; {new Date().getFullYear()} {school.name}. All rights reserved.
-                </p>
-            </footer>
+            <Footer data={liveContent.footer} theme={liveTheme} school={siteData?.school || school} />
         </div>
     );
 }
