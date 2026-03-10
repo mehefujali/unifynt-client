@@ -14,9 +14,9 @@ import {
   FileText,
   Award,
   ShieldAlert,
-  TrendingUp,
   Megaphone,
   Bell,
+  Mailbox,
 } from "lucide-react";
 
 export type SubItem = {
@@ -42,6 +42,16 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
     href: "/admin",
     icon: LayoutDashboard,
     requiredPermissions: ["DASHBOARD_VIEW"],
+  },
+  {
+    title: "Notice Board",
+    href: "/admin/notices",
+    icon: Megaphone,
+  },
+  {
+    title: "Inquiries",
+    href: "/admin/inquiries",
+    icon: Mailbox,
   },
   {
     title: "Admissions",

@@ -12,21 +12,21 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone, KeyRound } from "lucide-react";
+import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone, KeyRound, Bell } from "lucide-react";
 
 import ViewStudentModal from "./view-student-modal";
 import AddStudentModal from "./add-student-modal";
 import EditStudentModal from "./edit-student-modal";
+import ResetPasswordModal from "./reset-password-modal";
+import SendNotificationModal from "./send-notification-modal";
 
 // --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
-import { usePermission } from "@/hooks/use-permission";
 
 const extractData = (res: any) => {
     if (!res) return [];
@@ -47,11 +47,10 @@ export default function StudentsPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+    const [resetStudentId, setResetStudentId] = useState<string | null>(null);
+    const [notificationStudentId, setNotificationStudentId] = useState<string | null>(null);
+    const [generatedPasswordInfo, setGeneratedPasswordInfo] = useState<{ email: string, password: string } | null>(null);
     const [isExporting, setIsExporting] = useState(false);
-
-    // Permission Check for UI logic
-    const { hasPermission } = usePermission();
-    const canEdit = hasPermission(PERMISSIONS.STUDENT_EDIT);
 
     const { data: classesRes } = useQuery({
         queryKey: ["classes"],
@@ -74,25 +73,7 @@ export default function StudentsPage() {
         }),
     });
 
-    const handleResetPassword = async (stdId: string) => {
-        if (confirm("Are you sure you want to reset this student's password? An auto-generated password will be returned.")) {
-            try {
-                const toastId = toast.loading("Resetting password...");
-                const res = await StudentService.resetPassword(stdId);
-                if (res.success && res.data) {
-                    toast.success("Password Reset Successful", {
-                        id: toastId,
-                        description: `New Password for ${res.data.email} is: ${res.data.plainPassword}`,
-                        duration: 15000,
-                    });
-                } else {
-                    toast.success("Password Reset", { id: toastId });
-                }
-            } catch (err: any) {
-                toast.error(err?.response?.data?.message || "Failed to reset password");
-            }
-        }
-    };
+    // The password reset logic has been appropriately moved to the ResetPasswordModal component
 
     const handleExport = async (format: 'excel' | 'csv') => {
         try {
@@ -125,7 +106,7 @@ export default function StudentsPage() {
             }
 
             toast.success(`Exported successfully as ${format.toUpperCase()}`, { id: "export-toast" });
-        } catch (error) {
+        } catch {
             toast.error("Failed to export data", { id: "export-toast" });
         } finally {
             setIsExporting(false);
@@ -161,6 +142,14 @@ export default function StudentsPage() {
                         <p className="text-muted-foreground text-sm font-bold opacity-80">Full audit of enrolled students across all wings.</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        {generatedPasswordInfo && (
+                            <div className="hidden lg:flex items-center gap-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 px-4 py-2 rounded-xl border border-rose-100 dark:border-rose-900/30 font-bold text-[12px] shadow-sm animate-in zoom-in fade-in duration-300">
+                                <KeyRound className="h-4 w-4" /> 
+                                Password Reset - 
+                                <span className="opacity-80">{generatedPasswordInfo.email}</span>:
+                                <span className="font-mono tracking-wider ml-1 px-2 py-0.5 bg-white dark:bg-black/40 rounded border border-rose-100 dark:border-rose-900/50">{generatedPasswordInfo.password}</span>
+                            </div>
+                        )}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" disabled={isExporting} className="h-11 rounded-xl shadow-sm font-bold border-slate-200 dark:border-slate-800">
@@ -297,19 +286,25 @@ export default function StudentsPage() {
                                                     <div className="flex items-center justify-end gap-3">
                                                         {/* 🔒 Gate for Individual Actions */}
                                                         <PermissionGate required={PERMISSIONS.STUDENT_VIEW}>
-                                                            <Button variant="ghost" size="icon" onClick={() => setSelectedStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all">
+                                                            <Button variant="ghost" size="icon" onClick={() => setSelectedStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                                                                 <Eye className="h-5 w-5" />
                                                             </Button>
                                                         </PermissionGate>
                                                         
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Reset Password" variant="ghost" size="icon" onClick={() => handleResetPassword(std.id)} className="h-10 w-10 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all">
+                                                            <Button title="Send Notification" variant="ghost" size="icon" onClick={() => setNotificationStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-500/20">
+                                                                <Bell className="h-5 w-5" />
+                                                            </Button>
+                                                        </PermissionGate>
+
+                                                        <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
+                                                            <Button title="Reset Password" variant="ghost" size="icon" onClick={() => setResetStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all border border-transparent hover:border-rose-500/20">
                                                                 <KeyRound className="h-5 w-5" />
                                                             </Button>
                                                         </PermissionGate>
                                                         
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button variant="ghost" size="icon" onClick={() => setEditingStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-amber-500/10 hover:text-amber-600 transition-all">
+                                                            <Button title="Edit Details" variant="ghost" size="icon" onClick={() => setEditingStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-amber-500/10 hover:text-amber-600 transition-all border border-transparent hover:border-amber-500/20">
                                                                 <Edit className="h-5 w-5" />
                                                             </Button>
                                                         </PermissionGate>
@@ -359,6 +354,8 @@ export default function StudentsPage() {
                 <AddStudentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
                 <ViewStudentModal studentId={selectedStudentId} isOpen={!!selectedStudentId} onClose={() => setSelectedStudentId(null)} />
                 <EditStudentModal studentId={editingStudentId} isOpen={!!editingStudentId} onClose={() => setEditingStudentId(null)} />
+                <SendNotificationModal studentId={notificationStudentId} isOpen={!!notificationStudentId} onClose={() => setNotificationStudentId(null)} />
+                <ResetPasswordModal studentId={resetStudentId} isOpen={!!resetStudentId} onClose={() => setResetStudentId(null)} setGeneratedPasswordInfo={setGeneratedPasswordInfo} />
             </div>
         </PermissionGate>
     );

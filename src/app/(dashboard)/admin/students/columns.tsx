@@ -105,7 +105,10 @@ export const columns: ColumnDef<any>[] = [
                         <span className="font-black text-[14px] truncate max-w-[160px] text-slate-900 dark:text-white tracking-tight leading-none mb-1">
                             {fullName}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        <span className="text-[10px] font-bold text-slate-400 tracking-tighter truncate max-w-[160px]">
+                            {student.email || "No Email"}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter border-t border-slate-100 dark:border-slate-800 pt-0.5 mt-0.5 w-max">
                             ID: {student.studentId || student.admissionNumber || "N/A"}
                         </span>
                     </div>

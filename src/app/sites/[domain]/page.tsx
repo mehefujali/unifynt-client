@@ -5,18 +5,21 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SiteConfigService } from "@/services/site-config.service";
 import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
-import { Header, Hero, Stats, About, Features, Academics, Testimonials, Contact, Footer } from "@/components/templates/enterprise-sections";
+import { Header, Hero, NoticeBoard, Stats, About, Features, Academics, Gallery, Faculty, Testimonials, Faq, Contact, Footer } from "@/components/templates/enterprise-sections";
 import { Loader2 } from "lucide-react";
 
 // 🟢 Section Map Update
 const SECTION_MAP: Record<string, any> = {
   hero: Hero,
+  noticeBoard: NoticeBoard,
   stats: Stats,
   about: About,
   features: Features,
   academics: Academics,
+  gallery: Gallery,
+  faculty: Faculty,
   testimonials: Testimonials,
-
+  faq: Faq,
   contact: Contact,
 };
 
@@ -39,15 +42,46 @@ export default function EnterprisePublicSite() {
     if (siteData) {
       const mergedTheme = { ...DEFAULT_SITE_DATA.theme, ...(siteData.themeSettings || {}) };
 
-      const mergedContent = { ...DEFAULT_SITE_DATA.content } as any;
-      if (siteData.content) {
-        Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {
+      // Build the content object in the exact order we want to render
+      const mergedContent: any = {};
+      
+      // We manually define the order
+      const orderedKeys = [
+        "header",
+        "hero",
+        "noticeBoard", // Notice board right under hero
+        "stats",
+        "about",
+        "features",
+        "academics",
+        "gallery",
+        "faculty",
+        "testimonials",
+        "faq",
+        "contact",
+        "footer"
+      ];
+
+      orderedKeys.forEach(key => {
+        if (key === "noticeBoard") {
+          mergedContent.noticeBoard = { show: true };
+        } else if (DEFAULT_SITE_DATA.content[key as keyof typeof DEFAULT_SITE_DATA.content]) {
           mergedContent[key] = {
             ...(DEFAULT_SITE_DATA.content as any)[key],
-            ...(siteData.content[key] || {})
+            ...(siteData.content?.[key] || {})
           };
+        }
+      });
+      
+      // Include any other dynamic keys from siteData that weren't in the preset list
+      if (siteData.content) {
+        Object.keys(siteData.content).forEach(key => {
+            if (!mergedContent[key]) {
+                mergedContent[key] = siteData.content[key];
+            }
         });
       }
+
 
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiveTheme(mergedTheme);
