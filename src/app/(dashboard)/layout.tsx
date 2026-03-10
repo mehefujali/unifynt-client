@@ -16,7 +16,7 @@ export default function DashboardLayout({
 
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 custom-scrollbar">
                     <SubscriptionGuard>
-                        <div className="mx-auto max-w-400 h-full animate-in fade-in duration-700 zoom-in-[0.98]">
+                        <div className="mx-auto max-w-400 min-h-full animate-in fade-in duration-700 zoom-in-[0.98]">
                             {children}
                         </div>
                     </SubscriptionGuard>

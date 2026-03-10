@@ -23,7 +23,8 @@ import {
     Activity,
     ExternalLink,
     MessageSquare,
-    Send
+    Send,
+    Mail
 } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -49,6 +50,7 @@ import api from "@/lib/axios";
 
 // FIXED: Import the Assign SMS Modal
 import { AssignSmsModal } from "./assign-sms-modal";
+import { AssignEmailModal } from "./assign-email-modal";
 
 interface SchoolDetailsModalProps {
     schoolId: string | null;
@@ -112,6 +114,8 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
 
     // FIXED: State for the new Assign SMS Modal
     const [isAssignSmsModalOpen, setIsAssignSmsModalOpen] = useState(false);
+    // State for the Email Package Assign Modal
+    const [isAssignEmailModalOpen, setIsAssignEmailModalOpen] = useState(false);
 
     const { data: school, isLoading: isSchoolLoading } = useQuery({
         queryKey: ["school", schoolId],
@@ -436,6 +440,12 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                 </Card>
                                                 <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
                                                     <CardContent className="p-5 flex flex-col gap-2">
+                                                        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Email Credits</p>
+                                                        <p className="text-2xl font-bold tracking-tight text-foreground">{(school as any).emailBalance?.toLocaleString() || 0}</p>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card className="shadow-sm border-border/60 hover:shadow-md transition-shadow">
+                                                    <CardContent className="p-5 flex flex-col gap-2">
                                                         <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Renewal Date</p>
                                                         <div className="flex items-center gap-2">
                                                             <p className="text-xl font-bold tracking-tight text-foreground">
@@ -641,11 +651,11 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                     </div>
                                                 </div>
 
-                                                {/* FIXED: Professional SMS Package Allocation Section */}
+                                                {/* SMS Package Allocation */}
                                                 <div className="bg-background rounded-xl border shadow-sm overflow-hidden">
                                                     <div className="bg-muted/30 px-6 py-4 border-b">
                                                         <h3 className="text-lg font-bold flex items-center gap-2">
-                                                            <MessageSquare className="h-5 w-5 text-primary" /> Communication Quota
+                                                            <MessageSquare className="h-5 w-5 text-primary" /> SMS Communication Quota
                                                         </h3>
                                                         <p className="text-sm text-muted-foreground">Manage transactional SMS packages and current balance.</p>
                                                     </div>
@@ -660,6 +670,30 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                                                             className="h-12 px-6 font-bold shadow-md hover:scale-[1.02] transition-transform"
                                                         >
                                                             <Send className="mr-2 h-4 w-4" /> Assign SMS Package
+                                                        </Button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Email Package Allocation */}
+                                                <div className="bg-background rounded-xl border shadow-sm overflow-hidden">
+                                                    <div className="bg-muted/30 px-6 py-4 border-b">
+                                                        <h3 className="text-lg font-bold flex items-center gap-2">
+                                                            <Mail className="h-5 w-5 text-primary" /> Email Communication Quota
+                                                        </h3>
+                                                        <p className="text-sm text-muted-foreground">Manage bulk email packages and current balance.</p>
+                                                    </div>
+                                                    <div className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">Available Email Credits</p>
+                                                            <p className="text-4xl font-black text-foreground">{(school as any).emailBalance?.toLocaleString() || 0}</p>
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => setIsAssignEmailModalOpen(true)}
+                                                            className="h-12 px-6 font-bold shadow-md hover:scale-[1.02] transition-transform border-primary/30 hover:border-primary"
+                                                        >
+                                                            <Mail className="mr-2 h-4 w-4" /> Assign Email Package
                                                         </Button>
                                                     </div>
                                                 </div>
@@ -836,6 +870,16 @@ export function SchoolDetailsModal({ schoolId, onClose }: SchoolDetailsModalProp
                 <AssignSmsModal
                     isOpen={isAssignSmsModalOpen}
                     onClose={() => setIsAssignSmsModalOpen(false)}
+                    schoolId={school.id}
+                    schoolName={school.name}
+                />
+            )}
+
+            {/* NEW: External Email Assignment Modal */}
+            {school && (
+                <AssignEmailModal
+                    isOpen={isAssignEmailModalOpen}
+                    onClose={() => setIsAssignEmailModalOpen(false)}
                     schoolId={school.id}
                     schoolName={school.name}
                 />

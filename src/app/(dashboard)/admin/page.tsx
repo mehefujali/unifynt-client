@@ -8,7 +8,7 @@ import api from "@/lib/axios";
 import {
     Users, TrendingUp, GraduationCap, Wallet, Bell,
     Clock, Lock, MoreHorizontal, UserCheck,
-    BookOpen, CalendarDays, Sparkles, Activity
+    BookOpen, CalendarDays, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Chart } from "react-google-charts";
@@ -17,11 +17,12 @@ import { PermissionGate } from "@/components/common/permission-gate";
 import { AnnouncementModal } from "@/components/dashboard/announcement-modal";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminDashboard() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isDark, setIsDark] = useState(false);
-    const [userName, setUserName] = useState("");
+    const { user } = useAuth();
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -33,24 +34,16 @@ export default function AdminDashboard() {
         const observer = new MutationObserver(checkDark);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-        try {
-            const token = localStorage.getItem("accessToken");
-            if (token) {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                if (payload?.email) {
-                    const namePart = payload.email.split('@')[0];
-                    setUserName(namePart.charAt(0).toUpperCase() + namePart.slice(1));
-                }
-            }
-        } catch {
-            setUserName("");
-        }
-
         return () => {
             clearInterval(timer);
             observer.disconnect();
         };
     }, []);
+
+    // Extract precise display name
+    const displayName = user?.details?.firstName
+        ? `${user.details.firstName} ${user.details.lastName || ""}`.trim()
+        : user?.name || "";
 
     const textColor = isDark ? "#a1a1aa" : "#52525b";
     const gridColor = isDark ? "#27272a" : "#e4e4e7";
@@ -175,31 +168,35 @@ export default function AdminDashboard() {
         <PermissionGate
             required={PERMISSIONS.DASHBOARD_VIEW}
             fallback={
-                <div className="flex flex-col items-center justify-center min-h-[85vh] text-center px-4 animate-in fade-in zoom-in duration-700">
-                    <div className="relative mb-8">
-                        <div className="absolute -inset-4 bg-primary/20 rounded-full blur-xl animate-pulse"></div>
-                        <div className="relative h-24 w-24 bg-gradient-to-tr from-primary to-primary/60 rounded-3xl flex items-center justify-center shadow-2xl shadow-primary/30 rotate-3">
-                            <Sparkles className="h-10 w-10 text-white" />
-                        </div>
-                    </div>
+                <div className="flex flex-col items-center justify-center min-h-[85vh] px-4 md:px-8 bg-zinc-50/50 dark:bg-zinc-950/50 animate-in fade-in zoom-in duration-700">
+                    <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm p-8 md:p-12 text-center relative overflow-hidden">
+                        {/* Decorative Background Blur */}
+                        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+                        
+                        <div className="relative z-10 flex flex-col items-center">
+                            <div className="mb-6 h-20 w-20 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center shadow-inner border border-zinc-200/50 dark:border-zinc-700/50">
+                                <Activity className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />
+                            </div>
 
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-4">
-                        {greeting}{userName ? `, ${userName}` : "!"}
-                    </h1>
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-900 dark:text-white mb-3">
+                                {greeting}{displayName ? `, ${displayName}` : "!"}
+                            </h1>
 
-                    <p className="text-lg text-zinc-500 dark:text-zinc-400 mb-10 max-w-lg mx-auto font-medium leading-relaxed">
-                        Welcome to your unified workspace. Navigate through the sidebar menu to access your daily tools, classes, and tasks.
-                    </p>
-
-                    <div className="flex items-center gap-4 px-6 py-4 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-sm">
-                        <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
-                            <CalendarDays className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
-                        </div>
-                        <div className="text-left">
-                            <p className="text-xs font-extrabold uppercase tracking-widest text-zinc-400 mb-0.5">Today&apos;s Date</p>
-                            <p className="font-bold text-zinc-700 dark:text-zinc-200">
-                                {format(currentTime, 'EEEE, MMMM do, yyyy')}
+                            <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-md mx-auto font-medium">
+                                Welcome to your unified workspace. Navigate through the sidebar menu to access your daily operational tools and tasks.
                             </p>
+
+                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mt-4 px-6 py-4 bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 mx-auto">
+                                <div className="p-2.5 bg-white dark:bg-zinc-900 shadow-sm rounded-xl border border-zinc-200/50 dark:border-zinc-800">
+                                    <Clock className="h-5 w-5 text-primary" />
+                                </div>
+                                <div className="text-center sm:text-left">
+                                    <p className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-1">Current Session Info</p>
+                                    <p className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
+                                        {format(currentTime, 'EEEE, MMMM do, yyyy • hh:mm a')}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -215,7 +212,7 @@ export default function AdminDashboard() {
                             <Activity className="h-3.5 w-3.5" /> Workspace Active
                         </div>
                         <h1 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
-                            {greeting}, Administrator
+                            {greeting}{displayName ? `, ${displayName}` : "!"}
                         </h1>
                         <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">
                             Here&apos;s what&apos;s happening in your institution today. Monitor live metrics, track attendance, and overview financial statuses in real-time.

@@ -38,8 +38,8 @@ const DataViewer = ({ data, type }: { data: any; type: "old" | "new" }) => {
 export default function AuditDetailsModal({ log, isOpen, onClose }: Props) {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className=" p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-[32px]">
-                <DialogHeader className="px-8 py-6 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50">
+            <DialogContent className="p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-2xl md:rounded-[32px] w-[95vw] max-w-5xl h-[90vh] md:h-auto max-h-[90vh] flex flex-col">
+                <DialogHeader className="px-6 py-5 md:px-8 md:py-6 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
                     <div className="flex items-start justify-between">
                         <div>
                             <DialogTitle className="text-xl font-black uppercase tracking-tight text-zinc-900 dark:text-white flex items-center gap-3 mb-2">
@@ -61,10 +61,11 @@ export default function AuditDetailsModal({ log, isOpen, onClose }: Props) {
                     </div>
                 </DialogHeader>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-px bg-zinc-200 dark:bg-zinc-800">
-                    <div className="bg-white dark:bg-zinc-950 p-6 space-y-6 lg:col-span-1">
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 border-b border-zinc-100 dark:border-zinc-800 pb-2">Execution Context</p>
+                <div className="flex-1 overflow-y-auto md:overflow-hidden bg-zinc-200 dark:bg-zinc-800">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-px min-h-0 h-full">
+                        <div className="bg-white dark:bg-zinc-950 p-6 space-y-6 md:col-span-1 border-b md:border-b-0 md:border-r border-zinc-100 dark:border-zinc-800 shrink-0">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 border-b border-zinc-100 dark:border-zinc-800 pb-2">Execution Context</p>
                             <div className="space-y-4">
                                 <div>
                                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-1">Actor</p>
@@ -89,7 +90,7 @@ export default function AuditDetailsModal({ log, isOpen, onClose }: Props) {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-3 bg-white dark:bg-zinc-950 p-0 flex flex-col h-[550px]">
+                    <div className="md:col-span-3 bg-white dark:bg-zinc-950 p-0 flex flex-col h-[400px] md:h-auto min-h-[300px]">
                         <div className="grid grid-cols-2 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
                             <div className="p-4 flex items-center justify-between border-r border-zinc-200 dark:border-zinc-800 bg-rose-50/50 dark:bg-rose-950/20">
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600 dark:text-rose-400">Previous State</span>
@@ -108,7 +109,7 @@ export default function AuditDetailsModal({ log, isOpen, onClose }: Props) {
                                 )}
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 flex-1 min-h-0">
+                        <div className="grid grid-cols-2 flex-1 min-h-0 border-t border-zinc-200 dark:border-zinc-800">
                             <ScrollArea className="h-full border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#0a0a0a]">
                                 <DataViewer data={log.oldData} type="old" />
                             </ScrollArea>
@@ -116,6 +117,7 @@ export default function AuditDetailsModal({ log, isOpen, onClose }: Props) {
                                 <DataViewer data={log.newData} type="new" />
                             </ScrollArea>
                         </div>
+                    </div>
                     </div>
                 </div>
             </DialogContent>

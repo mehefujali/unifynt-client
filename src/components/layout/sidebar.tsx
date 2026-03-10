@@ -205,9 +205,9 @@ export default function Sidebar() {
 
     const profileRoute = useMemo(() => {
         if (!user?.role) return "#";
-        if (user.role === "SUPER_ADMIN") return "/super-admin/user-profile";
+        if (user.role === "SUPER_ADMIN") return "/super-admin/profile";
         if (user.role === "SCHOOL_ADMIN") return "/admin/user-profile";
-        return `/admin/user-profile`;
+        return `/admin/profile`;
     }, [user]);
 
     if (!isMounted || isLoading) {
@@ -222,7 +222,7 @@ export default function Sidebar() {
         ? `${user.details.firstName} ${user.details.lastName || ""}`.trim()
         : user?.name || "Admin User";
 
-    const profileImage = user?.details?.profileImage || (user as any)?.profileImage || "";
+    const profileImage = user?.details?.profilePicture || user?.details?.profileImage || (user as any)?.profileImage || (user as any)?.profilePicture || "";
 
     const getInitials = (name: string) => {
         if (!name) return "UN";
