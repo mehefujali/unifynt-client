@@ -4,7 +4,8 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useSocket } from '@/hooks/use-socket';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { BellRing } from 'lucide-react';
+import { BellRing, Mailbox } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface SocketContextData {
     socket: any;
@@ -17,6 +18,7 @@ export const useSocketContext = () => useContext(SocketContext);
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     const { socket } = useSocket();
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     useEffect(() => {
         if (!socket) return;
@@ -35,12 +37,28 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const handleNewInquiry = (inquiry: any) => {
+            toast(inquiry.title || "New Inquiry Received", {
+                description: inquiry.message || "Someone submitted a message via the contact form.",
+                icon: <Mailbox className="h-5 w-5 text-blue-500" />,
+                duration: 12000,
+                position: 'bottom-right',
+                action: {
+                    label: "View",
+                    onClick: () => router.push("/admin/inquiries"),
+                },
+            });
+        };
+
         socket.on('new_notification', handleNewNotification);
+        socket.on('new_inquiry', handleNewInquiry);
 
         return () => {
             socket.off('new_notification', handleNewNotification);
+            socket.off('new_inquiry', handleNewInquiry);
         };
-    }, [socket, queryClient]);
+    }, [socket, queryClient, router]);
 
     return (
         <SocketContext.Provider value={{ socket }}>

@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const loginSchema = z.object({
-    email: z.string().email("Please enter a valid email address"),
+    email: z.string().min(1, "Please enter your Email or Student ID"),
     password: z.string().min(1, "Password cannot be empty"),
 });
 
@@ -157,7 +157,7 @@ export default function LoginPage() {
                     <div className="mb-8 text-center sm:text-left">
                         <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">{is2FA ? "Security Check" : "Sign in"}</h2>
                         <p className="text-sm text-muted-foreground mt-2">
-                            {is2FA ? `Enter the 6-digit code sent to ${userEmail}` : "Enter your email and password to continue."}
+                            {is2FA ? `Enter the 6-digit code sent to ${userEmail}` : "Enter your Email or Student ID to continue."}
                         </p>
                     </div>
 
@@ -165,10 +165,10 @@ export default function LoginPage() {
                         <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
                             <div className="space-y-5">
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Work Email</Label>
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email or Student ID</Label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                        <Input {...loginForm.register("email")} type="email" placeholder="admin@school.com" className="pl-10 h-12 shadow-sm bg-muted/20" disabled={isLoading} />
+                                        <Input {...loginForm.register("email")} type="text" placeholder="admin@school.com or ID" className="pl-10 h-12 shadow-sm bg-muted/20" disabled={isLoading} />
                                     </div>
                                     {loginForm.formState.errors.email && <p className="text-xs text-red-500 font-medium">{loginForm.formState.errors.email.message}</p>}
                                 </div>

@@ -161,11 +161,21 @@ export function ContentEditor({ content, onChange }: any) {
                           onChange={(e) => updateField(secKey, key, e.target.value)}
                           className="rounded-2xl bg-zinc-50 border-0 focus-visible:ring-1 text-sm min-h-[120px] font-medium leading-relaxed"
                         />
+                      ) : key === "layout" ? (
+                        <select
+                          value={value}
+                          onChange={(e) => updateField(secKey, key, e.target.value)}
+                          className="h-12 w-full px-4 rounded-xl bg-zinc-50 border-0 focus-visible:ring-1 font-semibold text-sm outline-none cursor-pointer"
+                        >
+                          <option value="type1">Layout 1: Minimal Centered</option>
+                          <option value="type2">Layout 2: Background Image</option>
+                          <option value="type3">Layout 3: Split Image/Text</option>
+                        </select>
                       ) : (
                         <Input
                           value={value}
                           onChange={(e) => updateField(secKey, key, e.target.value)}
-                          className={`h-12 rounded-xl bg-zinc-50 border-0 focus-visible:ring-1 ${isLinkField ? 'font-mono text-xs text-primary' : 'font-bold text-sm'}`}
+                          className={`h-12 rounded-xl bg-zinc-50 border-0 focus-visible:ring-1 ${isLinkField ? 'font-mono text-xs text-primary' : 'font-semibold text-sm'}`}
                           placeholder={isLinkField ? "https://your-link.com" : "Enter text content..."}
                         />
                       )}

@@ -60,8 +60,12 @@ export const StudentService = {
     const response = await axiosInstance.get(`/students/promotion-preview`, { params });
     return response.data;
   },
-  resetPassword: async (id: string) => {
-    const response = await axiosInstance.post(`/students/${id}/reset-password`);
+  resetPassword: async (id: string, data?: { newPassword?: string }) => {
+    const response = await axiosInstance.post(`/students/${id}/reset-password`, data);
+    return response.data;
+  },
+  sendNotification: async (id: string, data: { title: string, message: string }) => {
+    const response = await axiosInstance.post(`/students/${id}/send-notification`, data);
     return response.data;
   },
 };
