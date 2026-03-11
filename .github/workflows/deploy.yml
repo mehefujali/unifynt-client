@@ -58,8 +58,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 60s
           script: |
-            cd /home/ubuntu/unifynt-client
-            git fetch origin main || (git clone https://github.com/mehefujali/unifynt-client.git /home/ubuntu/unifynt-client && cd /home/ubuntu/unifynt-client)
+            cd /home/ubuntu/
+            if [ ! -d "unifynt-client" ]; then
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mehefujali/unifynt-client.git
+            fi
+            cd unifynt-client
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mehefujali/unifynt-client.git
+            git fetch origin main
             git reset --hard origin/main
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose pull
