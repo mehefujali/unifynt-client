@@ -58,6 +58,7 @@ const schoolProfileSchema = z.object({
     taxId: z.string().optional().or(z.literal("")),
     timezone: z.string().optional().or(z.literal("")),
     currency: z.string().optional().or(z.literal("")),
+    attendanceType: z.string().optional().or(z.literal("DAILY")),
 });
 
 type SchoolProfileFormValues = z.infer<typeof schoolProfileSchema>;
@@ -164,6 +165,7 @@ export default function AdminWorkspaceProfilePage() {
                 taxId: schoolData.taxId || "",
                 timezone: schoolData.timezone || "Asia/Kolkata",
                 currency: schoolData.currency || "INR",
+                attendanceType: schoolData.attendanceType || "DAILY",
             });
         }
     }, [schoolData, form]);
@@ -439,6 +441,19 @@ export default function AdminWorkspaceProfilePage() {
                                             <div className="space-y-2">
                                                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Currency System</Label>
                                                 <Input className="h-12 shadow-sm bg-muted/10 font-mono" placeholder="e.g. INR, USD" {...form.register("currency")} />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Attendance Tracking Mode</Label>
+                                                <div className="flex flex-col gap-1.5 cursor-pointer">
+                                                    <select 
+                                                        className="h-12 px-3 rounded-md border border-input bg-muted/10 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-sm font-medium transition-colors"
+                                                        {...form.register("attendanceType")}
+                                                    >
+                                                        <option value="DAILY">Daily (Once per day, typically 1st Period)</option>
+                                                        <option value="SUBJECT_WISE">Subject-Wise (Every teacher marks attendance per class)</option>
+                                                    </select>
+                                                    <p className="text-[11px] text-muted-foreground">Determines how teachers mark attendance in their mobile app.</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </CardContent>

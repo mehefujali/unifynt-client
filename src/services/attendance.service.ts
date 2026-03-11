@@ -14,4 +14,11 @@ export const attendanceService = {
     const res = await api.get("/attendance/report", { params });
     return res.data.data;
   },
+
+  // Calculates nikhut attendance percentages (holidays excluded),
+  // returns { summary: [...], meta: { workingDays, holidayDays, ... } }
+  getStudentAttendanceSummary: async (params: Record<string, any>) => {
+    const res = await api.get("/attendance/summary", { params });
+    return res.data.data;
+  },
 };

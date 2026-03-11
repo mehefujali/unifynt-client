@@ -22,9 +22,10 @@ interface Props {
   sectionId: string;
   academicYearId: string;
   date: string;
+  periodId?: string;
 }
 
-export default function AttendanceGrid({ classId, sectionId, academicYearId, date }: Props) {
+export default function AttendanceGrid({ classId, sectionId, academicYearId, date, periodId }: Props) {
   const queryClient = useQueryClient();
   const [records, setRecords] = useState<any[]>([]);
 
@@ -33,16 +34,16 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
   const canMarkAttendance = hasPermission(PERMISSIONS.ATTENDANCE_MARK);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["attendanceGrid", classId, sectionId, academicYearId, date],
-    queryFn: () => attendanceService.getDailyGrid({ classId, sectionId, academicYearId, date }),
+    queryKey: ["attendanceGrid", classId, sectionId, academicYearId, date, periodId],
+    queryFn: () => attendanceService.getDailyGrid({ classId, sectionId, academicYearId, date, periodId }),
     retry: false,
   });
 
   useEffect(() => {
-    if (data) {
+    if (data && data.students) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRecords(
-        data.map((student: any) => ({
+        data.students.map((student: any) => ({
           studentId: student.studentId,
           status: student.status || "PRESENT",
           remarks: student.remarks || "",
@@ -52,7 +53,7 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
     } else {
       setRecords([]);
     }
-  }, [data, classId, sectionId]);
+  }, [data, classId, sectionId, periodId]);
 
   const mutation = useMutation({
     mutationFn: (payload: any) => attendanceService.saveDailyAttendance(payload),
@@ -81,6 +82,7 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
       sectionId,
       academicYearId,
       date,
+      periodId,
       records: records.map((r) => ({
         studentId: r.studentId,
         status: r.status,
@@ -98,7 +100,7 @@ export default function AttendanceGrid({ classId, sectionId, academicYearId, dat
     );
   }
 
-  if (isError || !data || data.length === 0) {
+  if (isError || !data || !data.students || data.students.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950">
         <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-4 ring-1 ring-inset ring-border/50">
