@@ -42,7 +42,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/mehefujali/unifynt-client:latest
+          tags: ghcr.io/mehefujali/unifynt:latest
           build-args: |
             NEXT_PUBLIC_API_URL=http://api.unifynt.com/api/v1
 
@@ -59,10 +59,10 @@ jobs:
           timeout: 60s
           script: |
             cd /home/ubuntu/
-            if [ ! -d "unifynt-client" ]; then
-              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mehefujali/unifynt-client.git
+            if [ ! -d "unifynt" ]; then
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mehefujali/unifynt-client.git unifynt
             fi
-            cd unifynt-client
+            cd unifynt
             git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mehefujali/unifynt-client.git
             git fetch origin main
             git reset --hard origin/main
