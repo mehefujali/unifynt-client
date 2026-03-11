@@ -81,4 +81,18 @@ export const examService = {
     const res = await api.post("/marks-entry/unlock", data);
     return res.data;
   },
+
+  // Marks Permission APIs
+  assignEvaluator: async (data: { scheduleId: string; userId: string }) => {
+    const res = await api.post("/marks-permission/assign", data);
+    return res.data;
+  },
+  revokeEvaluator: async (data: { scheduleId: string; userId: string }) => {
+    const res = await api.post("/marks-permission/revoke", data);
+    return res.data;
+  },
+  getAssignedEvaluators: async (scheduleId: string) => {
+    const res = await api.get(`/marks-permission/evaluators/${scheduleId}`);
+    return res.data?.data || res.data;
+  },
 };
