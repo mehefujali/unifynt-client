@@ -15,16 +15,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import AttendanceGrid from "./attendance-grid";
 import { AcademicService } from "@/services/academic.service";
+import { PeriodService } from "@/services/period.service";
+import { SchoolService } from "@/services/school.service";
+import { useAuth } from "@/hooks/use-auth";
 
 // --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
 
 export default function AttendancePage() {
+  const { user } = useAuth();
   const [date, setDate] = useState<Date>(new Date());
   const [classId, setClassId] = useState("");
   const [sectionId, setSectionId] = useState("");
+  const [periodId, setPeriodId] = useState("");
   const [academicYearId, setAcademicYearId] = useState("");
+
+  const { data: schoolData } = useQuery({
+    queryKey: ["my-school", user?.schoolId],
+    queryFn: () => SchoolService.getSingleSchool(user?.schoolId as string),
+    enabled: !!user?.schoolId,
+  });
+
+  const isSubjectWise = schoolData?.attendanceType === "SUBJECT_WISE";
+
+  const { data: periods } = useQuery({
+    queryKey: ["periods", classId],
+    queryFn: () => PeriodService.getAllPeriods({ classId }),
+    enabled: !!classId,
+  });
 
   const { data: academicYears } = useQuery({
     queryKey: ["academicYears"],
@@ -49,7 +68,7 @@ export default function AttendancePage() {
     }
   }, [academicYears, academicYearId]);
 
-  const isFilterComplete = classId && sectionId && academicYearId && date;
+  const isFilterComplete = classId && sectionId && academicYearId && date && (!isSubjectWise || periodId);
 
   return (
     // 🔒 Gate for the Entire Page View
@@ -117,6 +136,21 @@ export default function AttendancePage() {
                 </SelectContent>
               </Select>
 
+              {isSubjectWise && (
+                <Select value={periodId} onValueChange={setPeriodId} disabled={!classId}>
+                  <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all disabled:opacity-50">
+                    <SelectValue placeholder="Select Period" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {(Array.isArray(periods) ? periods : periods?.data || [])?.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id} className="rounded-lg">
+                        {p.name} ({format(new Date(`2000-01-01T${p.startTime}`), "hh:mm a")} - {format(new Date(`2000-01-01T${p.endTime}`), "hh:mm a")})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -150,6 +184,7 @@ export default function AttendancePage() {
             sectionId={sectionId}
             academicYearId={academicYearId}
             date={format(date, "yyyy-MM-dd")}
+            periodId={isSubjectWise ? periodId : undefined}
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">

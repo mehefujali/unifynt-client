@@ -5,11 +5,12 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { examService } from "@/services/exam.service";
 
+import { Plus, Edit2, Trash2, Loader2, CalendarRange, Clock, ShieldAlert, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit2, Trash2, Loader2, CalendarRange, Clock, ShieldAlert } from "lucide-react";
 import ScheduleModal from "./schedule-modal";
+import AssignEvaluatorModal from "./assign-evaluator-modal";
 import { toast } from "sonner";
 import { AcademicService } from "@/services/academic.service";
 
@@ -24,6 +25,9 @@ export default function ExamSchedulesPage() {
   const [classId, setClassId] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedScheduleForAssign, setSelectedScheduleForAssign] = useState<any>(null);
 
   // Check edit/delete permissions for the Actions column
   const { hasPermission } = usePermission();
@@ -57,6 +61,11 @@ export default function ExamSchedulesPage() {
   const handleEdit = (schedule: any) => {
     setSelectedSchedule(schedule);
     setIsModalOpen(true);
+  };
+
+  const handleAssignEvaluator = (schedule: any) => {
+    setSelectedScheduleForAssign(schedule);
+    setIsAssignModalOpen(true);
   };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -177,7 +186,8 @@ export default function ExamSchedulesPage() {
                             <td className="px-6 py-4 text-right space-x-2">
                                 {/* 🔒 Gate for Edit Button */}
                                 <PermissionGate required={PERMISSIONS.EXAM_EDIT}>
-                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Edit2 className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" title="Assign Evaluators" onClick={() => handleAssignEvaluator(schedule)} className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"><UserPlus className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" title="Edit Schedule" onClick={() => handleEdit(schedule)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Edit2 className="h-4 w-4" /></Button>
                                 </PermissionGate>
                                 
                                 {/* 🔒 Gate for Delete Button */}
@@ -204,6 +214,13 @@ export default function ExamSchedulesPage() {
         )}
 
         <ScheduleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} examId={examId} classId={classId} scheduleToEdit={selectedSchedule} />
+        
+        <AssignEvaluatorModal 
+            isOpen={isAssignModalOpen} 
+            onClose={() => setIsAssignModalOpen(false)} 
+            scheduleId={selectedScheduleForAssign?.id || null} 
+            subjectInfo={`${selectedScheduleForAssign?.subject?.subjectName} (${selectedScheduleForAssign?.subject?.subjectCode})`}
+        />
       </div>
     </PermissionGate>
   );

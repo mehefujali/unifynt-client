@@ -87,4 +87,19 @@ export const AcademicService = {
     });
     return response.data?.data || response.data;
   },
+
+  createHoliday: async (data: any) => {
+    const response = await axiosInstance.post("/academic/holidays", data);
+    return response.data;
+  },
+
+  getAllHolidays: async (params?: any) => {
+    const response = await axiosInstance.get("/academic/holidays", { params });
+    return response.data;
+  },
+
+  deleteHoliday: async (id: string) => {
+    const response = await axiosInstance.delete(`/academic/holidays/${id}`);
+    return response.data;
+  },
 };

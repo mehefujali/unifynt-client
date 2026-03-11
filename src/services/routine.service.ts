@@ -24,4 +24,25 @@ export const RoutineService = {
     });
     return response.data;
   },
+  /** Adjust a class for a specific date (cancel or substitute) */
+  adjustClass: async (data: {
+    routineId: string;
+    date: string;
+    action: "CANCELLED" | "SUBSTITUTED";
+    substitutedTeacherId?: string;
+    reason?: string;
+  }) => {
+    const response = await api.post("/routines/adjust", data);
+    return response.data;
+  },
+  /** Get all adjustments, optionally filtered by date */
+  getAdjustments: async (params?: { date?: string; routineId?: string }) => {
+    const response = await api.get("/routines/adjustments", { params });
+    return response.data;
+  },
+  /** Revert an adjustment back to the default schedule */
+  revertAdjustment: async (adjustmentId: string) => {
+    const response = await api.delete(`/routines/adjustments/${adjustmentId}`);
+    return response.data;
+  },
 };

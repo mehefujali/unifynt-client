@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { BookOpen, CalendarDays, Layers, Library, Clock } from "lucide-react";
+import { BookOpen, CalendarDays, Layers, Library, Clock, CalendarX2 } from "lucide-react";
 import { usePermission } from "@/hooks/use-permission";
 import { PERMISSIONS } from "@/config/permissions";
 
@@ -40,6 +40,12 @@ const tabs = [
         icon: Library,
         requiredPermission: [PERMISSIONS.ACADEMIC_VIEW, PERMISSIONS.SUBJECT_CREATE, PERMISSIONS.SUBJECT_EDIT]
     },
+    {
+        name: "Holidays",
+        href: "/admin/academics/holidays",
+        icon: CalendarX2,
+        requiredPermission: [PERMISSIONS.ACADEMIC_VIEW],
+    },
 ];
 
 export default function AcademicsLayout({ children }: { children: React.ReactNode }) {
@@ -54,7 +60,7 @@ export default function AcademicsLayout({ children }: { children: React.ReactNod
             <div className="flex flex-col gap-1">
                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm">Academic Configuration</h1>
                 <p className="text-muted-foreground text-[14px] font-medium">
-                    Manage academic years, time slots, classes, sections, and subjects structure.
+                    Manage academic years, time slots, classes, sections, subjects, and school holidays.
                 </p>
             </div>
 
