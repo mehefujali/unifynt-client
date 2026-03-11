@@ -8,15 +8,23 @@ export default async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const hostname = req.headers.get("host") || "";
 
-  const currentHost = hostname
-    .replace(":3000", "")
-    .replace(".localhost", "")
-    .replace(".unifynt.com", "");
+  // মেইন ডোমেইন লিস্ট
+  const rootDomains = ["unifynt.com", "localhost:3000", "localhost"];
+  
+  // চেক করুন হোস্টটি মেইন ডোমেইন কি না
+  const isRootDomain = rootDomains.some(domain => hostname === domain || hostname.endsWith(".localhost:3000"));
 
-  if (currentHost && currentHost !== "localhost" && currentHost !== "unifynt") {
-    return NextResponse.rewrite(
-      new URL(`/sites/${currentHost}${url.pathname}`, req.url),
-    );
+  if (!isRootDomain) {
+    const currentHost = hostname
+      .replace(".unifynt.com", "")
+      .replace(".localhost:3000", "")
+      .replace(":3000", "");
+
+    if (currentHost) {
+      return NextResponse.rewrite(
+        new URL(`/sites/${currentHost}${url.pathname}`, req.url),
+      );
+    }
   }
 
   return NextResponse.next();
