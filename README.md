@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/logo.png" alt="Unifynt Logo" width="120" />
+  <img src="https://i.ibb.co/8WzWcNn/unifynt.png" alt="Unifynt Logo" width="120" />
   <h1>Unifynt Client — Next.js Frontend</h1>
   <p><strong>A Modern, Multi-Tenant SaaS School Management System (Frontend)</strong></p>
   
@@ -27,15 +27,15 @@ The **Unifynt Client** is a highly scalable, multi-tenant frontend application b
 
 ## 🛠️ Technology Stack
 
-| Category | Technology | Description |
-| :--- | :--- | :--- |
-| **Framework** | Next.js (App Router) | React framework for production |
-| **Language** | TypeScript | Strongly typed programming language |
-| **Styling** | Tailwind CSS | Utility-first CSS framework |
-| **Components** | Shadcn UI, Radix UI | Accessible, unstyled React components |
-| **Data Fetching** | React Query, Axios | Powerful asynchronous state management |
+| Category            | Technology           | Description                                                |
+| :------------------ | :------------------- | :--------------------------------------------------------- |
+| **Framework**       | Next.js (App Router) | React framework for production                             |
+| **Language**        | TypeScript           | Strongly typed programming language                        |
+| **Styling**         | Tailwind CSS         | Utility-first CSS framework                                |
+| **Components**      | Shadcn UI, Radix UI  | Accessible, unstyled React components                      |
+| **Data Fetching**   | React Query, Axios   | Powerful asynchronous state management                     |
 | **Form Management** | React Hook Form, Zod | Performant, flexible, and extensible forms with validation |
-| **Real-time** | Socket.io-client | Bi-directional real-time communication |
+| **Real-time**       | Socket.io-client     | Bi-directional real-time communication                     |
 
 ## 📂 Project Structure
 
@@ -75,10 +75,10 @@ graph TD
     User([End User]) --> |HTTPS Request| Middleware[Next.js Middleware]
     Middleware --> |Subdomain Routing| Sites[Public Sites `src/app/sites`]
     Middleware --> |Auth Routing| App[App Router Dashboard `src/app/(dashboard)`]
-    
+
     App --> Components[UI Components]
     App --> State[React Query / Services]
-    
+
     State --> |Axios Requests| Backend[(Unifynt Core API)]
     State --> |Socket.io| WSS[(Real-time Server)]
 ```
@@ -93,11 +93,13 @@ graph TD
 ### Installation
 
 1. **Clone the repository and navigate to the client folder:**
+
    ```bash
    cd unifynt
    ```
 
 2. **Install dependencies:**
+
    ```bash
    npm install
    # or
@@ -106,6 +108,7 @@ graph TD
 
 3. **Environment Setup:**
    Create a `.env.local` file in the root directory and add the necessary environment variables:
+
    ```env
    NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
    NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
@@ -113,6 +116,7 @@ graph TD
    ```
 
 4. **Start the development server:**
+
    ```bash
    npm run dev
    ```
@@ -123,6 +127,7 @@ graph TD
 ## 🎨 UI/UX Philosophy
 
 The frontend is designed with a "Premium Enterprise" feel.
+
 - **Glassmorphism & Gradients:** Subtle use of blur effects and modern gradients for depth.
 - **Responsive by Default:** Ensures pixel-perfect layouts across mobile, tablet, and desktop viewports.
 - **Micro-interactions:** Smooth animations using `framer-motion` and native CSS transitions to provide user feedback.
@@ -134,4 +139,5 @@ The frontend is designed with a "Premium Enterprise" feel.
 - **Optimistic UI Updates** via React Query to ensure a snappy user experience.
 
 ---
+
 <p align="center">Made with ❤️ by the Unifynt Team</p>
