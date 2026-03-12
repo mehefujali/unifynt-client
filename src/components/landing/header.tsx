@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
@@ -10,7 +10,16 @@ import { useAuth } from "@/hooks/use-auth";
 
 export const LandingHeader = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const { user } = useAuth();
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     const isAuthenticated = !!user;
 
@@ -33,9 +42,13 @@ export const LandingHeader = () => {
                 initial={{ y: -100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="fixed top-0 left-0 right-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-zinc-200/50"
+                className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+                    scrolled 
+                    ? "bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 py-4" 
+                    : "bg-transparent border-b border-transparent py-6"
+                }`}
             >
-                <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+                <div className="max-w-7xl mx-auto flex items-center justify-between px-6">
                     <Link href="/" className="flex items-center gap-3 group">
                         <img src="/unifynt-logo.png" alt="Unifynt Logo" className="h-10 w-auto group-hover:scale-105 transition-transform duration-500 ease-out" />
                         <span className="text-xl font-bold tracking-tight text-zinc-900 group-hover:text-indigo-600 transition-colors duration-300">Unifynt</span>

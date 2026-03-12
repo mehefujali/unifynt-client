@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
         hostname: 'unifynt-uploads-2026.s3.us-east-1.amazonaws.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        pathname: '/**',
+      },
     ],
   },
 
