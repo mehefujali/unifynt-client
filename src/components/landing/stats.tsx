@@ -21,16 +21,16 @@ export const LandingStats = () => {
 
     useGSAP(() => {
         gsap.fromTo(".stat-item",
-            { opacity: 0, y: 50 },
+            { opacity: 0, y: 30 },
             {
                 opacity: 1,
                 y: 0,
-                duration: 1,
-                stagger: 0.15,
-                ease: "power3.out",
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "expo.out",
                 scrollTrigger: {
                     trigger: container.current,
-                    start: "top 75%",
+                    start: "top 85%",
                 }
             }
         );
