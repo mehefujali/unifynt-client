@@ -18,21 +18,18 @@ export default function WebsiteSettingsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("content");
-  
+
   const [localTheme, setLocalTheme] = useState<any>(DEFAULT_SITE_DATA.theme);
   const [localContent, setLocalContent] = useState<any>(DEFAULT_SITE_DATA.content);
 
-  // 🟢 Data Fetching (Without state update inside)
   const { data: config, isLoading } = useQuery({
     queryKey: ["site-config"],
     queryFn: () => SiteConfigService.getMyConfig(),
   });
 
-  // 🟢 Deep Merge Logic in useEffect (Fixes reload issue)
   useEffect(() => {
     if (config) {
       const mergedTheme = { ...DEFAULT_SITE_DATA.theme, ...(config.themeSettings || {}) };
-      
       const mergedContent = { ...DEFAULT_SITE_DATA.content } as any;
       if (config.content) {
         Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {
@@ -42,9 +39,9 @@ export default function WebsiteSettingsPage() {
           };
         });
       }
-
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalTheme(mergedTheme);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalContent(mergedContent);
     }
   }, [config]);
@@ -52,7 +49,7 @@ export default function WebsiteSettingsPage() {
   const mutation = useMutation({
     mutationFn: (data: any) => SiteConfigService.updateMyConfig(data),
     onSuccess: () => {
-      toast.success("Site architecture deployed successfully");
+      toast.success("Site configuration published successfully");
       queryClient.invalidateQueries({ queryKey: ["site-config"] });
     },
   });
@@ -67,53 +64,139 @@ export default function WebsiteSettingsPage() {
     }
   }, [localTheme, localContent]);
 
-  if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Loading Editor...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] -m-6 overflow-hidden bg-background">
-      <div className="h-16 border-b px-6 flex items-center justify-between bg-card z-20 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-primary/10 rounded-xl"><MonitorSmartphone className="h-5 w-5 text-primary" /></div>
+
+      {/* ── Top Bar ── */}
+      <div className="h-14 border-b border-border px-6 flex items-center justify-between bg-card z-20 shadow-sm shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <MonitorSmartphone className="h-4 w-4 text-primary" />
+          </div>
           <div>
-            <h1 className="text-xs font-black uppercase tracking-[0.2em]">Visual Engine</h1>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Session: {user?.school?.name}</p>
+            <h1 className="text-xs font-black uppercase tracking-widest text-foreground">Website Builder</h1>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">
+              {user?.school?.name || "Your School"}
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="font-bold text-[10px] uppercase" asChild>
-            <a href={`/sites/${user?.school?.subdomain}`} target="_blank"><ExternalLink className="h-3.5 w-3.5 mr-2" /> Live Preview</a>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-[10px] font-bold uppercase tracking-widest border-border"
+            asChild
+          >
+            <a href={`/sites/${user?.school?.subdomain}`} target="_blank">
+              <ExternalLink className="h-3.5 w-3.5 mr-2" />
+              Live Site
+            </a>
           </Button>
-          <Button size="sm" className="font-black px-8 shadow-xl uppercase text-[10px] tracking-widest" onClick={() => mutation.mutate({ themeSettings: localTheme, content: localContent })} disabled={mutation.isPending}>
-            {mutation.isPending ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-2 h-3.5 w-3.5" />}
-            Publish Changes
+          <Button
+            size="sm"
+            className="h-8 px-6 font-black text-[10px] uppercase tracking-widest shadow-sm"
+            onClick={() => mutation.mutate({ themeSettings: localTheme, content: localContent })}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending
+              ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              : <Save className="mr-2 h-3.5 w-3.5" />
+            }
+            Publish
           </Button>
         </div>
       </div>
 
+      {/* ── Body ── */}
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-[420px] flex-shrink-0 border-r bg-background flex flex-col h-full z-10">
+
+        {/* ── Left Panel ── */}
+        <aside className="w-[400px] flex-shrink-0 border-r border-border bg-background flex flex-col h-full z-10">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-            <div className="px-4 py-3 border-b bg-muted/20">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl">
-                <TabsTrigger value="template" className="text-[9px] font-black uppercase tracking-widest"><LayoutTemplate className="h-3.5 w-3.5 mr-1.5" /> Template</TabsTrigger>
-                <TabsTrigger value="content" className="text-[9px] font-black uppercase tracking-widest"><MonitorSmartphone className="h-3.5 w-3.5 mr-1.5" /> Content</TabsTrigger>
-                <TabsTrigger value="theme" className="text-[9px] font-black uppercase tracking-widest"><Palette className="h-3.5 w-3.5 mr-1.5" /> Styling</TabsTrigger>
+
+            {/* Tab Headers */}
+            <div className="px-4 py-3 border-b border-border bg-muted/30 shrink-0">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-lg h-9">
+                <TabsTrigger
+                  value="template"
+                  className="text-[9px] font-black uppercase tracking-widest rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                >
+                  <LayoutTemplate className="h-3 w-3 mr-1" />
+                  Template
+                </TabsTrigger>
+                <TabsTrigger
+                  value="content"
+                  className="text-[9px] font-black uppercase tracking-widest rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                >
+                  <MonitorSmartphone className="h-3 w-3 mr-1" />
+                  Content
+                </TabsTrigger>
+                <TabsTrigger
+                  value="theme"
+                  className="text-[9px] font-black uppercase tracking-widest rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                >
+                  <Palette className="h-3 w-3 mr-1" />
+                  Styling
+                </TabsTrigger>
               </TabsList>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-50/30">
-              <TabsContent value="template" className="m-0 p-0"><TemplateSelection currentConfig={config} /></TabsContent>
-              <TabsContent value="content" className="m-0 p-0"><ContentEditor content={localContent} onChange={setLocalContent} /></TabsContent>
-              <TabsContent value="theme" className="m-0 p-0"><ThemeEditor theme={localTheme} onChange={setLocalTheme} /></TabsContent>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-background">
+              <TabsContent value="template" className="m-0 p-0">
+                <TemplateSelection currentConfig={config} />
+              </TabsContent>
+              <TabsContent value="content" className="m-0 p-0">
+                <ContentEditor content={localContent} onChange={setLocalContent} />
+              </TabsContent>
+              <TabsContent value="theme" className="m-0 p-0">
+                <ThemeEditor theme={localTheme} onChange={setLocalTheme} />
+              </TabsContent>
             </div>
           </Tabs>
         </aside>
-        <main className="flex-1 bg-zinc-100 p-8 flex items-center justify-center relative">
-          <div className="w-full h-full max-w-[1400px] border-4 border-white rounded-[2.5rem] bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden flex flex-col ring-1 ring-black/5">
-            <div className="h-10 bg-zinc-50 border-b flex items-center px-6 gap-4 shrink-0">
-               <div className="flex gap-1.5"><div className="h-2 w-2 rounded-full bg-zinc-300" /><div className="h-2 w-2 rounded-full bg-zinc-300" /><div className="h-2 w-2 rounded-full bg-zinc-300" /></div>
-               <div className="flex-1 max-w-md bg-zinc-200/50 rounded-lg h-6 flex items-center px-4"><span className="text-[9px] font-bold text-muted-foreground uppercase truncate tracking-widest">https://{user?.school?.subdomain}.unifynt.com</span></div>
+
+        {/* ── Preview Panel ── */}
+        <main className="flex-1 bg-muted/40 p-6 flex items-center justify-center relative overflow-hidden">
+          {/* Background subtle grid */}
+          <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
+            style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+          />
+          <div className="relative w-full h-full max-w-[1400px] flex flex-col">
+            {/* Browser chrome */}
+            <div className="h-10 bg-card border border-border rounded-t-2xl flex items-center px-4 gap-3 shrink-0 shadow-sm">
+              <div className="flex gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full bg-rose-400/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
+              </div>
+              <div className="flex-1 max-w-sm bg-muted border border-border rounded-md h-6 flex items-center px-3 gap-2 mx-auto">
+                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+                <span className="text-[9px] font-bold text-muted-foreground uppercase truncate tracking-wider">
+                  https://{user?.school?.subdomain}.unifynt.com
+                </span>
+              </div>
             </div>
-            <iframe id="preview-frame" src={`/sites/${user?.school?.subdomain}?preview=true`} className="w-full h-full border-none" />
+            {/* Iframe */}
+            <div className="flex-1 border border-t-0 border-border rounded-b-2xl overflow-hidden shadow-xl">
+              <iframe
+                id="preview-frame"
+                src={`/sites/${user?.school?.subdomain}?preview=true`}
+                className="w-full h-full border-none bg-white"
+              />
+            </div>
           </div>
         </main>
       </div>
