@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect } from "react";
@@ -16,17 +15,19 @@ import { Switch } from "@/components/ui/switch";
 
 import api from "@/lib/axios";
 import { planSchema, PlanFormValues } from "./schema";
+import { PlanColumn } from "./columns";
 
 interface PlanModalProps {
     isOpen: boolean;
     onClose: () => void;
-    editingPlan?: any | null;
+    editingPlan?: PlanColumn | null;
 }
 
 export function PlanModal({ isOpen, onClose, editingPlan }: PlanModalProps) {
     const queryClient = useQueryClient();
 
     const form = useForm<PlanFormValues>({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolver: zodResolver(planSchema) as any,
         defaultValues: {
             name: "",
@@ -85,60 +86,59 @@ export function PlanModal({ isOpen, onClose, editingPlan }: PlanModalProps) {
             queryClient.invalidateQueries({ queryKey: ["plans"] });
             onClose();
         },
-        onError: (error: any) => {
+        onError: (error: { response?: { data?: { message?: string } } }) => {
             toast.error(error.response?.data?.message || "Failed to process plan");
         },
     });
 
-    const onSubmit = (data: PlanFormValues) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onSubmit: any = (data: PlanFormValues) => {
         mutation.mutate(data);
     };
 
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
-            <SheetContent className="sm:max-w-[600px] overflow-y-auto p-0 border-l-0 shadow-2xl flex flex-col h-full">
-                <div className="p-8 pb-4 bg-muted/20 border-b shrink-0">
-                    <SheetHeader>
-                        <SheetTitle className="text-2xl font-extrabold tracking-tight text-primary">
-                            {editingPlan ? "Edit Subscription Plan" : "Create New Plan"}
-                        </SheetTitle>
-                        <SheetDescription className="text-sm font-medium">
-                            Configure pricing, limits, and features for this SaaS plan.
-                        </SheetDescription>
-                    </SheetHeader>
-                </div>
+            <SheetContent className="w-full sm:max-w-[540px] flex flex-col h-full p-0">
+                <SheetHeader className="p-6 border-b bg-muted/20">
+                    <SheetTitle>{editingPlan ? "Edit Subscription Plan" : "Add Subscription Plan"}</SheetTitle>
+                    <SheetDescription>
+                        Configure plan details, pricing, and feature limits.
+                    </SheetDescription>
+                </SheetHeader>
 
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
                     <form id="plan-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="p-5 bg-background border rounded-xl shadow-sm space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Plan Name <span className="text-red-500">*</span></Label>
-                                <Input className="h-11 shadow-sm bg-muted/10" placeholder="e.g. Pro School" {...register("name")} />
-                                {errors.name && <p className="text-xs font-semibold text-red-500">{errors.name.message}</p>}
+                        <div className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name" className="font-bold">Plan Name</Label>
+                                <Input id="name" placeholder="e.g. Professional" {...register("name")} />
+                                {errors.name && <p className="text-xs text-destructive font-medium">{errors.name.message}</p>}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Price / Month ($) <span className="text-red-500">*</span></Label>
-                                    <Input type="number" className="h-11 shadow-sm bg-muted/10" {...register("pricePerMonth")} />
-                                    {errors.pricePerMonth && <p className="text-xs font-semibold text-red-500">{errors.pricePerMonth.message}</p>}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="price" className="font-bold">Monthly Price ($)</Label>
+                                    <Input id="price" type="number" {...register("pricePerMonth")} />
+                                    {errors.pricePerMonth && <p className="text-xs text-destructive font-medium">{errors.pricePerMonth.message}</p>}
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Student Limit <span className="text-red-500">*</span></Label>
-                                    <Input type="number" className="h-11 shadow-sm bg-muted/10" {...register("studentLimit")} />
-                                    {errors.studentLimit && <p className="text-xs font-semibold text-red-500">{errors.studentLimit.message}</p>}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="limit" className="font-bold">Student Limit</Label>
+                                    <Input id="limit" type="number" {...register("studentLimit")} />
+                                    {errors.studentLimit && <p className="text-xs text-destructive font-medium">{errors.studentLimit.message}</p>}
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Extra Offers (Optional)</Label>
-                                <Input className="h-11 shadow-sm bg-muted/10" placeholder="e.g. Free Domain Setup" {...register("extraOffers")} />
+                            <div className="grid gap-2">
+                                <Label htmlFor="extra" className="font-bold">Extra Offers (Optional)</Label>
+                                <Input id="extra" placeholder="e.g. Priority Support" {...register("extraOffers")} />
                             </div>
 
-                            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/5">
+                            <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/10 shadow-sm">
                                 <div className="space-y-0.5">
-                                    <Label className="text-sm font-bold">Plan Status</Label>
-                                    <p className="text-xs text-muted-foreground">Active plans are visible to schools.</p>
+                                    <Label className="text-base font-bold">Active Status</Label>
+                                    <div className="text-[13px] text-muted-foreground">
+                                        Allow schools to subscribe to this plan.
+                                    </div>
                                 </div>
                                 <Switch
                                     checked={watch("isActive")}
@@ -147,21 +147,21 @@ export function PlanModal({ isOpen, onClose, editingPlan }: PlanModalProps) {
                             </div>
                         </div>
 
-                        <div className="p-5 bg-background border rounded-xl shadow-sm space-y-4">
-                            <div className="flex items-center justify-between border-b pb-2">
-                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Plan Features</Label>
-                                <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
-                                    <Plus className="h-3 w-3 mr-1" /> Add Feature
+                        <div className="space-y-4 pt-4 border-t">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Features List</Label>
+                                <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })} className="h-8">
+                                    <Plus className="h-4 w-4 mr-2" /> Add Feature
                                 </Button>
                             </div>
                             <div className="space-y-3">
                                 {fields.map((field, index) => (
-                                    <div key={field.id} className="flex items-start gap-3">
-                                        <div className="flex-1 space-y-1">
-                                            <Input className="h-10 shadow-sm bg-muted/10" placeholder="e.g. Unlimited Exams" {...register(`features.${index}.value` as const)} />
-                                            {errors.features?.[index]?.value && <p className="text-xs font-semibold text-red-500">{errors.features[index]?.value?.message}</p>}
+                                    <div key={field.id} className="flex items-center gap-3">
+                                        <div className="flex-1">
+                                            <Input placeholder="Enter feature description..." {...register(`features.${index}.value` as const)} />
+                                            {errors.features?.[index]?.value && <p className="text-xs text-destructive mt-1 font-medium">{errors.features[index]?.value?.message}</p>}
                                         </div>
-                                        <Button type="button" variant="ghost" size="icon" className="h-10 w-10 text-destructive hover:bg-destructive/10 shrink-0" onClick={() => remove(index)} disabled={fields.length === 1}>
+                                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => remove(index)} disabled={fields.length === 1}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -171,10 +171,14 @@ export function PlanModal({ isOpen, onClose, editingPlan }: PlanModalProps) {
                     </form>
                 </div>
 
-                <div className="p-6 border-t bg-background/90 backdrop-blur shrink-0 flex justify-between">
-                    <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" form="plan-form" className="font-bold px-8" disabled={mutation.isPending}>
-                        {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Plan
+                <div className="p-6 border-t bg-muted/5 flex items-center justify-end gap-3">
+                    <Button variant="outline" onClick={onClose} disabled={mutation.isPending}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="plan-form" disabled={mutation.isPending}>
+                        {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save className="mr-2 h-4 w-4" />
+                        {editingPlan ? "Save Changes" : "Create Plan"}
                     </Button>
                 </div>
             </SheetContent>

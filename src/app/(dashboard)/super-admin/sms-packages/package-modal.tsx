@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v3";
-import { Loader2, PackagePlus, Edit3, Zap } from "lucide-react";
+import * as z from "zod/v3";
+import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,21 +27,11 @@ type PackageFormValues = z.infer<typeof packageSchema>;
 interface PackageModalProps {
     isOpen: boolean;
     onClose: () => void;
-    initialData?: SmsPackage | null; // NEW: Receives data for editing
-}
-
-interface ApiError {
-    response?: {
-        data?: {
-            message?: string;
-        };
-    };
+    initialData?: SmsPackage | null;
 }
 
 export function PackageModal({ isOpen, onClose, initialData }: PackageModalProps) {
     const queryClient = useQueryClient();
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
     const isEditing = !!initialData;
 
     const form = useForm<PackageFormValues>({
@@ -54,105 +44,117 @@ export function PackageModal({ isOpen, onClose, initialData }: PackageModalProps
         },
     });
 
-    // Pre-fill form when editing
+    const { reset, handleSubmit, control } = form;
+
     useEffect(() => {
         if (initialData && isOpen) {
-            form.reset({
+            reset({
                 name: initialData.name,
                 credits: initialData.credits,
                 price: initialData.price,
                 isActive: initialData.isActive,
             });
-        } else if (!isOpen) {
-            form.reset({ name: "", credits: 0, price: 0, isActive: true });
+        } else if (!initialData && isOpen) {
+            reset({ name: "", credits: 0, price: 0, isActive: true });
         }
-    }, [initialData, isOpen, form]);
+    }, [initialData, isOpen, reset]);
 
-    const onSubmit = async (values: PackageFormValues) => {
-        setIsSubmitting(true);
-        try {
+    const mutation = useMutation({
+        mutationFn: async (values: PackageFormValues) => {
             if (isEditing && initialData) {
-                await SmsService.updatePackage(initialData.id, values);
-                toast.success("SMS Package updated successfully!");
-            } else {
-                await SmsService.createPackage(values);
-                toast.success("SMS Package created successfully!");
+                return await SmsService.updatePackage(initialData.id, values);
             }
+            return await SmsService.createPackage(values);
+        },
+        onSuccess: () => {
+            toast.success(isEditing ? "Package updated successfully" : "Package created successfully");
             queryClient.invalidateQueries({ queryKey: ["sms-packages"] });
             onClose();
-        } catch (error: unknown) {
-            const err = error as ApiError;
-            toast.error(err.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} package.`);
-        } finally {
-            setIsSubmitting(false);
-        }
+        },
+        onError: (error: { response?: { data?: { message?: string } } }) => {
+            toast.error(error.response?.data?.message || `Failed to ${isEditing ? 'update' : 'create'} package`);
+        },
+    });
+
+    const onSubmit = (values: PackageFormValues) => {
+        mutation.mutate(values);
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[450px] max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-                        {isEditing ? <Edit3 className="h-5 w-5 text-primary" /> : <PackagePlus className="h-5 w-5 text-primary" />}
-                        {isEditing ? "Edit SMS Package" : "Create SMS Package"}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {isEditing ? "Modify the details of this credit bundle." : "Define a new credit bundle for schools to purchase."}
-                    </DialogDescription>
-                </DialogHeader>
+        <Sheet open={isOpen} onOpenChange={onClose}>
+            <SheetContent className="w-full sm:max-w-[540px] flex flex-col h-full p-0">
+                <SheetHeader className="p-6 border-b bg-muted/20">
+                    <SheetTitle>{isEditing ? "Edit SMS Package" : "Add SMS Package"}</SheetTitle>
+                    <SheetDescription>
+                        Set up the bundle name, credits, and pricing details.
+                    </SheetDescription>
+                </SheetHeader>
 
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2">
-                        <FormField control={form.control} name="name" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="font-bold">Package Name</FormLabel>
-                                <FormControl><Input placeholder="E.g., Gold Pack - 10k SMS" className="h-11 shadow-sm" {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="credits" render={({ field }) => (
+                <div className="flex-1 overflow-y-auto p-6">
+                    <Form {...form}>
+                        <form id="sms-package-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField control={control} name="name" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="font-bold flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-amber-500" /> SMS Credits</FormLabel>
-                                    <FormControl><Input type="number" placeholder="10000" className="h-11 shadow-sm font-bold" {...field} /></FormControl>
+                                    <FormLabel className="font-bold">Package Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Starter Bundle" {...field} />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                            <FormField control={form.control} name="price" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="font-bold">Price (₹)</FormLabel>
-                                    <FormControl><Input type="number" placeholder="499" className="h-11 shadow-sm font-bold text-primary" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
 
-                        <FormField control={form.control} name="isActive" render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-4 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <FormLabel className="text-sm font-bold text-foreground">Active Status</FormLabel>
-                                    <p className="text-[11px] text-muted-foreground font-medium">If disabled, schools won&apos;t see this package.</p>
-                                </div>
-                                <FormControl>
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                            </FormItem>
-                        )} />
-
-                        <DialogFooter className="pt-4 border-t border-border/40 sm:justify-center">
-                            <div className="grid grid-cols-2 gap-3 w-full">
-                                <Button type="button" variant="outline" onClick={onClose} className="w-full h-11 font-bold">
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={isSubmitting} className="w-full h-11 font-bold shadow-md">
-                                    {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : isEditing ? "Save Changes" : "Create Package"}
-                                </Button>
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField control={control} name="credits" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold">SMS Credits</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={control} name="price" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="font-bold">Price (INR)</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
                             </div>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+
+                            <FormField control={control} name="isActive" render={({ field }) => (
+                                <FormItem className="flex items-center justify-between rounded-lg border p-4 bg-muted/10 shadow-sm">
+                                    <div className="space-y-0.5">
+                                        <FormLabel className="text-base font-bold">Active Status</FormLabel>
+                                        <div className="text-[13px] text-muted-foreground">
+                                            Make this package available for purchase.
+                                        </div>
+                                    </div>
+                                    <FormControl>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )} />
+                        </form>
+                    </Form>
+                </div>
+
+                <div className="p-6 border-t bg-muted/5 flex items-center justify-end gap-3">
+                    <Button variant="outline" onClick={onClose} disabled={mutation.isPending}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="sms-package-form" disabled={mutation.isPending}>
+                        {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save className="mr-2 h-4 w-4" />
+                        {isEditing ? "Save Changes" : "Create Package"}
+                    </Button>
+                </div>
+            </SheetContent>
+        </Sheet>
     );
 }

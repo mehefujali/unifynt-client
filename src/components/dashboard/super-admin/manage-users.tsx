@@ -50,6 +50,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface User {
     id: string;
@@ -166,30 +167,30 @@ export default function ManageUsers() {
 
     const getRoleBadgeColor = (role: string) => {
         switch (role) {
-            case "SUPER_ADMIN": return "bg-zinc-900 border-zinc-900 text-white";
-            case "SCHOOL_ADMIN": return "bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200";
-            case "TEACHER": return "bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200";
-            case "STUDENT": return "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200";
-            default: return "bg-gray-100 text-gray-700 hover:bg-gray-100 border-gray-200";
+            case "SUPER_ADMIN": return "bg-primary text-primary-foreground border-primary";
+            case "SCHOOL_ADMIN": return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+            case "TEACHER": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+            case "STUDENT": return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+            default: return "bg-muted text-muted-foreground border-border";
         }
     };
 
     return (
         <div className="space-y-6">
             {/* Filters and Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-zinc-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
                 <div className="relative w-full sm:max-w-xs">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search by name or email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 bg-zinc-50 border-zinc-200"
+                        className="pl-9 bg-muted/20 border-border"
                     />
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <Select value={schoolFilter} onValueChange={(val) => { setSchoolFilter(val); setPage(1); }}>
-                        <SelectTrigger className="w-full sm:w-[200px] h-10">
+                        <SelectTrigger className="w-full sm:w-[200px] h-10 bg-muted/20">
                             <SelectValue placeholder="All Schools" />
                         </SelectTrigger>
                         <SelectContent>
@@ -203,7 +204,7 @@ export default function ManageUsers() {
                     </Select>
 
                     <Select value={roleFilter} onValueChange={(val) => { setRoleFilter(val); setPage(1); }}>
-                        <SelectTrigger className="w-full sm:w-[150px] h-10">
+                        <SelectTrigger className="w-full sm:w-[150px] h-10 bg-muted/20">
                             <SelectValue placeholder="All Roles" />
                         </SelectTrigger>
                         <SelectContent>
@@ -218,7 +219,7 @@ export default function ManageUsers() {
                     </Select>
 
                     <Select value={twoFactorFilter} onValueChange={(val) => { setTwoFactorFilter(val); setPage(1); }}>
-                        <SelectTrigger className="w-full sm:w-[160px] h-10">
+                        <SelectTrigger className="w-full sm:w-[160px] h-10 bg-muted/20">
                             <SelectValue placeholder="Security Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -231,16 +232,16 @@ export default function ManageUsers() {
             </div>
 
             {/* Data Table */}
-            <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden">
+            <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <Table>
-                        <TableHeader className="bg-zinc-50 border-b border-zinc-200">
+                        <TableHeader className="bg-muted/30 border-b border-border">
                             <TableRow>
-                                <TableHead className="w-[300px] font-semibold text-zinc-900">User Details</TableHead>
-                                <TableHead className="font-semibold text-zinc-900">School / Tenant</TableHead>
-                                <TableHead className="font-semibold text-zinc-900">Role</TableHead>
-                                <TableHead className="font-semibold text-zinc-900">Status & Security</TableHead>
-                                <TableHead className="font-semibold text-zinc-900">Registered On</TableHead>
+                                <TableHead className="w-[300px] font-bold text-foreground">User Details</TableHead>
+                                <TableHead className="font-bold text-foreground">School / Tenant</TableHead>
+                                <TableHead className="font-bold text-foreground">Role</TableHead>
+                                <TableHead className="font-bold text-foreground">Status & Security</TableHead>
+                                <TableHead className="font-bold text-foreground">Registered On</TableHead>
                                 <TableHead className="text-right"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -268,59 +269,59 @@ export default function ManageUsers() {
                                 </TableRow>
                             ) : (
                                 users.map((user) => (
-                                    <TableRow key={user.id} className="hover:bg-zinc-50/50 transition-colors">
+                                    <TableRow key={user.id} className="hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <Avatar className="h-10 w-10 border border-zinc-200">
+                                                <Avatar className="h-10 w-10 border border-border">
                                                     <AvatarImage src={user.profilePicture || ""} alt={user.email} className="object-cover" />
-                                                    <AvatarFallback className="bg-zinc-100 text-zinc-700 font-medium text-xs">
+                                                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                                                         {getInitials(user)}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-zinc-900">
+                                                    <span className="font-bold text-foreground">
                                                         {user.firstName ? `${user.firstName} ${user.lastName || ""}` : "Unnamed User"}
                                                     </span>
-                                                    <span className="text-xs text-zinc-500">{user.email}</span>
+                                                    <span className="text-xs text-muted-foreground">{user.email}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex items-center gap-2 text-zinc-700">
-                                                <School className="h-4 w-4 text-zinc-400 shrink-0" />
-                                                <span className="font-medium truncate max-w-[200px]" title={user.school.name}>
+                                            <div className="flex items-center gap-2 text-foreground/80">
+                                                <School className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                <span className="font-bold truncate max-w-[200px]" title={user.school.name}>
                                                     {user.school.name}
                                                 </span>
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className={getRoleBadgeColor(user.role)}>
+                                            <Badge variant="outline" className={cn("font-bold text-[10px] uppercase tracking-wider", getRoleBadgeColor(user.role))}>
                                                 {user.role.replace("_", " ")}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className={`h-2 w-2 rounded-full ${user.status === "ACTIVE" ? "bg-emerald-500" : "bg-red-500"}`} />
-                                                    <span className="text-sm font-medium text-zinc-700 capitalize">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn("h-2 w-2 rounded-full", user.status === "ACTIVE" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-red-500")} />
+                                                    <span className="text-sm font-bold text-foreground/80 capitalize">
                                                         {user.status.toLowerCase()}
                                                     </span>
                                                 </div>
                                                 {user.isTwoFactorEnabled && (
-                                                    <div className="flex text-[10px] items-center text-emerald-600 font-medium tracking-wide">
+                                                    <div className="flex text-[10px] items-center text-emerald-500 font-bold tracking-wider">
                                                         <Shield className="h-3 w-3 mr-1" />
-                                                        2FA ACTIVE
+                                                        2FA SECURED
                                                     </div>
                                                 )}
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-zinc-600 font-medium">
+                                        <TableCell className="text-muted-foreground font-bold text-sm">
                                             {format(new Date(user.createdAt), "MMM d, yyyy")}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all">
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
@@ -346,9 +347,9 @@ export default function ManageUsers() {
                 </div>
                 
                 {/* Pagination */}
-                <div className="border-t border-zinc-200 bg-zinc-50/50 p-4 flex items-center justify-between">
-                    <span className="text-sm text-zinc-500 font-medium">
-                        Showing <span className="text-zinc-900">{(page - 1) * limit + 1}</span> to <span className="text-zinc-900">{Math.min(page * limit, meta.total)}</span> of <span className="text-zinc-900">{meta.total}</span> users
+                <div className="border-t border-border bg-muted/20 p-4 flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground font-bold">
+                        Showing <span className="text-foreground">{(page - 1) * limit + 1}</span> to <span className="text-foreground">{Math.min(page * limit, meta.total)}</span> of <span className="text-foreground">{meta.total}</span> users
                     </span>
                     <div className="flex items-center gap-2">
                         <Button
@@ -356,11 +357,11 @@ export default function ManageUsers() {
                             size="sm"
                             onClick={() => setPage(p => Math.max(1, p - 1))}
                             disabled={page === 1 || isLoading}
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <div className="px-2 text-sm font-medium text-zinc-700">
+                        <div className="px-3 text-xs font-bold text-foreground/70 bg-background/50 py-1 rounded-md border border-border/50">
                             Page {page} of {totalPages}
                         </div>
                         <Button
@@ -368,7 +369,7 @@ export default function ManageUsers() {
                             size="sm"
                             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                             disabled={page === totalPages || isLoading}
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
                         >
                             <ChevronRight className="h-4 w-4" />
                         </Button>

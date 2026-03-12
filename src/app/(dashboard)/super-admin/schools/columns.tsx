@@ -2,11 +2,13 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, ExternalLink, School } from "lucide-react";
+import { Eye, ExternalLink, School, Building2, MoreHorizontal } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export type SchoolColumn = {
     id: string;
@@ -29,12 +31,12 @@ const ActionCell = ({ school }: { school: SchoolColumn }) => {
         <div className="flex justify-end">
             <PermissionGate required={PERMISSIONS.SCHOOL_EDIT}>
                 <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => router.push(`${pathname}?schoolId=${school.id}`)}
-                    className="h-8 px-3 rounded-lg text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 >
-                    <Eye className="mr-2 h-3.5 w-3.5 text-zinc-500" /> Manage
+                    <Eye className="h-4 w-4" />
                 </Button>
             </PermissionGate>
         </div>
@@ -44,23 +46,23 @@ const ActionCell = ({ school }: { school: SchoolColumn }) => {
 export const columns: ColumnDef<SchoolColumn>[] = [
     {
         accessorKey: "name",
-        header: "Institution Identity",
+        header: "Institution Details",
         cell: ({ row }) => {
             const school = row.original;
             return (
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-lg">
+                <div className="flex items-center gap-3 py-1">
+                    <Avatar className="h-10 w-10 border border-border bg-muted/20 rounded-lg">
                         <AvatarImage src={school.logo} alt={school.name} className="object-contain p-1" />
-                        <AvatarFallback className="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold text-xs rounded-lg">
-                            <School className="h-4 w-4" />
+                        <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xs">
+                            <Building2 className="h-4 w-4" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]">
+                        <span className="font-bold text-foreground truncate max-w-[200px]">
                             {school.name}
                         </span>
-                        <span className="text-xs text-zinc-500 truncate max-w-[200px]">
-                            {school.email || "No email provided"}
+                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {school.email || "No administrative email"}
                         </span>
                     </div>
                 </div>
@@ -77,7 +79,7 @@ export const columns: ColumnDef<SchoolColumn>[] = [
                     href={`https://${subdomain}.unifynt.com`}
                     target="_blank"
                     rel="noreferrer"
-                    className="group flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    className="group inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors uppercase tracking-tight"
                 >
                     {subdomain}.unifynt.com
                     <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -93,15 +95,18 @@ export const columns: ColumnDef<SchoolColumn>[] = [
             const isPremium = !planName.toLowerCase().includes("free") && !planName.toLowerCase().includes("trial");
 
             return (
-                <span className={`px-2 py-1 rounded text-[10px] font-semibold uppercase tracking-wider border ${isPremium ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20' : 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'}`}>
+                <Badge variant="outline" className={cn(
+                    "font-bold text-[10px] uppercase tracking-wider",
+                    isPremium ? "border-primary/20 bg-primary/5 text-primary" : "border-muted bg-muted/10 text-muted-foreground"
+                )}>
                     {planName}
-                </span>
+                </Badge>
             );
         },
     },
     {
         id: "usage",
-        header: "User Capacity",
+        header: "Capacity",
         cell: ({ row }) => {
             const current = row.original._count?.students || 0;
             const limit = row.original.studentLimit || 1;
@@ -111,13 +116,18 @@ export const columns: ColumnDef<SchoolColumn>[] = [
 
             return (
                 <div className="flex flex-col gap-1.5 w-32">
-                    <div className="flex items-center justify-between text-xs font-medium">
-                        <span className="text-zinc-900 dark:text-zinc-100">{current} <span className="text-zinc-400">/ {limit}</span></span>
-                        <span className="text-zinc-500">{percentage}%</span>
+                    <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-foreground">{current} <span className="text-muted-foreground">/ {limit}</span></span>
+                        <span className={cn(
+                            isCritical ? "text-destructive" : isWarning ? "text-amber-500" : "text-emerald-500"
+                        )}>{percentage}%</span>
                     </div>
-                    <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden shadow-inner">
                         <div
-                            className={`h-full rounded-full transition-all duration-500 ${isCritical ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                            className={cn(
+                                "h-full rounded-full transition-all duration-500",
+                                isCritical ? 'bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.3)]' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'
+                            )}
                             style={{ width: `${percentage}%` }}
                         />
                     </div>
@@ -132,8 +142,14 @@ export const columns: ColumnDef<SchoolColumn>[] = [
             const isActive = row.original.isActive;
             return (
                 <div className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                    <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    <div className={cn(
+                        "h-2 w-2 rounded-full",
+                        isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+                    )} />
+                    <span className={cn(
+                        "text-sm font-bold",
+                        isActive ? "text-foreground" : "text-muted-foreground"
+                    )}>
                         {isActive ? "Active" : "Suspended"}
                     </span>
                 </div>
@@ -142,7 +158,7 @@ export const columns: ColumnDef<SchoolColumn>[] = [
     },
     {
         id: "actions",
-        header: () => <div className="text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider">Operations</div>,
+        header: () => null,
         cell: ({ row }) => <ActionCell school={row.original} />,
     },
 ];

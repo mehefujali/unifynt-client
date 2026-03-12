@@ -3,11 +3,13 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, Clock, Activity, MonitorSmartphone, Copy, CheckCircle2 } from "lucide-react";
+import { Eye, Clock, Activity, MonitorSmartphone, Copy } from "lucide-react";
 import { format } from "date-fns";
 import AuditDetailsModal from "./audit-details-modal";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export interface AuditLog {
     id: string;
@@ -23,46 +25,53 @@ export interface AuditLog {
     createdAt: string;
 }
 
-const ActionBadge = ({ action }: { action: string }) => {
-    const styles: Record<string, string> = {
-        CREATE: "bg-emerald-500/10 text-emerald-600 ring-emerald-500/20 border-emerald-500/20",
-        UPDATE: "bg-blue-500/10 text-blue-600 ring-blue-500/20 border-blue-500/20",
-        DELETE: "bg-rose-500/10 text-rose-600 ring-rose-500/20 border-rose-500/20",
-        UPSERT: "bg-amber-500/10 text-amber-600 ring-amber-500/20 border-amber-500/20",
-    };
-    return (
-        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border ${styles[action] || "bg-zinc-100 text-zinc-600 border-zinc-200"}`}>
-            {action}
-        </span>
-    );
-};
-
 export const columns: ColumnDef<AuditLog>[] = [
     {
         accessorKey: "action",
         header: "Action",
-        cell: ({ row }) => <ActionBadge action={row.original.action} />,
+        cell: ({ row }) => {
+            const action = row.original.action;
+            const variant = 
+                action === "CREATE" ? "success" : 
+                action === "DELETE" ? "destructive" : 
+                action === "UPDATE" ? "default" : "outline";
+            
+            return (
+                <Badge variant="outline" className={cn(
+                    "font-bold text-[10px] uppercase tracking-wider",
+                    action === "CREATE" && "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
+                    action === "UPDATE" && "border-blue-500/20 bg-blue-500/10 text-blue-600",
+                    action === "DELETE" && "border-destructive/20 bg-destructive/10 text-destructive",
+                    action === "UPSERT" && "border-amber-500/20 bg-amber-500/10 text-amber-600",
+                )}>
+                    {action}
+                </Badge>
+            );
+        },
     },
     {
         accessorKey: "entity",
-        header: "Module Context",
+        header: "Context",
         cell: ({ row }) => (
-            <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center ring-1 ring-inset ring-zinc-200 dark:ring-zinc-800">
-                    <Activity className="h-4 w-4 text-zinc-500" />
+            <div className="flex items-center gap-3 py-1">
+                <div className="h-9 w-9 rounded-lg bg-muted/50 flex items-center justify-center border border-border">
+                    <Activity className="h-4.5 w-4.5 text-muted-foreground" />
                 </div>
-                <div>
-                    <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-widest">
+                <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-foreground uppercase tracking-tight text-xs">
                         {row.original.entity}
                     </span>
-                    <div className="flex items-center gap-1 mt-0.5 group cursor-pointer" onClick={() => {
-                        navigator.clipboard.writeText(row.original.id);
-                        toast.success("Transaction ID Copied");
-                    }}>
-                        <span className="text-[9px] font-mono text-zinc-400 group-hover:text-primary transition-colors">
-                            {row.original.id.split('-')[0]}...
+                    <div 
+                        className="flex items-center gap-1.5 cursor-pointer group" 
+                        onClick={() => {
+                            navigator.clipboard.writeText(row.original.id);
+                            toast.success("Transaction ID Copied");
+                        }}
+                    >
+                        <span className="text-[10px] font-mono text-muted-foreground group-hover:text-primary transition-colors">
+                            ID: {row.original.id.split('-')[0]}...
                         </span>
-                        <Copy className="h-3 w-3 text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Copy className="h-3 w-3 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                 </div>
             </div>
@@ -72,22 +81,24 @@ export const columns: ColumnDef<AuditLog>[] = [
         accessorKey: "actorName",
         header: "Authorized By",
         cell: ({ row }) => (
-            <div>
-                <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{row.original.actorName || "SYSTEM PROCESS"}</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mt-0.5">
-                    {row.original.actorRole || "AUTO"}
-                </p>
+            <div className="flex flex-col">
+                <span className="font-bold text-foreground text-sm">
+                    {row.original.actorName || "SYSTEM"}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
+                    {row.original.actorRole || "AUTOMATED"}
+                </span>
             </div>
         ),
     },
     {
         accessorKey: "ipAddress",
-        header: "Network",
+        header: "Network Identity",
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
-                <MonitorSmartphone className="h-4 w-4 text-zinc-400" />
-                <span className="text-xs font-medium font-mono text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded-md border border-zinc-200 dark:border-zinc-800">
-                    {row.original.ipAddress || "INTERNAL"}
+                <MonitorSmartphone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-[11px] font-bold font-mono text-muted-foreground bg-muted/30 px-2 py-1 rounded border border-border/50">
+                    {row.original.ipAddress || "::1"}
                 </span>
             </div>
         ),
@@ -97,33 +108,34 @@ export const columns: ColumnDef<AuditLog>[] = [
         header: "Timestamp",
         cell: ({ row }) => (
             <div className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                <span className="text-[13px] font-bold text-foreground">
                     {format(new Date(row.original.createdAt), "dd MMM, yyyy")}
                 </span>
-                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider font-mono">
                     <Clock className="h-3 w-3 text-emerald-500" /> 
                     {format(new Date(row.original.createdAt), "hh:mm:ss a")}
-                </span>
+                </div>
             </div>
         ),
     },
     {
         id: "actions",
+        header: () => null,
         cell: ({ row }) => {
             // eslint-disable-next-line react-hooks/rules-of-hooks
             const [isOpen, setIsOpen] = useState(false);
             return (
-                <>
+                <div className="flex justify-end">
                     <Button 
                         variant="ghost" 
-                        size="sm" 
+                        size="icon" 
                         onClick={() => setIsOpen(true)}
-                        className="h-9 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-zinc-900 text-[10px] font-black uppercase tracking-widest shadow-sm transition-all"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     >
-                        <Eye className="mr-2 h-3.5 w-3.5" /> Inspect
+                        <Eye className="h-4 w-4" />
                     </Button>
                     <AuditDetailsModal log={row.original} isOpen={isOpen} onClose={() => setIsOpen(false)} />
-                </>
+                </div>
             );
         },
     },

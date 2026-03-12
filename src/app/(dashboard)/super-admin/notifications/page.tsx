@@ -64,8 +64,10 @@ import {
     ChevronsUpDown,
     ChevronLeft,
     ChevronRight,
+    X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const notificationSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters").max(100),
@@ -85,11 +87,9 @@ export default function SuperAdminNotificationsPage() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-    // Helper arrays for multi-select mimicking since shadcn lacks a native multi-select
     const [selectedSchools, setSelectedSchools] = useState<{ id: string, name: string }[]>([]);
     const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
-    // School Pagination & Search
     const [schoolSearchQuery, setSchoolSearchQuery] = useState("");
     const [schoolPage, setSchoolPage] = useState(1);
     const [isSchoolDropdownOpen, setIsSchoolDropdownOpen] = useState(false);
@@ -108,7 +108,6 @@ export default function SuperAdminNotificationsPage() {
     const { watch } = form;
     const currentTargetType = watch("targetType");
 
-    // Fetch schools for the school selector (with pagination and search)
     const { data: schoolsDataResponse, isLoading: isLoadingSchools } = useQuery({
         queryKey: ["schools-list", schoolSearchQuery, schoolPage],
         queryFn: async () => {
@@ -151,14 +150,12 @@ export default function SuperAdminNotificationsPage() {
     const onSubmit = (values: NotificationFormValues) => {
         const formData = new FormData();
 
-        // Core details
         formData.append("title", values.title);
         formData.append("message", values.message);
         formData.append("type", values.type);
         formData.append("targetType", values.targetType);
         if (values.actionUrl) formData.append("actionUrl", values.actionUrl);
 
-        // Arrays need JSON stringification or multiple appends. The backend expects JSON string or arrays
         if (currentTargetType === "SPECIFIC_SCHOOLS" && selectedSchools.length > 0) {
             selectedSchools.forEach(school => formData.append("targetSchoolIds[]", school.id));
         }
@@ -191,51 +188,34 @@ export default function SuperAdminNotificationsPage() {
     ];
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 relative min-h-screen">
-            {/* Decorative Background */}
-            <div className="absolute top-0 right-0 -z-10 w-full h-[500px] bg-gradient-to-bl from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
-
-            <div className="flex flex-col gap-2">
-                <h2 className="text-3xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-inner">
-                        <BellRing className="h-6 w-6" />
-                    </div>
-                    Broadcast Hub
-                </h2>
-                <p className="text-muted-foreground font-medium">
-                    Create and dispatch real-time notifications across the entire Unifynt platform.
-                </p>
+        <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                    <h2 className="text-3xl font-bold tracking-tight">Broadcast Hub</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Create and dispatch real-time notifications across the entire platform.
+                    </p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Form Container */}
                 <div className="lg:col-span-2">
-                    <Card className="border-0 shadow-2xl bg-white/70 dark:bg-zinc-950/70 backdrop-blur-3xl ring-1 ring-zinc-200/50 dark:ring-zinc-800/50 rounded-3xl overflow-hidden">
-                        <div className="h-2 w-full bg-gradient-to-r from-primary via-primary/50 to-primary" />
-
-                        <CardHeader className="md:px-8 mt-2">
-                            <CardTitle className="flex items-center gap-2">
-                                <Target className="h-5 w-5 text-primary" />
-                                Notification Composer
-                            </CardTitle>
-                            <CardDescription>Target specific crowds or blast a global announcement.</CardDescription>
+                    <Card className="rounded-xl border border-border shadow-sm overflow-hidden">
+                        <CardHeader className="bg-muted/30 border-b border-border py-4">
+                            <CardTitle className="text-base font-bold uppercase tracking-wider text-foreground">Notification Composer</CardTitle>
                         </CardHeader>
-
-                        <CardContent className="md:px-8 pb-8">
+                        <CardContent className="p-6">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
-                                    {/* Row 1: Title & Type */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                         <FormField
                                             control={form.control}
                                             name="title"
                                             render={({ field }) => (
                                                 <FormItem className="md:col-span-2">
-                                                    <FormLabel className="font-bold text-zinc-700 dark:text-zinc-300">Notification Title *</FormLabel>
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Notification Heading</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="E.g. System Maintenance Scheduled" {...field} className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-xl focus-visible:ring-primary/30" />
+                                                        <Input placeholder="E.g. System Maintenance Scheduled" {...field} className="h-11 bg-muted/20 rounded-xl" />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -247,14 +227,14 @@ export default function SuperAdminNotificationsPage() {
                                             name="type"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="font-bold text-zinc-700 dark:text-zinc-300">Priority Tier *</FormLabel>
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Category</FormLabel>
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                         <FormControl>
-                                                            <SelectTrigger className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-primary/30">
+                                                            <SelectTrigger className="h-11 bg-muted/20 rounded-xl">
                                                                 <SelectValue placeholder="Select type" />
                                                             </SelectTrigger>
                                                         </FormControl>
-                                                        <SelectContent className="rounded-2xl shadow-xl">
+                                                        <SelectContent className="rounded-xl shadow-lg">
                                                             <SelectItem value="INFO">Information</SelectItem>
                                                             <SelectItem value="SUCCESS">Success / Achievement</SelectItem>
                                                             <SelectItem value="WARNING">Warning</SelectItem>
@@ -268,18 +248,17 @@ export default function SuperAdminNotificationsPage() {
                                         />
                                     </div>
 
-                                    {/* Row 2: Message Content */}
                                     <FormField
                                         control={form.control}
                                         name="message"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="font-bold text-zinc-700 dark:text-zinc-300">Expanded Message *</FormLabel>
+                                                <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Detailed Message</FormLabel>
                                                 <FormControl>
                                                     <Textarea
                                                         placeholder="Type the full notification body here..."
                                                         {...field}
-                                                        className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-xl min-h-[120px] resize-y focus-visible:ring-primary/30"
+                                                        className="min-h-[140px] bg-muted/20 rounded-xl resize-none"
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -287,11 +266,10 @@ export default function SuperAdminNotificationsPage() {
                                         )}
                                     />
 
-                                    {/* Row 3: Audience Selector */}
-                                    <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/10 space-y-4">
-                                        <div className="flex items-center gap-2 mb-2">
+                                    <div className="bg-muted/10 rounded-xl border border-border p-6 space-y-6">
+                                        <div className="flex items-center gap-2">
                                             <Target className="h-4 w-4 text-primary" />
-                                            <h3 className="font-bold text-sm uppercase tracking-wider text-primary">Target Audience</h3>
+                                            <span className="text-[11px] font-bold uppercase tracking-widest text-primary">Target Selection</span>
                                         </div>
 
                                         <FormField
@@ -299,70 +277,67 @@ export default function SuperAdminNotificationsPage() {
                                             name="targetType"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <Select onValueChange={(val) => {
-                                                        field.onChange(val);
-                                                        setSelectedSchools([]);
-                                                        setSelectedRoles([]);
-                                                    }} defaultValue={field.value}>
+                                                    <Select 
+                                                        onValueChange={(val) => {
+                                                            field.onChange(val);
+                                                            setSelectedSchools([]);
+                                                            setSelectedRoles([]);
+                                                        }} 
+                                                        defaultValue={field.value}
+                                                    >
                                                         <FormControl>
-                                                            <SelectTrigger className="bg-white dark:bg-zinc-950 border-primary/20 focus:ring-primary/30 rounded-xl font-medium">
-                                                                <SelectValue placeholder="Who should receive this?" />
+                                                            <SelectTrigger className="h-11 bg-background border-border rounded-xl">
+                                                                <SelectValue placeholder="Target audience" />
                                                             </SelectTrigger>
                                                         </FormControl>
-                                                        <SelectContent className="rounded-2xl">
-                                                            <SelectItem value="ALL_USERS">Global: Everyone</SelectItem>
-                                                            <SelectItem value="ALL_SCHOOLS">All Schools (Admins)</SelectItem>
-                                                            <SelectItem value="SPECIFIC_SCHOOLS">Select Specific Schools</SelectItem>
-                                                            <SelectItem value="SPECIFIC_ROLES">Select Specific Roles</SelectItem>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="ALL_USERS">Global: Every Registered User</SelectItem>
+                                                            <SelectItem value="ALL_SCHOOLS">All Institution Admins</SelectItem>
+                                                            <SelectItem value="SPECIFIC_SCHOOLS">Specific Institutions</SelectItem>
+                                                            <SelectItem value="SPECIFIC_ROLES">Specific Global Roles</SelectItem>
                                                         </SelectContent>
                                                     </Select>
-                                                    <FormDescription>Choose exactly who gets pinged by this notification.</FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
                                         />
 
-                                        {/* Dynamic Selectors Based on Target Type */}
                                         {currentTargetType === "SPECIFIC_SCHOOLS" && (
                                             <div className="space-y-3 pt-2">
-                                                <Label className="text-zinc-700 dark:text-zinc-300 font-bold">Select Schools</Label>
+                                                <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Pick Institutions</Label>
                                                 <div className="flex flex-col gap-2">
-
                                                     <Popover open={isSchoolDropdownOpen} onOpenChange={setIsSchoolDropdownOpen}>
                                                         <PopoverTrigger asChild>
                                                             <Button
                                                                 variant="outline"
-                                                                role="combobox"
-                                                                aria-expanded={isSchoolDropdownOpen}
-                                                                className="w-full justify-between bg-white dark:bg-zinc-950 rounded-xl border-zinc-200 dark:border-zinc-800 font-normal shadow-sm h-11"
+                                                                className="w-full justify-between h-11 rounded-xl border-border bg-background font-normal"
                                                             >
-                                                                <span className="text-zinc-500">Search and select a school...</span>
+                                                                <span className="text-muted-foreground">Search institutions...</span>
                                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-[400px] p-0 rounded-2xl shadow-2xl border-zinc-200 dark:border-zinc-800 overflow-hidden" align="start">
+                                                        <PopoverContent className="w-[400px] p-0 rounded-xl shadow-xl border-border overflow-hidden" align="start">
                                                             <Command shouldFilter={false}>
                                                                 <CommandInput
-                                                                    placeholder="Search schools..."
+                                                                    placeholder="Type to search..."
                                                                     value={schoolSearchQuery}
                                                                     onValueChange={(val) => {
                                                                         setSchoolSearchQuery(val);
                                                                         setSchoolPage(1);
                                                                     }}
-                                                                    className="h-12"
+                                                                    className="h-11"
                                                                 />
                                                                 <CommandList>
-                                                                    <CommandEmpty className="py-6 text-center text-sm text-zinc-500">
-                                                                        {isLoadingSchools ? "Loading schools..." : "No schools found."}
+                                                                    <CommandEmpty className="py-6 text-center text-xs text-muted-foreground font-medium">
+                                                                        {isLoadingSchools ? "Syncing..." : "No results found."}
                                                                     </CommandEmpty>
                                                                     {!isLoadingSchools && schoolsData.length > 0 && (
-                                                                        <CommandGroup className="p-2">
+                                                                        <CommandGroup className="p-1">
                                                                             {schoolsData.map((school: any) => {
                                                                                 const isSelected = selectedSchools.some(s => s.id === school.id);
                                                                                 return (
                                                                                     <CommandItem
                                                                                         key={school.id}
-                                                                                        value={school.id}
                                                                                         onSelect={() => {
                                                                                             if (isSelected) {
                                                                                                 setSelectedSchools(selectedSchools.filter(s => s.id !== school.id));
@@ -370,14 +345,12 @@ export default function SuperAdminNotificationsPage() {
                                                                                                 setSelectedSchools([...selectedSchools, { id: school.id, name: school.name }]);
                                                                                             }
                                                                                         }}
-                                                                                        className="rounded-xl my-1 cursor-pointer aria-selected:bg-primary/5 aria-selected:text-primary transition-colors"
+                                                                                        className="rounded-lg my-0.5"
                                                                                     >
-                                                                                        <Check
-                                                                                            className={`mr-3 h-4 w-4 transition-all ${isSelected ? "opacity-100 text-primary scale-100" : "opacity-0 scale-50"}`}
-                                                                                        />
+                                                                                        <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
                                                                                         <div className="flex flex-col">
-                                                                                            <span className="font-bold text-zinc-800 dark:text-zinc-200">{school.name}</span>
-                                                                                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{school.subdomain || school.domain || "No domain"}</span>
+                                                                                            <span className="font-bold text-sm">{school.name}</span>
+                                                                                            <span className="text-[10px] text-muted-foreground uppercase">{school.subdomain || "No domain"}</span>
                                                                                         </div>
                                                                                     </CommandItem>
                                                                                 );
@@ -385,29 +358,25 @@ export default function SuperAdminNotificationsPage() {
                                                                         </CommandGroup>
                                                                     )}
                                                                 </CommandList>
-
-                                                                {/* Pagination Footer */}
-                                                                <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-800">
+                                                                <div className="flex items-center justify-between p-2 bg-muted/30 border-t border-border">
                                                                     <Button
-                                                                        variant="outline"
+                                                                        variant="ghost"
                                                                         size="sm"
-                                                                        className="h-8 rounded-lg text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                                        className="h-8 h-8 rounded-lg"
                                                                         onClick={() => setSchoolPage(p => Math.max(1, p - 1))}
                                                                         disabled={schoolPage <= 1 || isLoadingSchools}
                                                                     >
-                                                                        <ChevronLeft className="h-4 w-4 mr-1" /> Prev
+                                                                        <ChevronLeft className="h-4 w-4" />
                                                                     </Button>
-                                                                    <div className="text-[11px] font-bold tracking-widest text-zinc-400 uppercase">
-                                                                        Page {schoolsMeta.page} / {schoolsMeta.totalPage || 1}
-                                                                    </div>
+                                                                    <span className="text-[10px] font-bold text-muted-foreground">Page {schoolPage}</span>
                                                                     <Button
-                                                                        variant="outline"
+                                                                        variant="ghost"
                                                                         size="sm"
-                                                                        className="h-8 rounded-lg text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                                                        className="h-8 h-8 rounded-lg"
                                                                         onClick={() => setSchoolPage(p => Math.min(schoolsMeta.totalPage || 1, p + 1))}
                                                                         disabled={schoolPage >= (schoolsMeta.totalPage || 1) || isLoadingSchools}
                                                                     >
-                                                                        Next <ChevronRight className="h-4 w-4 ml-1" />
+                                                                        <ChevronRight className="h-4 w-4" />
                                                                     </Button>
                                                                 </div>
                                                             </Command>
@@ -416,11 +385,9 @@ export default function SuperAdminNotificationsPage() {
 
                                                     <div className="flex flex-wrap gap-2 mt-2">
                                                         {selectedSchools.map(school => (
-                                                            <Badge key={school.id} variant="secondary" className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center gap-2 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 hover:border-rose-200 transition-colors group">
-                                                                <span className="font-bold">{school.name}</span>
-                                                                <button type="button" onClick={() => setSelectedSchools(selectedSchools.filter(s => s.id !== school.id))} className="text-zinc-400 group-hover:text-rose-500 rounded-full focus:outline-none transition-colors">
-                                                                    <XCircle className="h-4 w-4" />
-                                                                </button>
+                                                            <Badge key={school.id} variant="secondary" className="px-3 py-1.5 bg-background shadow-sm border border-border rounded-lg group">
+                                                                <span className="font-bold mr-1">{school.name}</span>
+                                                                <X className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-destructive transition-colors" onClick={() => setSelectedSchools(selectedSchools.filter(s => s.id !== school.id))} />
                                                             </Badge>
                                                         ))}
                                                     </div>
@@ -430,25 +397,23 @@ export default function SuperAdminNotificationsPage() {
 
                                         {currentTargetType === "SPECIFIC_ROLES" && (
                                             <div className="space-y-3 pt-2">
-                                                <Label className="text-zinc-700 dark:text-zinc-300 font-bold">Select Roles</Label>
+                                                <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Select Access Roles</Label>
                                                 <div className="flex flex-wrap gap-2">
                                                     {rolesList.map(role => {
                                                         const isSelected = selectedRoles.includes(role);
                                                         return (
-                                                            <button
+                                                            <Button
                                                                 type="button"
                                                                 key={role}
+                                                                variant={isSelected ? "default" : "outline"}
                                                                 onClick={() => {
                                                                     if (isSelected) setSelectedRoles(selectedRoles.filter(r => r !== role));
                                                                     else setSelectedRoles([...selectedRoles, role]);
                                                                 }}
-                                                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ${isSelected
-                                                                    ? 'bg-primary text-primary-foreground border-primary scale-105'
-                                                                    : 'bg-white dark:bg-zinc-950 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:border-primary/50'
-                                                                    }`}
+                                                                className="h-10 px-4 rounded-xl text-xs font-bold transition-all"
                                                             >
                                                                 {role.replace(/_/g, " ")}
-                                                            </button>
+                                                            </Button>
                                                         );
                                                     })}
                                                 </div>
@@ -456,72 +421,58 @@ export default function SuperAdminNotificationsPage() {
                                         )}
                                     </div>
 
-                                    {/* Row 4: Action & Media */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                                         <FormField
                                             control={form.control}
                                             name="actionUrl"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="flex items-center gap-2 font-bold text-zinc-700 dark:text-zinc-300">
-                                                        <LinkIcon className="h-4 w-4 text-zinc-400" /> Optional Link
+                                                    <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                        <LinkIcon className="h-3 w-3" /> Redirect URL
                                                     </FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="https://..." {...field} className="bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-xl focus-visible:ring-primary/30" />
+                                                        <Input placeholder="https://..." {...field} className="h-11 bg-muted/20 rounded-xl" />
                                                     </FormControl>
-                                                    <FormDescription>Where should the user go when clicking this?</FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
                                         />
 
                                         <FormItem>
-                                            <FormLabel className="flex items-center gap-2 font-bold text-zinc-700 dark:text-zinc-300">
-                                                <ImageIcon className="h-4 w-4 text-zinc-400" /> Attached Image
+                                            <FormLabel className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                <ImageIcon className="h-3 w-3" /> Graphic Attachment
                                             </FormLabel>
                                             <FormControl>
-                                                <div className="flex items-center gap-4">
-                                                    <label className="flex items-center justify-center flex-1 h-[42px] px-4 rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors text-sm font-medium text-zinc-500 hover:text-primary">
-                                                        <span>{imageFile ? "Change Image" : "Upload Graphic"}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <label className="flex-1 h-11 px-4 rounded-xl border border-dashed border-border bg-muted/20 hover:bg-muted/30 cursor-pointer flex items-center justify-center text-xs font-bold text-muted-foreground transition-all">
+                                                        <span>{imageFile ? "Update Image" : "Select File"}</span>
                                                         <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                                                     </label>
                                                     {imagePreview && (
-                                                        <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden border shadow-sm group">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <div className="h-11 w-11 rounded-lg border border-border overflow-hidden shrink-0 shadow-sm relative group">
                                                             <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => { setImageFile(null); setImagePreview(null); }}
-                                                                className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
-                                                            >
-                                                                &times;
-                                                            </button>
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <X className="h-3 w-3 text-white cursor-pointer" onClick={() => { setImageFile(null); setImagePreview(null); }} />
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
                                             </FormControl>
-                                            <FormDescription>Attach promotional banners or context images.</FormDescription>
                                         </FormItem>
                                     </div>
 
                                     <div className="pt-4 flex justify-end">
                                         <Button
                                             type="submit"
-                                            onClick={() => console.log('submitting...')}
                                             disabled={createNotificationMutation.isPending}
-                                            className="rounded-xl px-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground"
+                                            className="h-12 px-10 rounded-xl font-bold transition-all shadow-sm"
                                         >
                                             {createNotificationMutation.isPending ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Broadcasting...
-                                                </>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             ) : (
-                                                <>
-                                                    <Send className="mr-2 h-4 w-4" />
-                                                    Dispatch Notification
-                                                </>
+                                                <Send className="mr-2 h-4 w-4" />
                                             )}
+                                            Dispatch Notification
                                         </Button>
                                     </div>
                                 </form>
@@ -530,58 +481,44 @@ export default function SuperAdminNotificationsPage() {
                     </Card>
                 </div>
 
-                {/* Live Preview Pane */}
-                <div className="hidden lg:flex flex-col">
+                <div className="hidden lg:block">
                     <div className="sticky top-28 space-y-6">
-                        <div className="flex items-center gap-2 pb-2 border-b border-zinc-200 dark:border-zinc-800">
-                            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <h3 className="font-bold text-sm uppercase tracking-wider text-zinc-500">Live User Preview</h3>
+                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                            <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Snapshot Preview</h3>
                         </div>
 
-                        <div className="relative w-full max-w-sm ml-auto mr-auto filter drop-shadow-2xl">
-                            {/* Toast Mockup */}
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="p-4 flex gap-4">
-                                    <div className="flex-shrink-0 mt-0.5">
-                                        <div className="p-2 rounded-xl border border-primary/20 bg-primary/5 shadow-sm">
-                                            {form.watch("type") === "INFO" && <Info className="h-5 w-5 text-blue-500" />}
-                                            {form.watch("type") === "WARNING" && <AlertTriangle className="h-5 w-5 text-amber-500" />}
-                                            {form.watch("type") === "SUCCESS" && <CheckCircle className="h-5 w-5 text-emerald-500" />}
-                                            {form.watch("type") === "ERROR" && <XCircle className="h-5 w-5 text-rose-500" />}
-                                            {form.watch("type") === "SYSTEM" && <Megaphone className="h-5 w-5 text-primary" />}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col min-w-0 pr-6 w-full">
-                                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                                            {form.watch("title") || "Notification Title"}
-                                        </p>
-                                        <p className="text-xs mt-1 text-zinc-500 line-clamp-2 leading-relaxed break-words">
-                                            {form.watch("message") || "The body of your message will appear here. Keep it concise and actionable."}
-                                        </p>
-                                    </div>
-                                    <button className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600">
-                                        &times;
-                                    </button>
+                        <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+                            <div className="p-4 flex gap-4">
+                                <div className="h-10 w-10 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                    {form.watch("type") === "INFO" && <Info className="h-5 w-5" />}
+                                    {form.watch("type") === "WARNING" && <AlertTriangle className="h-5 w-5" />}
+                                    {form.watch("type") === "SUCCESS" && <CheckCircle className="h-5 w-5" />}
+                                    {form.watch("type") === "ERROR" && <XCircle className="h-5 w-5" />}
+                                    {form.watch("type") === "SYSTEM" && <Megaphone className="h-5 w-5" />}
                                 </div>
-                                {imagePreview && (
-                                    <div className="w-full h-32 border-t border-zinc-100 dark:border-zinc-800 mt-2">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                    </div>
-                                )}
-                                <div className="bg-zinc-50 dark:bg-zinc-950 p-2 border-t border-zinc-100 dark:border-zinc-800 text-[10px] text-zinc-400 font-medium tracking-wide flex justify-between items-center">
-                                    <span>UNIFYNT SYS</span>
-                                    <span>Just now</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-bold text-sm text-foreground truncate">{form.watch("title") || "Preview Title"}</p>
+                                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{form.watch("message") || "Message body will appear here..."}</p>
                                 </div>
+                            </div>
+                            {imagePreview && (
+                                <div className="aspect-video w-full border-t border-border">
+                                    <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+                                </div>
+                            )}
+                            <div className="p-3 bg-muted/30 border-t border-border flex items-center justify-between">
+                                <span className="text-[10px] font-bold uppercase text-muted-foreground">UNIFYNT BROADCAST</span>
+                                <span className="text-[10px] font-medium text-muted-foreground">NOW</span>
                             </div>
                         </div>
 
-                        <div className="bg-zinc-100/50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 backdrop-blur-sm text-xs text-zinc-500 leading-relaxed font-medium">
-                            This preview mimics what end users will experience when they receive this toast in real-time across their active sessions.
+                        <div className="p-4 rounded-xl border border-border bg-muted/20">
+                            <p className="text-xs text-muted-foreground leading-relaxed italic">
+                                This live preview reflects the real-time notification experience for users on various dashboard modules.
+                            </p>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );

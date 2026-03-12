@@ -163,7 +163,7 @@ export default function ApplicationsPage() {
         </PermissionGate>
       </div>
 
-      <Card className="border-border shadow-none bg-card/40 backdrop-blur-sm overflow-hidden">
+      <Card className="border-border shadow-none bg-card overflow-hidden">
         <CardHeader className="border-b border-border/30 p-4 shrink-0">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="relative w-full sm:w-96">
@@ -175,7 +175,7 @@ export default function ApplicationsPage() {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-10 w-full pl-9"
+                className="h-10 w-full pl-9 bg-muted/20"
               />
             </div>
             <Select
@@ -185,7 +185,7 @@ export default function ApplicationsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-10 w-full sm:w-[180px]">
+              <SelectTrigger className="h-10 w-full sm:w-[180px] bg-muted/20">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -199,7 +199,7 @@ export default function ApplicationsPage() {
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-background/30">
+            <TableHeader className="bg-muted/30">
               <TableRow>
                 <TableHead className="px-6 font-semibold text-foreground">
                   Applicant Info
