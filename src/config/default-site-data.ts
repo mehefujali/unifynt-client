@@ -62,11 +62,16 @@ export const DEFAULT_SITE_DATA = {
     },
     gallery: {
       title: "Campus & Infrastructure",
-      description: "Explore our state-of-the-art facilities and vibrant campus life.",
-      image1: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800",
-      image2: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800",
-      image3: "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800",
-      image4: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800",
+      description:
+        "Explore our state-of-the-art facilities and vibrant campus life.",
+      image1:
+        "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800",
+      image2:
+        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800",
+      image3:
+        "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800",
+      image4:
+        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800",
       show: true,
     },
     faculty: {
@@ -84,12 +89,13 @@ export const DEFAULT_SITE_DATA = {
     },
     faq: {
       title: "Frequently Asked Questions",
-      description: "Find answers to common queries regarding admissions, curriculum, and policies.",
+      description:
+        "Find answers to common queries regarding admissions, curriculum, and policies.",
       show: true,
     },
     contact: {
       title: "Get In Touch With Us",
-      phone: "+880 1700 000 000",
+      phone: "+91 0000000000",
       email: "office@unifyntacademy.edu",
       show: true,
     },

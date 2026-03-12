@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -162,8 +163,8 @@ export default function ApplicationsPage() {
         </PermissionGate>
       </div>
 
-      <Card className="border-border shadow-sm">
-        <CardHeader className="border-b bg-muted/20 p-4">
+      <Card className="border-border shadow-none bg-card/40 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="border-b border-border/30 p-4 shrink-0">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div className="relative w-full sm:w-96">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -198,7 +199,7 @@ export default function ApplicationsPage() {
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-muted/40">
+            <TableHeader className="bg-background/30">
               <TableRow>
                 <TableHead className="px-6 font-semibold text-foreground">
                   Applicant Info
@@ -241,7 +242,7 @@ export default function ApplicationsPage() {
                 </TableRow>
               ) : (
                 applications.map((app: any) => (
-                  <TableRow key={app.id} className="hover:bg-muted/20">
+                  <TableRow key={app.id} className="hover:bg-muted/5 transition-colors">
                     <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 border shadow-sm">
@@ -263,7 +264,7 @@ export default function ApplicationsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm font-medium">
+                    <TableCell className="text-sm font-medium text-foreground/80">
                       {app.phone || "N/A"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -272,16 +273,20 @@ export default function ApplicationsPage() {
                     <TableCell>
                       {(() => {
                         const ps = app.paymentStatus || "PENDING";
-                        const psStyle =
-                          ps === "PAID"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : ps === "FAILED"
-                              ? "border-red-200 bg-red-50 text-red-700"
-                              : ps === "REFUNDED"
-                                ? "border-purple-200 bg-purple-50 text-purple-700"
-                                : "border-amber-200 bg-amber-50 text-amber-700"; // PENDING / PARTIAL / OVERDUE
                         return (
-                          <Badge variant="outline" className={psStyle}>
+                          <Badge 
+                            variant="outline" 
+                            className={cn(
+                              "font-bold text-[10px] uppercase tracking-wider",
+                              ps === "PAID"
+                                ? "border-emerald-500/50 text-emerald-500 bg-emerald-500/5"
+                                : ps === "FAILED"
+                                  ? "border-red-500/50 text-red-500 bg-red-500/5"
+                                  : ps === "REFUNDED"
+                                    ? "border-purple-500/50 text-purple-500 bg-purple-500/5"
+                                    : "border-amber-500/50 text-amber-500 bg-amber-500/5"
+                            )}
+                          >
                             {ps}
                           </Badge>
                         );
@@ -290,30 +295,30 @@ export default function ApplicationsPage() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={
+                        className={cn(
+                          "font-bold text-[10px] uppercase tracking-wider",
                           app.status === "APPROVED"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-600"
+                            ? "border-emerald-500/50 text-emerald-500 bg-emerald-500/5"
                             : app.status === "REJECTED"
-                              ? "border-red-200 bg-red-50 text-red-600"
-                              : "border-amber-200 bg-amber-50 text-amber-600"
-                        }
+                              ? "border-red-500/50 text-red-500 bg-red-500/5"
+                              : "border-amber-500/50 text-amber-500 bg-amber-500/5"
+                        )}
                       >
                         {app.status}
                       </Badge>
                     </TableCell>
                     {canReview && (
                         <TableCell className="px-6 text-right">
-                        {/* 🔒 Gate for Review Button inside the column */}
-                        <PermissionGate required={[PERMISSIONS.ADMISSION_EDIT, PERMISSIONS.ADMISSION_DELETE]}>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setSelectedAppId(app.id)}
-                                className="h-9 hover:bg-primary/10 hover:text-primary"
-                            >
-                                <Eye className="mr-2 h-4 w-4" /> Review
-                            </Button>
-                        </PermissionGate>
+                            <PermissionGate required={[PERMISSIONS.ADMISSION_EDIT, PERMISSIONS.ADMISSION_DELETE]}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setSelectedAppId(app.id)}
+                                    className="h-8 text-xs font-bold hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
+                                >
+                                    <Eye className="mr-2 h-3.5 w-3.5" /> Review
+                                </Button>
+                            </PermissionGate>
                         </TableCell>
                     )}
                   </TableRow>
@@ -323,7 +328,7 @@ export default function ApplicationsPage() {
           </Table>
 
           {!isLoading && meta.total > 0 && (
-            <div className="flex items-center justify-between border-t bg-muted/10 px-6 py-4">
+            <div className="flex items-center justify-between border-t border-border/30 bg-background/20 px-6 py-4">
               <div className="text-sm font-medium text-muted-foreground">
                 Showing {(meta.page - 1) * meta.limit + 1} to{" "}
                 {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}{" "}
