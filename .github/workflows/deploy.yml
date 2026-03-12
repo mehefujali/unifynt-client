@@ -28,7 +28,7 @@ jobs:
       - name: Build project
         run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: http://api.unifynt.com/api/v1
+          NEXT_PUBLIC_API_URL: https://api.unifynt.com/api/v1
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -44,7 +44,7 @@ jobs:
           push: true
           tags: ghcr.io/mehefujali/unifynt:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=http://api.unifynt.com/api/v1
+            NEXT_PUBLIC_API_URL=https://api.unifynt.com/api/v1
 
   deploy:
     needs: build-and-push
