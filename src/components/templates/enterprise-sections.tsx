@@ -87,6 +87,8 @@ export const Header = ({ data, theme, school }: any) => {
           </button>
         </div>
       </motion.header>
+      {/* Spacer to push content below fixed header */}
+      <div className="h-[73px] w-full" /> 
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>

@@ -12,7 +12,7 @@ export default async function middleware(req: NextRequest) {
   const rootDomains = ["unifynt.com", "localhost:3000", "localhost"];
   
   // চেক করুন হোস্টটি মেইন ডোমেইন কি না
-  const isRootDomain = rootDomains.some(domain => hostname === domain || hostname.endsWith(".localhost:3000"));
+  const isRootDomain = rootDomains.includes(hostname);
 
   // 'api' সাবডোমেইন হলে মিডলওয়্যার স্কিপ করুন
   if (hostname.startsWith("api.unifynt.com")) {

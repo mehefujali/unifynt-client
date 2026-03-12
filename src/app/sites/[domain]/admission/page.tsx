@@ -1,86 +1,99 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { notFound } from "next/navigation";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, notFound } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { SiteConfigService } from "@/services/site-config.service";
 import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
 import { Header, Footer } from "@/components/templates/enterprise-sections";
 import DynamicAdmissionForm from "@/components/admission/DynamicAdmissionForm";
-import { prisma } from "@/app/config/db";
+import { Loader2 } from "lucide-react";
 
-interface AdmissionPageProps {
-    params: Promise<{
-        domain: string;
-    }>;
-}
+export default function AdmissionPage() {
+    const { domain } = useParams();
 
-export default async function AdmissionPage({ params }: AdmissionPageProps) {
-    const resolvedParams = await params;
-    const domain = decodeURIComponent(resolvedParams.domain);
-
-    // Fetch school to ensure it exists and get ID for the form
-    const school = await prisma.school.findFirst({
-        where: {
-            OR: [
-                { subdomain: domain },
-                { slug: domain }
-            ],
-            isActive: true,
-        }
+    // Fetch site data via API (Safe for production)
+    const { data: siteData, isLoading, isError } = useQuery({
+        queryKey: ["public-site", domain],
+        queryFn: () => SiteConfigService.getPublicSiteData(domain as string),
+        enabled: !!domain,
     });
 
-    if (!school) {
+    const [liveTheme, setLiveTheme] = useState(DEFAULT_SITE_DATA.theme);
+    const [liveContent, setLiveContent] = useState<any>(DEFAULT_SITE_DATA.content);
+
+    useEffect(() => {
+        if (siteData) {
+            const mergedTheme = { ...DEFAULT_SITE_DATA.theme, ...(siteData.themeSettings || {}) };
+            const mergedContent = { ...DEFAULT_SITE_DATA.content } as any;
+
+            if (siteData.content) {
+                Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {
+                    mergedContent[key] = {
+                        ...(DEFAULT_SITE_DATA.content as any)[key],
+                        ...(siteData.content[key] || {})
+                    };
+                });
+            }
+
+
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLiveTheme(mergedTheme);
+            setLiveContent(mergedContent);
+        }
+    }, [siteData]);
+
+    if (isLoading) {
+        return (
+            <div className="h-screen flex flex-col items-center justify-center bg-white">
+                <Loader2 className="animate-spin text-primary h-12 w-12 mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Initializing Admission Engine...</p>
+            </div>
+        );
+    }
+
+    if (isError || !siteData?.school) {
         return notFound();
     }
 
-    // Fetch site config for Header/Footer styling
-    let siteData = null;
-    try {
-        siteData = await SiteConfigService.getPublicSiteData(domain);
-    } catch (e) {
-        siteData = null;
-    }
-
-    const liveTheme = siteData?.themeSettings ? { ...DEFAULT_SITE_DATA.theme, ...siteData.themeSettings } : DEFAULT_SITE_DATA.theme;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const liveContent = { ...DEFAULT_SITE_DATA.content } as any;
-    
-    if (siteData?.content) {
-        Object.keys(DEFAULT_SITE_DATA.content).forEach(key => {
-            liveContent[key] = {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                ...(DEFAULT_SITE_DATA.content as any)[key],
-                ...(siteData?.content[key] || {})
-            };
-        });
-    }
+    const school = siteData.school;
 
     return (
         <div style={{ backgroundColor: liveTheme.background }} className="min-h-screen flex flex-col font-sans transition-colors duration-300">
-            <Header data={liveContent.header} theme={liveTheme} school={siteData?.school || school} />
+            <Header data={liveContent.header} theme={liveTheme} school={school} />
 
-            <main className="flex-grow py-12 px-4 sm:px-6 lg:px-8 relative">
-                <div className="absolute top-0 left-0 w-full h-96 opacity-20 -z-10" style={{ background: `linear-gradient(to bottom, ${liveTheme.primary}, transparent)` }}></div>
+            <main className="flex-grow py-16 px-4 sm:px-6 lg:px-8 relative">
+                {/* Visual Background Decoration */}
+                <div
+                    className="absolute top-0 left-0 w-full h-[500px] opacity-10 -z-10 transition-all duration-1000"
+                    style={{ background: `linear-gradient(to bottom, ${liveTheme.primary}, transparent)` }}
+                ></div>
 
-                <div className="max-w-4xl mx-auto mb-10 text-center">
-                    <div 
-                        className="inline-flex items-center justify-center px-4 py-1.5 mb-4 rounded-full font-semibold text-sm tracking-wide"
-                        style={{ backgroundColor: `${liveTheme.primary}20`, color: liveTheme.primary, borderColor: `${liveTheme.primary}40`, borderWidth: '1px' }}    
+                <div className="max-w-4xl mx-auto mb-12 text-center">
+                    <div
+                        className="inline-flex items-center justify-center px-4 py-1.5 mb-6 rounded-full font-bold text-[10px] uppercase tracking-[0.2em] shadow-sm border"
+                        style={{ backgroundColor: `${liveTheme.primary}10`, color: liveTheme.primary, borderColor: `${liveTheme.primary}30` }}
                     >
-                        Admissions Open
+                        Admission Portal Active
                     </div>
-                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl mb-4" style={{ color: liveTheme.text }}>
-                        Application for Admission
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-6" style={{ color: liveTheme.textPrimary || '#000' }}>
+                        Join Our Academic Community
                     </h1>
-                    <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: liveTheme.text, opacity: 0.8 }}>
-                        Join {school.name} for the upcoming academic session. Please complete the application form below with accurate information to initiate your admission process.
+                    <div className="h-1 w-20 mx-auto mb-8 rounded-full" style={{ backgroundColor: liveTheme.primary }}></div>
+                    <p className="text-lg max-w-2xl mx-auto leading-relaxed font-medium opacity-70" style={{ color: liveTheme.textPrimary || '#000' }}>
+                        Ready to start your journey with {school.name}? Complete the official application form below. Our admissions team will review your submission promptly.
                     </p>
                 </div>
 
                 <div className="max-w-4xl mx-auto">
-                    <DynamicAdmissionForm schoolId={school.id} />
+                    <div className="bg-white/50 backdrop-blur-sm rounded-[2.5rem] p-1 border border-white/20 shadow-2xl">
+                        <DynamicAdmissionForm schoolId={school.id} />
+                    </div>
                 </div>
             </main>
 
-            <Footer data={liveContent.footer} theme={liveTheme} school={siteData?.school || school} />
+            <Footer data={liveContent.footer} theme={liveTheme} school={school} />
         </div>
     );
 }

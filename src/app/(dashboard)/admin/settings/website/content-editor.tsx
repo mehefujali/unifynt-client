@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Layout, Type, Image as ImageIcon, UploadCloud, Loader2, Link as LinkIcon, Globe, Plus, Trash2 } from "lucide-react";
+import {
+  Layout, Type, Image as ImageIcon, UploadCloud, Loader2,
+  Link as LinkIcon, Globe, Plus, Trash2
+} from "lucide-react";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 
@@ -28,7 +31,7 @@ export function ContentEditor({ content, onChange }: any) {
       const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
       if (res.data.success) {
         updateField(section, field, res.data.data.url);
-        toast.success("Asset deployed to Cloudinary");
+        toast.success("Asset uploaded successfully");
       }
     } catch {
       toast.error("Upload failed");
@@ -37,151 +40,210 @@ export function ContentEditor({ content, onChange }: any) {
     }
   };
 
-  if (!content) return <div className="p-8 text-center animate-pulse font-black text-[10px] uppercase opacity-40">Architecting Content Engine...</div>;
+  if (!content) {
+    return (
+      <div className="p-8 text-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary/40 mx-auto mb-2" />
+        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Loading content engine...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 space-y-4 pb-32">
-      <div className="px-2 mb-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Content Modules</h3>
-        <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Configure your enterprise presence</p>
+    <div className="p-4 space-y-3 pb-32">
+
+      {/* Header */}
+      <div className="px-2 pb-2">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-primary">Content Modules</h3>
+        <p className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">
+          Configure your institution&apos;s web presence
+        </p>
       </div>
 
-      <Accordion type="multiple" className="space-y-4">
+      <Accordion type="multiple" className="space-y-2">
         {Object.entries(content).map(([secKey, secData]: [string, any]) => (
-          <AccordionItem key={secKey} value={secKey} className="border rounded-[1.5rem] overflow-hidden bg-card shadow-sm border-zinc-100">
-            <AccordionTrigger className="px-6 py-5 hover:no-underline hover:bg-muted/10 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  {secKey === 'header' || secKey === 'footer' ? <Globe className="h-4 w-4 text-primary" /> : <Layout className="h-4 w-4 text-primary" />}
+          <AccordionItem
+            key={secKey}
+            value={secKey}
+            className="border border-border rounded-xl overflow-hidden bg-card shadow-sm"
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 transition-all [&[data-state=open]]:bg-muted/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 border border-primary/20 rounded-lg">
+                  {secKey === 'header' || secKey === 'footer'
+                    ? <Globe className="h-3.5 w-3.5 text-primary" />
+                    : <Layout className="h-3.5 w-3.5 text-primary" />
+                  }
                 </div>
-                <span className="font-black text-[11px] uppercase tracking-[0.2em]">{secKey}</span>
+                <span className="font-black text-[11px] uppercase tracking-widest text-foreground">
+                  {secKey}
+                </span>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-6 space-y-8 border-t border-zinc-50">
-              {secKey !== 'header' && secKey !== 'footer' && (
-                <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
-                  <div className="space-y-0.5">
-                    <Label className="text-[10px] font-black uppercase tracking-widest">Visibility</Label>
-                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Enable this block on site</p>
-                  </div>
-                  <Switch checked={secData.show !== false} onCheckedChange={(v) => updateField(secKey, "show", v)} />
-                </div>
-              )}
 
-              <div className="grid gap-6">
-                {Object.entries(secData).map(([key, value]: [string, any]) => {
-                  if (key === "show") return null;
+            <AccordionContent className="border-t border-border bg-background">
+              <div className="p-5 space-y-6">
 
-                  const isImageField = (key.toLowerCase().includes("image") || key.toLowerCase() === "logo") && !key.toLowerCase().includes("text");
-                  const isLinkField = key.toLowerCase().includes("link");
-
-                  return (
-                    <div key={key} className="space-y-3">
-                      <Label className="text-[10px] font-black uppercase tracking-widest opacity-40 flex items-center gap-2">
-                        {isImageField ? <ImageIcon className="h-3 w-3" /> : isLinkField ? <LinkIcon className="h-3 w-3" /> : <Type className="h-3 w-3" />}
-                        {key.replace(/([A-Z])/g, ' $1')}
+                {/* Visibility Toggle */}
+                {secKey !== 'header' && secKey !== 'footer' && (
+                  <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border border-dashed">
+                    <div className="space-y-0.5">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-foreground">
+                        Visibility
                       </Label>
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase">
+                        Show this section on site
+                      </p>
+                    </div>
+                    <Switch
+                      checked={secData.show !== false}
+                      onCheckedChange={(v) => updateField(secKey, "show", v)}
+                    />
+                  </div>
+                )}
 
-                      {Array.isArray(value) ? (
-                        <div className="space-y-3 border p-4 rounded-xl bg-zinc-50 border-zinc-200">
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">{key.replace(/([A-Z])/g, ' $1')}</Label>
-                          {value.map((link: any, index: number) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <Input
-                                value={link.label}
-                                onChange={(e) => {
-                                  const newLinks = [...value];
-                                  newLinks[index].label = e.target.value;
-                                  updateField(secKey, key, newLinks);
-                                }}
-                                className="h-10 text-xs" placeholder="Label (e.g. Careers)"
-                              />
-                              <Input
-                                value={link.url}
-                                onChange={(e) => {
-                                  const newLinks = [...value];
-                                  newLinks[index].url = e.target.value;
-                                  updateField(secKey, key, newLinks);
-                                }}
-                                className="h-10 text-xs font-mono text-primary" placeholder="/careers"
-                              />
-                              <Button
-                                variant="destructive" size="icon" className="h-10 w-10 shrink-0 rounded-lg"
-                                onClick={() => {
-                                  const newLinks = value.filter((_, i) => i !== index);
-                                  updateField(secKey, key, newLinks);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                          <Button
-                            variant="outline" size="sm" className="w-full border-dashed"
-                            onClick={() => {
-                              const newLinks = [...value];
-                              newLinks.push({ label: "", url: "" });
-                              updateField(secKey, key, newLinks);
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-2" /> Add Link
-                          </Button>
-                        </div>
-                      ) : isImageField ? (
-                        <div className="space-y-4">
-                          {value && (
-                            <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-zinc-100 group">
-                              <img src={value} alt="Asset" className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
-                            </div>
-                          )}
-                          <div className="relative">
-                            <input
-                              type="file"
-                              className="hidden"
-                              id={`upload-${secKey}-${key}`}
-                              accept="image/*"
-                              onChange={(e) => e.target.files?.[0] && handleImageUpload(secKey, key, e.target.files[0])}
-                            />
+                {/* Fields */}
+                <div className="grid gap-5">
+                  {Object.entries(secData).map(([key, value]: [string, any]) => {
+                    if (key === "show") return null;
+
+                    const isImageField = (key.toLowerCase().includes("image") || key.toLowerCase() === "logo") && !key.toLowerCase().includes("text");
+                    const isLinkField = key.toLowerCase().includes("link");
+
+                    return (
+                      <div key={key} className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                          {isImageField
+                            ? <ImageIcon className="h-3 w-3" />
+                            : isLinkField
+                            ? <LinkIcon className="h-3 w-3" />
+                            : <Type className="h-3 w-3" />
+                          }
+                          {key.replace(/([A-Z])/g, ' $1')}
+                        </Label>
+
+                        {/* Array (links) */}
+                        {Array.isArray(value) ? (
+                          <div className="space-y-2 border border-border p-4 rounded-xl bg-muted/20">
+                            {value.map((link: any, index: number) => (
+                              <div key={index} className="flex items-center gap-2">
+                                <Input
+                                  value={link.label}
+                                  onChange={(e) => {
+                                    const newLinks = [...value];
+                                    newLinks[index].label = e.target.value;
+                                    updateField(secKey, key, newLinks);
+                                  }}
+                                  className="h-9 text-xs bg-background border-border"
+                                  placeholder="Label (e.g. About)"
+                                />
+                                <Input
+                                  value={link.url}
+                                  onChange={(e) => {
+                                    const newLinks = [...value];
+                                    newLinks[index].url = e.target.value;
+                                    updateField(secKey, key, newLinks);
+                                  }}
+                                  className="h-9 text-xs font-mono text-primary bg-background border-border"
+                                  placeholder="/about"
+                                />
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0 rounded-lg"
+                                  onClick={() => {
+                                    const newLinks = value.filter((_: any, i: number) => i !== index);
+                                    updateField(secKey, key, newLinks);
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
                             <Button
                               variant="outline"
-                              className="w-full h-12 border-2 border-dashed rounded-xl font-black text-[10px] uppercase tracking-widest hover:border-primary/50"
-                              asChild
-                              disabled={isUploading === `${secKey}-${key}`}
+                              size="sm"
+                              className="w-full border-dashed border-border text-[10px] font-black uppercase tracking-widest h-9 hover:bg-muted/30"
+                              onClick={() => {
+                                const newLinks = [...value, { label: "", url: "" }];
+                                updateField(secKey, key, newLinks);
+                              }}
                             >
-                              <label htmlFor={`upload-${secKey}-${key}`}>
-                                {isUploading === `${secKey}-${key}` ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                                {value ? "Replace Asset" : "Upload Asset"}
-                              </label>
+                              <Plus className="h-3.5 w-3.5 mr-2" />
+                              Add Link
                             </Button>
                           </div>
-                        </div>
-                      ) : key.toLowerCase().includes("description") || key.toLowerCase().includes("subtitle") || key.toLowerCase().includes("quote") ? (
-                        <Textarea
-                          value={value}
-                          onChange={(e) => updateField(secKey, key, e.target.value)}
-                          className="rounded-2xl bg-zinc-50 border-0 focus-visible:ring-1 text-sm min-h-[120px] font-medium leading-relaxed"
-                        />
-                      ) : key === "layout" ? (
-                        <select
-                          value={value}
-                          onChange={(e) => updateField(secKey, key, e.target.value)}
-                          className="h-12 w-full px-4 rounded-xl bg-zinc-50 border-0 focus-visible:ring-1 font-semibold text-sm outline-none cursor-pointer"
-                        >
-                          <option value="type1">Layout 1: Minimal Centered</option>
-                          <option value="type2">Layout 2: Background Image</option>
-                          <option value="type3">Layout 3: Split Image/Text</option>
-                        </select>
-                      ) : (
-                        <Input
-                          value={value}
-                          onChange={(e) => updateField(secKey, key, e.target.value)}
-                          className={`h-12 rounded-xl bg-zinc-50 border-0 focus-visible:ring-1 ${isLinkField ? 'font-mono text-xs text-primary' : 'font-semibold text-sm'}`}
-                          placeholder={isLinkField ? "https://your-link.com" : "Enter text content..."}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+
+                        /* Image upload */
+                        ) : isImageField ? (
+                          <div className="space-y-3">
+                            {value && (
+                              <div className="relative aspect-video rounded-xl overflow-hidden border border-border bg-muted/20 group">
+                                <img
+                                  src={value}
+                                  alt="Asset"
+                                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                                />
+                              </div>
+                            )}
+                            <div className="relative">
+                              <input
+                                type="file"
+                                className="hidden"
+                                id={`upload-${secKey}-${key}`}
+                                accept="image/*"
+                                onChange={(e) => e.target.files?.[0] && handleImageUpload(secKey, key, e.target.files[0])}
+                              />
+                              <Button
+                                variant="outline"
+                                className="w-full h-10 border-dashed border-border rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-muted/30 hover:border-primary/40 transition-all"
+                                asChild
+                                disabled={isUploading === `${secKey}-${key}`}
+                              >
+                                <label htmlFor={`upload-${secKey}-${key}`} className="cursor-pointer">
+                                  {isUploading === `${secKey}-${key}`
+                                    ? <Loader2 className="animate-spin mr-2 h-3.5 w-3.5" />
+                                    : <UploadCloud className="mr-2 h-3.5 w-3.5" />
+                                  }
+                                  {value ? "Replace Asset" : "Upload Asset"}
+                                </label>
+                              </Button>
+                            </div>
+                          </div>
+
+                        /* Textarea */
+                        ) : key.toLowerCase().includes("description") || key.toLowerCase().includes("subtitle") || key.toLowerCase().includes("quote") ? (
+                          <Textarea
+                            value={value}
+                            onChange={(e) => updateField(secKey, key, e.target.value)}
+                            className="rounded-xl bg-background border-border focus-visible:ring-1 text-sm min-h-[100px] font-medium leading-relaxed"
+                          />
+
+                        /* Layout select */
+                        ) : key === "layout" ? (
+                          <select
+                            value={value}
+                            onChange={(e) => updateField(secKey, key, e.target.value)}
+                            className="h-10 w-full px-3 rounded-xl bg-background border border-border text-foreground focus-visible:ring-1 font-semibold text-sm outline-none cursor-pointer"
+                          >
+                            <option value="type1">Layout 1: Minimal Centered</option>
+                            <option value="type2">Layout 2: Background Image</option>
+                            <option value="type3">Layout 3: Split Image/Text</option>
+                          </select>
+
+                        /* Text input */
+                        ) : (
+                          <Input
+                            value={value}
+                            onChange={(e) => updateField(secKey, key, e.target.value)}
+                            className={`h-10 rounded-xl bg-background border-border focus-visible:ring-1 ${isLinkField ? 'font-mono text-xs text-primary' : 'font-medium text-sm'}`}
+                            placeholder={isLinkField ? "https://your-link.com" : "Enter text content..."}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>
