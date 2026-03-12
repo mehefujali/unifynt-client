@@ -1,13 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import { MessageCircle, Phone, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const FloatingContact = () => {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const phoneNumber = "+919239536545";
   const whatsappNumber = "919239536545";
+
+  // Define hidden paths (Dashboards, Admin, Super-Admin)
+  const isHidden = pathname.startsWith("/admin") || 
+                   pathname.startsWith("/super-admin") || 
+                   pathname.startsWith("/student") ||
+                   pathname.startsWith("/parent") ||
+                   pathname.startsWith("/teacher");
+
+  if (isHidden) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-4">

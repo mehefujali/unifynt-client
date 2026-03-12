@@ -1,6 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useRef } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
@@ -106,12 +108,14 @@ export const LandingBottom = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
                         {/* Brand Column */}
                         <div className="space-y-6">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-10 h-10 rounded-xl bg-[#2B9EFF] flex items-center justify-center shadow-lg shadow-[#2B9EFF]/20">
-                                    <Zap size={20} className="text-white fill-current" />
-                                </div>
-                                <span className="font-bold text-zinc-900 tracking-tighter text-2xl">Unifynt</span>
-                            </div>
+                            <Link href="/" className="flex items-center gap-3 group">
+                            <img 
+                                src="/unifynt-logo.png" 
+                                alt="Unifynt Logo" 
+                                className="h-10 w-auto group-hover:scale-105 transition-transform duration-500 ease-out" 
+                            />
+                            <span className="text-xl font-bold tracking-tight text-zinc-900 group-hover:text-indigo-600 transition-colors duration-300">Unifynt</span>
+                        </Link>
                             <p className="text-zinc-500 text-sm font-medium leading-relaxed max-w-xs">
                                 The world&apos;s first AI-driven operating system designed to elevate school performance and automate intelligence.
                             </p>
@@ -169,10 +173,9 @@ export const LandingBottom = () => {
                     
                     <div className="pt-10 border-t border-zinc-200/60 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div className="flex gap-8 text-xs font-bold uppercase tracking-widest text-zinc-400">
-                           <a href="#" className="hover:text-zinc-900 transition-colors">Privacy</a>
-                           <a href="#" className="hover:text-zinc-900 transition-colors">Terms</a>
-                           <a href="#" className="hover:text-zinc-900 transition-colors">Cookies</a>
-                           <a href="#" className="hover:text-zinc-900 transition-colors">Status</a>
+                           <Link href="/privacy" className="hover:text-zinc-900 transition-colors">Privacy</Link>
+                           <Link href="/terms" className="hover:text-zinc-900 transition-colors">Terms</Link>
+                           <Link href="/cookies" className="hover:text-zinc-900 transition-colors">Cookies</Link>
                         </div>
                         
                         <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
