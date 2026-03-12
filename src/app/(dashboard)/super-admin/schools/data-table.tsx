@@ -54,17 +54,17 @@ export function DataTable<TData, TValue>({
     });
 
     return (
-        <div className="w-full flex flex-col min-h-[500px]">
-            <div className="w-full bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/20 dark:border-white/5 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden transition-all duration-300">
+        <div className="w-full flex flex-col">
+            <div className="w-full overflow-hidden">
                 <div className="overflow-x-auto custom-scrollbar">
                     <Table>
-                        <TableHeader className="bg-slate-50/50 dark:bg-slate-950/30 border-b border-black/5 dark:border-white/5">
+                        <TableHeader className="border-b border-border">
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-none">
                                     {headerGroup.headers.map((header) => (
                                         <TableHead 
                                             key={header.id} 
-                                            className="h-14 px-8 font-black text-[11px] uppercase text-slate-400 tracking-[2px] whitespace-nowrap"
+                                            className="h-12 px-8 font-bold text-foreground text-[11px] uppercase tracking-wider whitespace-nowrap"
                                         >
                                             {header.isPlaceholder
                                                 ? null
@@ -83,7 +83,7 @@ export function DataTable<TData, TValue>({
                                     <TableRow
                                         key={row.id}
                                         data-state={row.getIsSelected() && "selected"}
-                                        className="group hover:bg-white/80 dark:hover:bg-white/5 transition-all border-b border-black/5 dark:border-white/5 h-16"
+                                        className="group hover:bg-muted/10 transition-colors border-b border-border last:border-0 h-16"
                                     >
                                         {row.getVisibleCells().map((cell) => (
                                             <TableCell key={cell.id} className="px-8 py-4">
@@ -101,15 +101,15 @@ export function DataTable<TData, TValue>({
                                         colSpan={columns.length}
                                         className="h-[400px] text-center"
                                     >
-                                        <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in-50 duration-500">
-                                            <div className="p-6 bg-slate-50 dark:bg-white/5 rounded-[32px] border border-dashed border-slate-200 dark:border-white/10 shadow-inner">
-                                                <School className="h-10 w-10 text-slate-300" />
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <div className="p-6 bg-muted rounded-xl border border-dashed border-border">
+                                                <School className="h-10 w-10 text-muted-foreground/30" />
                                             </div>
                                             <div className="space-y-1">
-                                                <p className="font-black text-[15px] text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                                                <p className="font-bold text-sm uppercase tracking-wider">
                                                     No registered institutions
                                                 </p>
-                                                <p className="text-[12px] font-bold text-slate-400 max-w-[250px] mx-auto leading-relaxed">
+                                                <p className="text-xs text-muted-foreground max-w-[250px] mx-auto leading-relaxed">
                                                     There are no schools matching your current dashboard filter.
                                                 </p>
                                             </div>
@@ -121,16 +121,16 @@ export function DataTable<TData, TValue>({
                     </Table>
                 </div>
 
-                <div className="p-6 border-t border-black/5 dark:border-white/5 bg-slate-50/30 dark:bg-black/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-3 order-2 sm:order-1">
                         <div className="p-2 bg-primary/10 rounded-lg">
                             <ShieldCheck className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[13px] font-black text-slate-900 dark:text-white leading-none">
+                            <span className="text-[13px] font-bold leading-none">
                                 Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase mt-1 tracking-widest">
                                 Global Registry Management
                             </span>
                         </div>
@@ -139,40 +139,40 @@ export function DataTable<TData, TValue>({
                     <div className="flex items-center gap-2 order-1 sm:order-2">
                         <Button
                             variant="outline"
-                            className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm"
+                            className="hidden h-9 w-9 p-0 rounded-lg border-border bg-background shadow-sm"
                             onClick={() => table.setPageIndex(0)}
                             disabled={!table.getCanPreviousPage()}
                         >
-                            <ChevronsLeft className="h-4 w-4 stroke-[3]" />
+                            <ChevronsLeft className="h-4 w-4" />
                         </Button>
                         <Button
                             variant="outline"
-                            className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm"
+                            className="h-9 w-9 p-0 rounded-lg border-border bg-background shadow-sm"
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
-                            <ChevronLeft className="h-4 w-4 stroke-[3]" />
+                            <ChevronLeft className="h-4 w-4" />
                         </Button>
                         
-                        <div className="px-4 h-9 flex items-center justify-center bg-primary text-white dark:text-black rounded-xl font-black text-[13px] shadow-lg shadow-primary/20">
+                        <div className="px-4 h-9 flex items-center justify-center bg-primary text-primary-foreground rounded-lg font-bold text-[13px] shadow-sm">
                             {table.getState().pagination.pageIndex + 1}
                         </div>
 
                         <Button
                             variant="outline"
-                            className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm"
+                            className="h-9 w-9 p-0 rounded-lg border-border bg-background shadow-sm"
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >
-                            <ChevronRight className="h-4 w-4 stroke-[3]" />
+                            <ChevronRight className="h-4 w-4" />
                         </Button>
                         <Button
                             variant="outline"
-                            className="hidden h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-sm"
+                            className="hidden h-9 w-9 p-0 rounded-lg border-border bg-background shadow-sm"
                             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                             disabled={!table.getCanNextPage()}
                         >
-                            <ChevronsRight className="h-4 w-4 stroke-[3]" />
+                            <ChevronsRight className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>

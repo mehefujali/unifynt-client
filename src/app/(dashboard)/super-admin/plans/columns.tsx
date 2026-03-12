@@ -1,17 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
+import { Edit, Trash2, CheckCircle2, Package, MoreHorizontal, PauseCircle, PlayCircle } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PlanService } from "@/services/plan.service";
 import { toast } from "sonner";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
 import { usePermission } from "@/hooks/use-permission";
+import { cn } from "@/lib/utils";
 
 export type PlanColumn = {
     id: string;
@@ -20,9 +27,10 @@ export type PlanColumn = {
     studentLimit: number;
     features: string[];
     isActive: boolean;
+    extraOffers?: string;
 };
 
-const ActionCell = ({ row, onEdit }: { row: any; onEdit: (plan: any) => void }) => {
+const ActionCell = ({ row, onEdit }: { row: { original: PlanColumn }; onEdit: (plan: PlanColumn) => void }) => {
     const queryClient = useQueryClient();
     const plan = row.original;
     const { hasPermission } = usePermission();
@@ -33,8 +41,21 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (plan: any) => void }) 
             toast.success("Subscription plan removed");
             queryClient.invalidateQueries({ queryKey: ["plans"] });
         },
-        onError: (error: any) => {
+        onError: (error: { response?: { data?: { message?: string } } }) => {
             toast.error(error.response?.data?.message || "Failed to delete plan");
+        },
+    });
+
+    const toggleStatusMutation = useMutation({
+        mutationFn: async () => {
+            return await PlanService.updatePlan(plan.id, { isActive: !plan.isActive });
+        },
+        onSuccess: () => {
+            toast.success(`Plan ${!plan.isActive ? 'activated' : 'deactivated'} successfully`);
+            queryClient.invalidateQueries({ queryKey: ["plans"] });
+        },
+        onError: (error: { response?: { data?: { message?: string } } }) => {
+            toast.error(error.response?.data?.message || "Failed to update status");
         },
     });
 
@@ -49,48 +70,53 @@ const ActionCell = ({ row, onEdit }: { row: any; onEdit: (plan: any) => void }) 
     if (!canModify) return null;
 
     return (
-        <div className="flex justify-end gap-3 pr-2">
-            <PermissionGate required={PERMISSIONS.PLAN_EDIT}>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => onEdit(plan)} 
-                    className="h-9 w-9 rounded-xl hover:bg-blue-500/10 hover:text-blue-600 transition-all"
-                >
-                    <Edit className="h-4 w-4 stroke-[2.5]" />
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                    <MoreHorizontal className="h-4 w-4" />
                 </Button>
-            </PermissionGate>
-
-            <PermissionGate required={PERMISSIONS.PLAN_DELETE}>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleDelete} 
-                    disabled={deleteMutation.isPending} 
-                    className="h-9 w-9 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all"
-                >
-                    <Trash2 className="h-4 w-4 stroke-[2.5]" />
-                </Button>
-            </PermissionGate>
-        </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px]">
+                <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <PermissionGate required={PERMISSIONS.PLAN_EDIT}>
+                    <DropdownMenuItem onClick={() => onEdit(plan)} className="cursor-pointer font-medium">
+                        <Edit className="mr-2 h-4 w-4" /> Edit Tier
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toggleStatusMutation.mutate()} className="cursor-pointer font-medium">
+                        {plan.isActive ? (
+                            <><PauseCircle className="mr-2 h-4 w-4" /> Deactivate</>
+                        ) : (
+                            <><PlayCircle className="mr-2 h-4 w-4" /> Activate</>
+                        )}
+                    </DropdownMenuItem>
+                </PermissionGate>
+                <PermissionGate required={PERMISSIONS.PLAN_DELETE}>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleDelete} className="cursor-pointer font-medium text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove Tier
+                    </DropdownMenuItem>
+                </PermissionGate>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 };
 
-export const getColumns = (onEdit: (plan: any) => void): ColumnDef<PlanColumn>[] => [
+export const getColumns = (onEdit: (plan: PlanColumn) => void): ColumnDef<PlanColumn>[] => [
     {
         accessorKey: "name",
-        header: () => <span className="pl-2">Subscription Tier</span>,
+        header: () => <span>Subscription Tier</span>,
         cell: ({ row }) => (
-            <div className="flex items-center gap-3 pl-2 py-1">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm">
-                    <Zap className="h-5 w-5 fill-current" />
+            <div className="flex items-center gap-3 py-1">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-sm shrink-0 border border-primary/10">
+                    <Package className="h-4.5 w-4.5" />
                 </div>
                 <div className="flex flex-col">
-                    <span className="font-black text-[15px] text-slate-900 dark:text-white tracking-tight uppercase">
+                    <span className="font-bold text-foreground">
                         {row.original.name}
                     </span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-                        Tier ID: {row.original.id.slice(-6).toUpperCase()}
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">
+                        ID: {row.original.id.slice(-6).toUpperCase()}
                     </span>
                 </div>
             </div>
@@ -98,13 +124,13 @@ export const getColumns = (onEdit: (plan: any) => void): ColumnDef<PlanColumn>[]
     },
     {
         accessorKey: "pricePerMonth",
-        header: "Monthly Billing",
+        header: "Monthly Price",
         cell: ({ row }) => (
             <div className="flex flex-col">
-                <span className="font-black text-[16px] text-emerald-600 tracking-tighter tabular-nums">
+                <span className="font-bold text-foreground">
                     ₹{row.original.pricePerMonth.toLocaleString()}
                 </span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Per month</span>
+                <span className="text-[10px] text-muted-foreground uppercase">Per month</span>
             </div>
         ),
     },
@@ -113,33 +139,31 @@ export const getColumns = (onEdit: (plan: any) => void): ColumnDef<PlanColumn>[]
         header: "Capacity",
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
-                <div className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
-                    <span className="font-black text-[13px] text-slate-700 dark:text-slate-300 tabular-nums">
-                        {row.original.studentLimit.toLocaleString()}
-                    </span>
-                </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Students</span>
+                <span className="font-bold text-foreground">
+                    {row.original.studentLimit.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Students</span>
             </div>
         ),
     },
     {
         accessorKey: "features",
-        header: "Included Modules",
+        header: "Core Features",
         cell: ({ row }) => {
             const features = row.original.features;
             return (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1">
                     {features.slice(0, 2).map((feature, i) => (
                         <div key={i} className="flex items-center gap-2">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-500 shadow-sm" />
-                            <span className="text-[11px] font-bold text-slate-500 truncate max-w-[150px]">
+                            <div className="h-1 w-1 rounded-full bg-emerald-500" />
+                            <span className="text-xs text-muted-foreground truncate max-w-[150px]">
                                 {feature}
                             </span>
                         </div>
                     ))}
                     {features.length > 2 && (
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest ml-5">
-                            + {features.length - 2} Additional
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider ml-3">
+                            + {features.length - 2} more...
                         </span>
                     )}
                 </div>
@@ -148,14 +172,20 @@ export const getColumns = (onEdit: (plan: any) => void): ColumnDef<PlanColumn>[]
     },
     {
         accessorKey: "isActive",
-        header: "Availability",
+        header: "Status",
         cell: ({ row }) => {
             const isActive = row.original.isActive;
             return (
                 <div className="flex items-center gap-2">
-                    <div className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"}`} />
-                    <span className={`text-[10px] font-black tracking-[1px] uppercase ${isActive ? "text-emerald-600" : "text-rose-600"}`}>
-                        {isActive ? "Market Ready" : "Internal Use"}
+                    <div className={cn(
+                        "h-2 w-2 rounded-full",
+                        isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "bg-muted-foreground/30"
+                    )} />
+                    <span className={cn(
+                        "text-sm font-bold",
+                        isActive ? "text-foreground" : "text-muted-foreground"
+                    )}>
+                        {isActive ? "Active" : "On Hold"}
                     </span>
                 </div>
             );
@@ -163,7 +193,7 @@ export const getColumns = (onEdit: (plan: any) => void): ColumnDef<PlanColumn>[]
     },
     {
         id: "actions",
-        header: () => <div className="text-right pr-6 font-black text-[11px] uppercase text-slate-400 tracking-[2px]">Manage</div>,
+        header: () => null,
         cell: ({ row }) => <ActionCell row={row} onEdit={onEdit} />,
     },
 ];

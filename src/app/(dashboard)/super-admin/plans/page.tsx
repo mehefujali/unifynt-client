@@ -2,23 +2,26 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Plus, Gem, ShieldAlert, Sparkles } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, Gem, ShieldAlert, Search } from "lucide-react";
 import { PlanService } from "@/services/plan.service";
 import { DataTable } from "./data-table";
 import { getColumns } from "./columns";
 import { PlanModal } from "./plan-modal";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 // --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
 
 export default function PlansPage() {
+    const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<any | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
-    const { data: plans, isLoading, isError } = useQuery({
+    const { data: plans = [], isLoading, isError } = useQuery({
         queryKey: ["plans"],
         queryFn: PlanService.getAllPlans,
     });
@@ -38,82 +41,95 @@ export default function PlansPage() {
         setTimeout(() => setEditingPlan(null), 300);
     };
 
+    const filteredPlans = (plans || []).filter((plan: any) => 
+        plan.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (isLoading) {
         return (
-            <div className="flex h-[80vh] items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-center h-[400px]">
+                    <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground font-medium">Loading subscription plans...</p>
+                    </div>
+                </div>
             </div>
         );
     }
 
     if (isError) {
         return (
-            <div className="flex h-[80vh] items-center justify-center flex-col gap-4">
-                <div className="h-16 w-16 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center shadow-inner">
-                    <ShieldAlert className="h-8 w-8" />
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-center h-[400px]">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
+                            <ShieldAlert className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold">Failed to load plans</h3>
+                            <p className="text-sm text-muted-foreground">Unable to fetch subscription data from the server.</p>
+                        </div>
+                        <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ["plans"] })}>
+                            Try Again
+                        </Button>
+                    </div>
                 </div>
-                <p className="text-destructive text-lg font-black uppercase tracking-tight">Failed to load subscription vault</p>
-                <Button variant="outline" onClick={() => window.location.reload()} className="rounded-xl font-bold">
-                    Retry Connection
-                </Button>
             </div>
         );
     }
 
     return (
-        // 🔒 Global Gate: Entire Marketplace Config Access
         <PermissionGate 
             required={PERMISSIONS.PLAN_VIEW}
             fallback={
-                <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95 duration-500">
-                    <div className="h-24 w-24 bg-zinc-100 dark:bg-white/5 text-zinc-400 rounded-3xl flex items-center justify-center mb-8 rotate-3 shadow-xl">
-                        <Gem className="h-12 w-12 opacity-20" />
+                <div className="flex-1 space-y-4 p-8 pt-6">
+                    <div className="flex items-center justify-center h-[400px]">
+                        <div className="text-center space-y-2">
+                            <h3 className="text-lg font-bold">Access Restricted</h3>
+                            <p className="text-sm text-muted-foreground">You don't have permission to manage subscription plans.</p>
+                        </div>
                     </div>
-                    <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Marketplace Restricted</h2>
-                    <p className="text-muted-foreground mt-3 max-w-md mx-auto font-medium">
-                        Only high-level administrators can configure subscription tiers and SaaS pricing models.
-                    </p>
                 </div>
             }
         >
-            <div className="flex flex-col gap-10 p-4 md:p-8 animate-in fade-in duration-700">
-                {/* Header Section */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[40px] border border-white/20 dark:border-white/5 shadow-2xl shadow-black/5">
-                    <div className="flex items-center gap-6">
-                        <div className="p-5 bg-primary text-white dark:text-black rounded-[24px] shadow-2xl shadow-primary/40 rotate-3">
-                            <Gem className="h-8 w-8 stroke-[2.5]" />
-                        </div>
-                        <div className="space-y-1">
-                            <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white uppercase italic">
-                                Plan Architect
-                            </h1>
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="h-3 w-3 text-amber-500" />
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                    Configure SaaS Tiers & Resource Limits
-                                </p>
-                            </div>
-                        </div>
+            <div className="flex-1 space-y-6 p-8 pt-6">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <h2 className="text-3xl font-bold tracking-tight">Subscription Plans</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Configure school subscription tiers and feature limits.
+                        </p>
                     </div>
+                    <PermissionGate required={PERMISSIONS.PLAN_CREATE}>
+                        <Button onClick={handleOpenAddModal} className="h-10">
+                            <Plus className="mr-2 h-4 w-4" /> Add Plan
+                        </Button>
+                    </PermissionGate>
+                </div>
 
-                    <div className="shrink-0">
-                        {/* 🔒 Gate for Create Plan Action */}
-                        <PermissionGate required={PERMISSIONS.PLAN_CREATE}>
-                            <Button 
-                                onClick={handleOpenAddModal} 
-                                className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-[1.03] active:scale-95"
-                            >
-                                <Plus className="mr-2 h-5 w-5 stroke-[4]" /> New Tier
-                            </Button>
-                        </PermissionGate>
+                <div className="flex items-center justify-between gap-4 bg-card p-4 rounded-xl border border-border shadow-sm">
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search plans..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 bg-muted/20"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 rounded-lg border border-border">
+                            <Gem className="h-4 w-4" />
+                            <span>{plans.length} Total Tiers</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Table Section */}
-                <div className="transition-all duration-500">
+                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden p-0">
                     <DataTable 
                         columns={getColumns(handleOpenEditModal)} 
-                        data={plans || []} 
+                        data={filteredPlans} 
                     />
                 </div>
 

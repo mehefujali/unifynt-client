@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'unifynt-uploads-2026.s3.us-east-1.amazonaws.com',
+        pathname: '/**',
+      },
     ],
   },
 

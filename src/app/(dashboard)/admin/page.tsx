@@ -3,12 +3,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import {
     Users, TrendingUp, GraduationCap, Wallet, Bell,
     Clock, Lock, MoreHorizontal, UserCheck,
-    BookOpen, CalendarDays, Activity
+    BookOpen, CalendarDays, Activity, ShieldCheck,
+    ArrowUpRight, Target, ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Chart } from "react-google-charts";
@@ -18,20 +19,23 @@ import { AnnouncementModal } from "@/components/dashboard/announcement-modal";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminDashboard() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isDark, setIsDark] = useState(false);
     const { user } = useAuth();
+    const queryClient = useQueryClient();
 
     useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
 
         const checkDark = () => document.documentElement.classList.contains("dark");
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsDark(checkDark());
 
-        const observer = new MutationObserver(checkDark);
+        const observer = new MutationObserver(() => setIsDark(checkDark()));
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
         return () => {
@@ -40,15 +44,14 @@ export default function AdminDashboard() {
         };
     }, []);
 
-    // Extract precise display name
     const displayName = user?.details?.firstName
         ? `${user.details.firstName} ${user.details.lastName || ""}`.trim()
         : user?.name || "";
 
-    const textColor = isDark ? "#a1a1aa" : "#52525b";
-    const gridColor = isDark ? "#27272a" : "#e4e4e7";
+    const textColor = isDark ? "#a1a1aa" : "#71717a";
+    const gridColor = isDark ? "#27272a" : "#f1f5f9";
 
-    const { data: response, isLoading } = useQuery({
+    const { data: response, isLoading, isError } = useQuery({
         queryKey: ["adminStats"],
         queryFn: async () => {
             const res = await api.get("/dashboard/school-admin");
@@ -61,15 +64,33 @@ export default function AdminDashboard() {
 
     if (isLoading) {
         return (
-            <div className="p-4 md:p-8 space-y-6 animate-pulse">
-                <div className="h-10 w-1/3 bg-zinc-200 dark:bg-zinc-800 rounded-2xl" />
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                    {[1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-zinc-200 dark:bg-zinc-800 rounded-3xl" />)}
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between mb-8">
+                    <div className="space-y-1">
+                        <div className="h-8 w-48 bg-muted rounded-lg animate-pulse" />
+                        <div className="h-4 w-64 bg-muted rounded-lg animate-pulse mt-2" />
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div className="xl:col-span-2 h-[420px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl" />
-                    <div className="xl:col-span-1 h-[420px] bg-zinc-200 dark:bg-zinc-800 rounded-3xl" />
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="h-32 bg-card border border-border rounded-xl animate-pulse" />
+                    ))}
                 </div>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
+                    <div className="xl:col-span-2 h-[400px] bg-card border border-border rounded-xl animate-pulse" />
+                    <div className="xl:col-span-1 h-[400px] bg-card border border-border rounded-xl animate-pulse" />
+                </div>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="flex-1 p-8 pt-6 flex flex-col items-center justify-center h-[80vh]">
+                <ShieldCheck className="h-12 w-12 text-destructive opacity-50 mb-4" />
+                <h3 className="text-lg font-bold">Campus Hub Offline</h3>
+                <p className="text-sm text-muted-foreground mt-1">Unable to stream administrative metrics from the core server.</p>
+                <Button variant="outline" className="mt-6 font-bold" onClick={() => queryClient.invalidateQueries({ queryKey: ["adminStats"] })}>Reconnect</Button>
             </div>
         );
     }
@@ -93,54 +114,52 @@ export default function AdminDashboard() {
             if (item.status === 'PRESENT') return "#10b981"; // Emerald
             if (item.status === 'ABSENT') return "#f43f5e"; // Rose
             if (item.status === 'LATE') return "#f59e0b"; // Amber
-            return "#8b5cf6"; // Violet
+            return "#6366f1"; // Indigo
         });
     }
 
-    const attendanceOptions = {
+    const commonPieOptions = {
         backgroundColor: "transparent",
-        pieHole: 0.75,
-        chartArea: { width: "85%", height: "80%" },
-        legend: { position: "bottom", textStyle: { color: textColor, fontSize: 13, fontName: 'Inter, sans-serif', bold: true } },
-        colors: getAttendanceColors(),
-        pieSliceBorderColor: isDark ? "#09090b" : "#ffffff",
+        pieHole: 0.8,
+        chartArea: { width: "90%", height: "80%" },
+        legend: {
+            position: "bottom",
+            alignment: "center",
+            textStyle: { color: textColor, fontSize: 11, fontName: 'Inter', bold: true }
+        },
+        pieSliceBorderColor: "transparent",
         pieSliceText: "none",
-        animation: { startup: true, duration: 1200, easing: "out" },
-        tooltip: { textStyle: { fontName: 'Inter, sans-serif' } },
+        animation: { startup: true, duration: 800, easing: "out" },
+        tooltip: { textStyle: { fontName: 'Inter', fontSize: 12 } },
+    };
+
+    const attendanceOptions = {
+        ...commonPieOptions,
+        colors: getAttendanceColors(),
     };
 
     const revenueChartData = [
         ["Type", "Amount"],
-        ["Collected Fees", overview?.totalCollected || 0],
-        ["Pending Dues", overview?.totalDue || 0],
+        ["Collected", overview?.totalCollected || 0],
+        ["Due", overview?.totalDue || 0],
     ];
 
     const revenueOptions = {
-        backgroundColor: "transparent",
-        pieHole: 0.75,
-        chartArea: { width: "85%", height: "80%" },
-        legend: { position: "bottom", alignment: "center", textStyle: { color: textColor, fontSize: 13, fontName: 'Inter, sans-serif', bold: true } },
-        colors: ["#10b981", "#f43f5e"],
-        pieSliceBorderColor: isDark ? "#09090b" : "#ffffff",
-        pieSliceText: "none",
-        animation: { startup: true, duration: 1200, easing: "out" },
-        tooltip: { textStyle: { fontName: 'Inter, sans-serif' } },
+        ...commonPieOptions,
+        colors: ["#10b981", "#cbd5e1"],
     };
 
-    const StatCard = ({ title, value, icon: Icon, colorClass, isProtected = false, permission = "" }: any) => {
-        const content = (
-            <div className={cn(
-                "relative overflow-hidden p-6 rounded-2xl border bg-card/50 dark:bg-card/40 backdrop-blur-sm",
-                "shadow-sm hover:shadow-md transition-all duration-300 group border-border/50 flex flex-col justify-between h-full"
-            )}>
-                <div className="relative z-10 flex items-center justify-between mb-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
-                    <div className={cn("p-2.5 rounded-xl bg-background border border-border/50", colorClass)}>
+    const StatCard = ({ title, value, icon: Icon, color, isProtected = false, permission = "" }: any) => {
+        const card = (
+            <div className="bg-card border border-border rounded-xl shadow-sm p-6 space-y-3 transition-all hover:shadow-md h-full flex flex-col justify-center">
+                <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+                    <div className={cn("p-2 rounded-lg bg-muted/30 border border-border", color)}>
                         <Icon className="h-4 w-4" />
                     </div>
                 </div>
-                <div className="relative z-10">
-                    <h3 className="text-3xl font-bold text-foreground tracking-tight tabular-nums">{value}</h3>
+                <div>
+                    <h3 className="text-3xl font-bold tracking-tight tabular-nums text-foreground">{value}</h3>
                 </div>
             </div>
         );
@@ -148,82 +167,80 @@ export default function AdminDashboard() {
         if (isProtected) {
             return (
                 <PermissionGate required={permission} fallback={
-                    <div className="bg-zinc-50/50 dark:bg-zinc-900/30 backdrop-blur-md border border-dashed border-zinc-300 dark:border-zinc-800 p-6 rounded-3xl flex flex-col items-center justify-center text-center h-full opacity-60">
-                        <Lock className="h-6 w-6 text-zinc-400 mb-3" />
-                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">{title} Restricted</p>
+                    <div className="bg-muted/10 border border-dashed border-border p-6 rounded-xl flex flex-col items-center justify-center text-center h-full opacity-60">
+                        <Lock className="h-4 w-4 text-muted-foreground mb-2" />
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Restricted</p>
                     </div>
                 }>
-                    {content}
+                    {card}
                 </PermissionGate>
             );
         }
-        return content;
+        return card;
     };
+
+    function DashboardCard({ title, icon: Icon, children, className, action }: any) {
+        return (
+            <div className={cn("bg-card border border-border rounded-xl shadow-sm flex flex-col overflow-hidden", className)}>
+                <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center justify-between">
+                    <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        {Icon && <Icon className="h-3.5 w-3.5 font-bold" />} {title}
+                    </h2>
+                    {action}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                    {children}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <PermissionGate
             required={PERMISSIONS.DASHBOARD_VIEW}
             fallback={
-                <div className="flex flex-col items-center justify-center min-h-[85vh] px-4 md:px-8 bg-zinc-50/50 dark:bg-zinc-950/50 animate-in fade-in zoom-in duration-700">
-                    <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-sm p-8 md:p-12 text-center relative overflow-hidden">
-                        {/* Decorative Background Blur */}
-                        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-                        
-                        <div className="relative z-10 flex flex-col items-center">
-                            <div className="mb-6 h-20 w-20 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center shadow-inner border border-zinc-200/50 dark:border-zinc-700/50">
-                                <Activity className="h-8 w-8 text-zinc-700 dark:text-zinc-300" />
-                            </div>
-
-                            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-900 dark:text-white mb-3">
-                                {greeting}{displayName ? `, ${displayName}` : "!"}
-                            </h1>
-
-                            <p className="text-zinc-500 dark:text-zinc-400 mb-8 max-w-md mx-auto font-medium">
-                                Welcome to your unified workspace. Navigate through the sidebar menu to access your daily operational tools and tasks.
+                <div className="flex-1 p-8 pt-6 flex flex-col items-center justify-center min-h-[80vh]">
+                    <div className="max-w-md text-center space-y-6">
+                        <div className="mx-auto h-20 w-20 bg-muted rounded-2xl flex items-center justify-center border border-border">
+                            <Activity className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        <div className="space-y-2">
+                            <h1 className="text-3xl font-bold tracking-tight">{greeting}, {displayName}!</h1>
+                            <p className="text-sm text-muted-foreground leading-relaxed font-medium">
+                                Welcome to the Unifynt Platform. Your workspace is ready. Use the sidebar to navigate to your assigned administrative modules.
                             </p>
-
-                            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mt-4 px-6 py-4 bg-zinc-50 dark:bg-zinc-950/50 rounded-2xl border border-zinc-100 dark:border-zinc-800/80 mx-auto">
-                                <div className="p-2.5 bg-white dark:bg-zinc-900 shadow-sm rounded-xl border border-zinc-200/50 dark:border-zinc-800">
-                                    <Clock className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="text-center sm:text-left">
-                                    <p className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-1">Current Session Info</p>
-                                    <p className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
-                                        {format(currentTime, 'EEEE, MMMM do, yyyy • hh:mm a')}
-                                    </p>
-                                </div>
-                            </div>
+                        </div>
+                        <div className="p-4 bg-muted/30 border border-border rounded-xl inline-flex items-center gap-3">
+                            <CalendarDays className="h-4 w-4 text-primary" />
+                            <span className="text-xs font-bold tabular-nums text-muted-foreground">
+                                {format(currentTime, 'EEEE, MMM dd, yyyy')}
+                            </span>
                         </div>
                     </div>
                 </div>
             }
         >
-            <div className="p-4 md:p-8 space-y-8 min-h-screen">
+            <div className="flex-1 space-y-6 p-8 pt-6">
                 <AnnouncementModal />
 
                 {/* header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-                    <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold mb-3 uppercase tracking-wider">
-                            <Activity className="h-3 w-3" /> System Operational
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider py-0.5 border-primary/20 bg-primary/5 text-primary">
+                                System Active
+                            </Badge>
                         </div>
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-                            {greeting}{displayName ? `, ${displayName}` : "!"}
-                        </h1>
-                        <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">
-                            Here&apos;s what&apos;s happening in your institution today. Monitor live metrics, track attendance, and overview financial statuses in real-time.
+                        <h2 className="text-3xl font-bold tracking-tight">
+                            {greeting}, {displayName}
+                        </h2>
+                        <p className="text-sm text-muted-foreground font-medium">
+                            Global overview of your institution&apos;s operational and financial health.
                         </p>
                     </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-sm w-full sm:w-auto">
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">Live Sync</span>
-                        </div>
-                        <div className="flex w-full sm:w-auto items-center gap-2 px-4 py-2.5 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl shadow-sm text-xs font-bold text-zinc-600 dark:text-zinc-300 tabular-nums">
-                            <CalendarDays className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-3 bg-card border border-border p-1.5 rounded-xl shadow-sm">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg border border-border text-[11px] font-bold text-muted-foreground tabular-nums uppercase tracking-tight">
+                            <CalendarDays className="h-3.5 w-3.5 text-primary" />
                             {format(currentTime, 'MMM dd, yyyy • hh:mm a')}
                         </div>
                     </div>
@@ -232,198 +249,156 @@ export default function AdminDashboard() {
                 {/* Stat Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard
-                        title="Total Students"
+                        title="Enrollment"
                         value={overview?.totalStudents || 0}
                         icon={GraduationCap}
-                        colorClass="text-blue-500"
+                        color="text-primary"
                     />
                     <StatCard
-                        title="Active Teachers"
+                        title="Faculty"
                         value={overview?.totalTeachers || 0}
                         icon={Users}
-                        colorClass="text-purple-500"
+                        color="text-indigo-500"
                     />
                     <StatCard
-                        title="Collected Fees"
+                        title="Collections"
                         value={`₹${(overview?.totalCollected || 0).toLocaleString()}`}
                         icon={Wallet}
-                        colorClass="text-emerald-500"
+                        color="text-emerald-500"
                         isProtected permission={PERMISSIONS.FEE_VIEW}
                     />
                     <StatCard
-                        title="Pending Dues"
+                        title="Outstanding"
                         value={`₹${(overview?.totalDue || 0).toLocaleString()}`}
                         icon={TrendingUp}
-                        colorClass="text-rose-500"
+                        color="text-rose-500"
                         isProtected permission={PERMISSIONS.FEE_VIEW}
                     />
                 </div>
 
-                {/* Main Charts Level 1 */}
+                {/* Distribution & Analytics */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    {/* Class Distribution */}
-                    <div className="lg:col-span-2 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col min-h-[420px] overflow-hidden">
-                        <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
-                            <div>
-                                <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
-                                    <div className="p-1.5 bg-primary/10 rounded-lg text-primary"><BookOpen className="h-4 w-4" /></div>
-                                    Enrollment Demographics
-                                </h2>
-                                <p className="text-xs font-medium text-muted-foreground mt-1">Student distribution across registered classes</p>
-                            </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-accent hidden sm:flex"><MoreHorizontal className="h-4 w-4 text-muted-foreground" /></Button>
-                        </div>
-
-                        <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                    <DashboardCard title="Class Distribution" icon={BookOpen} className="lg:col-span-2">
+                        <div className="p-6 h-[400px] overflow-y-auto custom-scrollbar">
                             {classDistribution?.length > 0 ? (
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 content-start">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {classDistribution.map((c: any, index: number) => {
                                         const percent = maxStudents > 0 ? (c.students / maxStudents) * 100 : 0;
                                         return (
-                                            <div key={index} className="group p-4 bg-background/50 border border-border/40 rounded-xl hover:border-primary/20 transition-all duration-300">
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
-                                                        Class {c.name}
-                                                    </span>
+                                            <div key={index} className="space-y-2 group">
+                                                <div className="flex justify-between items-end">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">Class {c.name}</span>
+                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-80">Roster Capacity</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <span className="text-xl font-bold text-foreground tabular-nums">{c.students}</span>
+                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Students</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-baseline gap-1 mb-3">
-                                                    <span className="text-2xl font-bold text-foreground leading-none tabular-nums">
-                                                        {c.students}
-                                                    </span>
-                                                    <span className="text-[10px] font-medium text-muted-foreground">Students</span>
-                                                </div>
-                                                <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-primary/80 dark:bg-primary rounded-full transition-all duration-1000 ease-out group-hover:bg-primary"
-                                                        style={{ width: `${percent}%` }}
-                                                    />
-                                                </div>
+                                                <Progress value={percent} className="h-1.5" />
                                             </div>
                                         )
                                     })}
                                 </div>
                             ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-60 space-y-3 min-h-[250px]">
-                                    <div className="p-4 bg-zinc-100 dark:bg-zinc-900 rounded-2xl"><BookOpen className="h-8 w-8 text-zinc-400" /></div>
-                                    <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">No class data found</p>
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                                    <BookOpen className="h-12 w-12 mb-3" />
+                                    <p className="text-sm font-bold uppercase tracking-widest">No enrollment data</p>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </DashboardCard>
 
-                    {/* Attendance */}
-                    <div className="lg:col-span-1 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col min-h-[420px] overflow-hidden">
-                        <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
-                            <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
-                                <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500"><UserCheck className="h-4 w-4" /></div>
-                                Live Attendance
-                            </h2>
-                        </div>
+                    <DashboardCard title="Daily Presence" icon={UserCheck}>
                         <PermissionGate required={PERMISSIONS.ATTENDANCE_VIEW} fallback={
-                            <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60 space-y-3 p-8">
-                                <div className="p-4 bg-zinc-100 dark:bg-zinc-900 rounded-2xl"><Lock className="h-8 w-8 text-zinc-400" /></div>
-                                <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">View Restricted</p>
+                            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                                <Lock className="h-8 w-8 mb-3" />
+                                <p className="text-xs font-bold uppercase tracking-widest leading-loose">Attendance Ledger<br />Restricted</p>
                             </div>
                         }>
-                            <div className="p-6 pb-0">
-                                <p className="text-sm font-medium text-zinc-500 mb-2">Today&apos;s campus presence breakdown</p>
-                            </div>
-                            <div className="flex-1 relative w-full h-[280px] p-2">
-                                <Chart
-                                    chartType="PieChart"
-                                    width="100%"
-                                    height="100%"
-                                    data={attendanceChartData}
-                                    options={attendanceOptions}
-                                />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
-                                    <span className="text-4xl font-black text-zinc-900 dark:text-white leading-none tracking-tight">
-                                        {todaysAttendance?.find((a: any) => a.status === 'PRESENT')?.count || 0}
-                                    </span>
-                                    <span className="text-xs font-bold uppercase tracking-widest text-zinc-500 mt-2">Present</span>
+                            <div className="h-[400px] relative flex flex-col">
+                                <div className="flex-1 relative mt-4">
+                                    <Chart
+                                        chartType="PieChart"
+                                        width="100%"
+                                        height="100%"
+                                        data={attendanceChartData}
+                                        options={attendanceOptions}
+                                    />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-12">
+                                        <span className="text-4xl font-black text-foreground tabular-nums tracking-tighter">
+                                            {todaysAttendance?.find((a: any) => a.status === 'PRESENT')?.count || 0}
+                                        </span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">On Campus</span>
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-muted/20 border-t border-border mt-auto">
+                                    <p className="text-[10px] font-bold text-center text-muted-foreground uppercase tracking-widest">Live Attendance Stream</p>
                                 </div>
                             </div>
                         </PermissionGate>
-                    </div>
+                    </DashboardCard>
                 </div>
 
-                {/* Main Charts Level 2 */}
+                {/* Financials & Notices */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    {/* Financial Overview */}
-                    <div className="lg:col-span-2">
+                    <DashboardCard title="Revenue Stream" icon={Wallet} className="lg:col-span-2">
                         <PermissionGate required={PERMISSIONS.FEE_VIEW} fallback={
-                            <div className="bg-zinc-50/50 dark:bg-zinc-900/30 backdrop-blur-md border border-dashed border-zinc-300 dark:border-zinc-800 rounded-3xl flex flex-col items-center justify-center text-center p-12 opacity-70 h-full min-h-[420px]">
-                                <div className="p-4 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-2xl mb-3"><Lock className="h-8 w-8 text-zinc-500" /></div>
-                                <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Financial Reports Restricted</p>
+                            <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-40">
+                                <Lock className="h-10 w-10 mb-3" />
+                                <p className="text-xs font-bold uppercase tracking-widest">Financial Analytics Restricted</p>
                             </div>
                         }>
-                            <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col h-full min-h-[420px] overflow-hidden">
-                                <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
-                                    <div>
-                                        <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
-                                            <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-600"><Wallet className="h-4 w-4" /></div>
-                                            Financial Overview
-                                        </h2>
-                                        <p className="text-xs font-medium text-muted-foreground mt-1">Collection vs pending dues</p>
+                            <div className="h-[360px] flex items-center justify-center">
+                                {(overview?.totalCollected || overview?.totalDue) ? (
+                                    <Chart
+                                        chartType="PieChart"
+                                        width="100%"
+                                        height="100%"
+                                        data={revenueChartData}
+                                        options={revenueOptions}
+                                    />
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center opacity-40">
+                                        <Wallet className="h-12 w-12 mb-3" />
+                                        <p className="text-sm font-bold uppercase tracking-widest">No collection history</p>
                                     </div>
-                                </div>
-                                <div className="flex-1 w-full flex items-center justify-center p-6">
-                                    {(overview?.totalCollected || overview?.totalDue) ? (
-                                        <div className="w-full h-full max-h-[320px]">
-                                            <Chart
-                                                chartType="PieChart"
-                                                width="100%"
-                                                height="100%"
-                                                data={revenueChartData}
-                                                options={revenueOptions}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center space-y-3 opacity-60">
-                                            <div className="p-4 bg-zinc-100 dark:bg-zinc-900 rounded-2xl"><Wallet className="h-8 w-8 text-zinc-400" /></div>
-                                            <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">No financial data</p>
-                                        </div>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         </PermissionGate>
-                    </div>
+                    </DashboardCard>
 
-                    {/* Notice Board */}
-                    <div className="lg:col-span-1 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col h-full min-h-[420px] overflow-hidden">
-                        <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
-                            <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
-                                <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-600"><Bell className="h-4 w-4" /></div>
-                                Notice Board
-                            </h2>
-                            <Button variant="ghost" size="sm" className="h-8 text-xs font-bold rounded-lg hover:bg-accent px-3">View All</Button>
-                        </div>
-                        <div className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3">
+                    <DashboardCard
+                        title="Internal Notices"
+                        icon={Bell}
+                        action={<Button variant="ghost" size="sm" className="h-6 text-[9px] font-bold uppercase tracking-widest px-2">Registry</Button>}
+                    >
+                        <div className="p-2 space-y-1 h-[360px] overflow-y-auto custom-scrollbar">
                             {recentNotices?.length > 0 ? recentNotices.map((notice: any) => (
-                                <div key={notice.id} className="group flex items-start gap-4 p-4 bg-zinc-50/50 dark:bg-zinc-900/30 hover:bg-white dark:hover:bg-zinc-900 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-800/50 hover:shadow-md">
-                                    <div className="h-10 w-10 shrink-0 rounded-lg bg-background border border-border/50 shadow-sm text-foreground flex flex-col items-center justify-center group-hover:border-primary/30 group-hover:text-primary transition-colors">
+                                <div key={notice.id} className="group flex items-start gap-4 p-4 rounded-xl hover:bg-muted/30 transition-all cursor-pointer border border-transparent hover:border-border/50">
+                                    <div className="h-10 w-10 shrink-0 rounded-lg bg-background border border-border flex flex-col items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
                                         <span className="text-[8px] font-bold uppercase leading-none mb-1 opacity-70">{format(new Date(notice.createdAt), 'MMM')}</span>
-                                        <span className="text-base font-bold leading-none">{format(new Date(notice.createdAt), 'dd')}</span>
+                                        <span className="text-sm font-black leading-none">{format(new Date(notice.createdAt), 'dd')}</span>
                                     </div>
-                                    <div className="space-y-1.5 flex-1 pr-1">
-                                        <p className="text-[15px] font-bold text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-2 group-hover:text-primary transition-colors">{notice.title}</p>
-                                        <p className="text-xs font-medium text-zinc-500 flex items-center gap-1.5 opacity-80">
-                                            <Clock className="h-3.5 w-3.5" /> {format(new Date(notice.createdAt), 'hh:mm a')}
-                                        </p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">{notice.title}</p>
+                                        <div className="flex items-center gap-2 mt-1.5">
+                                            <Clock className="h-3 w-3 text-muted-foreground opacity-60" />
+                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{format(new Date(notice.createdAt), 'hh:mm a')}</span>
+                                        </div>
                                     </div>
+                                    <ArrowUpRight className="h-3 w-3 text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity mt-1" />
                                 </div>
                             )) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-60 space-y-3 min-h-[250px]">
-                                    <div className="p-4 bg-zinc-100 dark:bg-zinc-900 rounded-2xl"><Bell className="h-8 w-8 text-zinc-400" /></div>
-                                    <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">No active notices</p>
+                                <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
+                                    <Bell className="h-10 w-10 mb-3" />
+                                    <p className="text-[10px] font-bold uppercase tracking-widest">Empty Bulletin</p>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </DashboardCard>
                 </div>
-
             </div>
         </PermissionGate>
     );

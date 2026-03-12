@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Search, FileText, FileSpreadsheet, CalendarIcon, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -111,7 +112,7 @@ export function DataTable<TData, TValue>({
 
             toast.success(`Exported ${fetchedData.length} records successfully`);
             setExportModalOpen(false);
-        } catch (error) {
+        } catch {
             toast.error("Failed to export data");
         } finally {
             setIsExporting(false);
@@ -123,7 +124,7 @@ export function DataTable<TData, TValue>({
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative w-full sm:w-80">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search logs..."
                             value={searchTerm}
@@ -131,78 +132,87 @@ export function DataTable<TData, TValue>({
                                 setSearchTerm(e.target.value);
                                 setPage(1);
                             }}
-                            className="pl-9 h-10 rounded-lg bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-sm text-sm"
+                            className="pl-9 h-10 rounded-xl bg-muted/20 border-border shadow-sm text-sm"
                         />
                     </div>
                     <Select value={actionFilter} onValueChange={(val) => { setActionFilter(val); setPage(1); }}>
-                        <SelectTrigger className="h-10 w-[140px] bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-sm">
+                        <SelectTrigger className="h-10 w-[140px] bg-muted/20 border-border rounded-xl shadow-sm font-bold text-xs uppercase tracking-wider">
                             <SelectValue placeholder="Action" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">All Actions</SelectItem>
-                            <SelectItem value="CREATE">Create</SelectItem>
-                            <SelectItem value="UPDATE">Update</SelectItem>
-                            <SelectItem value="DELETE">Delete</SelectItem>
-                            <SelectItem value="LOGIN">Auth/Login</SelectItem>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="ALL" className="font-bold">All Actions</SelectItem>
+                            <SelectItem value="CREATE" className="font-bold">Create</SelectItem>
+                            <SelectItem value="UPDATE" className="font-bold">Update</SelectItem>
+                            <SelectItem value="DELETE" className="font-bold">Delete</SelectItem>
+                            <SelectItem value="LOGIN" className="font-bold">Auth/Login</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                 
                 <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
                     <DialogTrigger asChild>
-                        <Button variant="outline" className="h-10 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-sm text-xs font-semibold px-4 w-full sm:w-auto">
-                            <Download className="mr-2 h-4 w-4 text-zinc-500" /> Export Data
+                        <Button variant="outline" className="h-10 rounded-xl border-border bg-background shadow-sm text-xs font-bold px-6 w-full sm:w-auto uppercase tracking-wider hover:bg-primary/10 hover:text-primary transition-all">
+                            <Download className="mr-2 h-4 w-4 text-primary" /> Export Data
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px] bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl p-6">
-                        <DialogHeader>
-                            <DialogTitle className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                                <Download className="h-5 w-5 text-indigo-500" /> Export Audit Logs
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-5 mt-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-zinc-500 flex items-center gap-1.5"><CalendarIcon className="h-3 w-3"/> Start Date</label>
-                                    <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-xs bg-zinc-50 dark:bg-zinc-900" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-zinc-500 flex items-center gap-1.5"><CalendarIcon className="h-3 w-3"/> End Date</label>
-                                    <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-xs bg-zinc-50 dark:bg-zinc-900" />
+                    <DialogContent className="sm:max-w-[425px] bg-card border-border rounded-2xl shadow-xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+                        <ScrollArea className="flex-1 w-full max-h-[90vh]">
+                            <div className="p-6">
+                                <DialogHeader>
+                                    <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2 uppercase tracking-tight">
+                                        <Download className="h-5 w-5 text-primary" /> Export Audit Logs
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-5 mt-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5"><CalendarIcon className="h-3 w-3"/> Start Date</label>
+                                            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-10 text-xs bg-muted/30 border-border rounded-xl" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5"><CalendarIcon className="h-3 w-3"/> End Date</label>
+                                            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="h-10 text-xs bg-muted/30 border-border rounded-xl" />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 pt-2">
+                                        <Button onClick={() => handleExport("csv")} disabled={isExporting} variant="outline" className="flex-1 h-11 border-border bg-muted/40 hover:bg-emerald-500/10 hover:border-emerald-500/30 rounded-xl font-bold transition-all">
+                                            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4 text-emerald-500" />} CSV
+                                        </Button>
+                                        <Button onClick={() => handleExport("excel")} disabled={isExporting} variant="outline" className="flex-1 h-11 border-border bg-muted/40 hover:bg-blue-500/10 hover:border-blue-500/30 rounded-xl font-bold transition-all">
+                                            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4 text-blue-500" />} Excel
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="flex gap-3 pt-2">
-                                <Button onClick={() => handleExport("csv")} disabled={isExporting} variant="outline" className="flex-1 h-11 border-zinc-200 dark:border-zinc-800 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800">
-                                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4 text-emerald-500" />} CSV
-                                </Button>
-                                <Button onClick={() => handleExport("excel")} disabled={isExporting} variant="outline" className="flex-1 h-11 border-zinc-200 dark:border-zinc-800 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800">
-                                    {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-2 h-4 w-4 text-blue-500" />} Excel
-                                </Button>
-                            </div>
+                        </ScrollArea>
+                        <div className="p-4 border-t border-border/50 bg-muted/20 flex justify-end shrink-0 rounded-b-2xl">
+                             <Button variant="ghost" onClick={() => setExportModalOpen(false)} className="rounded-xl font-bold text-xs uppercase tracking-wider px-6">
+                                Close
+                             </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 overflow-hidden shadow-sm">
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
                 <Table>
-                    <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">
+                    <TableHeader className="bg-muted/30 border-b border-border/30 px-4">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                            <TableRow key={headerGroup.id} className="border-border/30 hover:bg-transparent px-4">
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="h-11 px-5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                                    <TableHead key={header.id} className="h-12 px-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                     </TableHead>
                                 ))}
                             </TableRow>
                         ))}
                     </TableHeader>
-                    <TableBody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                    <TableBody className="divide-y divide-border/20">
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                <TableRow key={row.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors border-0">
+                                <TableRow key={row.id} className="hover:bg-muted/10 transition-colors border-border/30 last:border-0 px-4">
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="px-5 py-3">
+                                        <TableCell key={cell.id} className="px-5 py-4">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
@@ -222,18 +232,18 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
 
-            <div className="flex items-center justify-between px-1 pt-2">
-                <p className="text-xs font-medium text-zinc-500">
-                    Showing <span className="font-bold text-zinc-900 dark:text-zinc-100">{table.getRowModel().rows.length}</span> of {meta.total} records
+            <div className="flex items-center justify-between px-1 pt-4">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Displaying <span className="text-foreground">{(meta.page - 1) * meta.limit + 1} - {Math.min(meta.page * meta.limit, meta.total)}</span> of {meta.total} records
                 </p>
-                <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={meta.page === 1} className="rounded-lg h-8 px-3 text-xs font-medium border-zinc-200 dark:border-zinc-800 shadow-sm">
+                <div className="flex items-center space-x-3">
+                    <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={meta.page === 1} className="rounded-xl h-9 px-4 text-xs font-bold border-border shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                         Previous
                     </Button>
-                    <div className="px-3 text-xs font-medium text-zinc-500">
+                    <div className="px-4 py-1.5 text-[11px] font-bold text-foreground bg-muted/50 rounded-lg border border-border/50">
                         Page {meta.page} of {meta.totalPage || 1}
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={meta.page >= meta.totalPage} className="rounded-lg h-8 px-3 text-xs font-medium border-zinc-200 dark:border-zinc-800 shadow-sm">
+                    <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(meta.totalPage, p + 1))} disabled={meta.page >= meta.totalPage} className="rounded-xl h-9 px-4 text-xs font-bold border-border shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                         Next
                     </Button>
                 </div>

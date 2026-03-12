@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone, KeyRound, Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import ViewStudentModal from "./view-student-modal";
 import AddStudentModal from "./add-student-modal";
@@ -138,8 +139,8 @@ export default function StudentsPage() {
             <div className="p-6 space-y-6 animate-in fade-in duration-500">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Student Directory</h2>
-                        <p className="text-muted-foreground text-sm font-bold opacity-80">Full audit of enrolled students across all wings.</p>
+                        <h2 className="text-2xl font-bold tracking-tight text-foreground uppercase">Student Directory</h2>
+                        <p className="text-muted-foreground text-sm font-medium opacity-80">Manage and oversee all enrolled students.</p>
                     </div>
                     <div className="flex items-center gap-3">
                         {generatedPasswordInfo && (
@@ -169,48 +170,48 @@ export default function StudentsPage() {
 
                         {/* 🔒 Gate for Add Student Action */}
                         <PermissionGate required={PERMISSIONS.STUDENT_CREATE}>
-                            <Button onClick={() => setIsAddModalOpen(true)} className="font-black shadow-xl shadow-primary/20 h-11 px-6 rounded-xl transition-all hover:scale-[1.02]">
-                                <Plus className="h-4 w-4 mr-2 stroke-[3]" /> Add Student
+                            <Button onClick={() => setIsAddModalOpen(true)} className="font-bold shadow-lg shadow-primary/20 h-10 px-6 rounded-xl transition-all hover:scale-[1.02]">
+                                <Plus className="h-4 w-4 mr-2" /> Add Student
                             </Button>
                         </PermissionGate>
                     </div>
                 </div>
 
-                <Card className="rounded-[32px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-                    <CardHeader className="p-4 border-b bg-muted/10">
+                <Card className="rounded-2xl bg-card border-border shadow-sm overflow-hidden">
+                    <CardHeader className="p-4 border-b border-border/30 bg-muted/20">
                         <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
                             <div className="relative sm:col-span-6 lg:col-span-4">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Search by name, ID or guardian..."
                                     value={search}
                                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                    className="pl-11 h-11 bg-background rounded-2xl border-slate-200 dark:border-slate-800 shadow-sm font-bold text-[13px]"
+                                    className="pl-11 h-10 bg-muted/20 rounded-xl border-border font-medium text-sm"
                                 />
                             </div>
                             <div className="sm:col-span-3 lg:col-span-4">
                                 <Select value={classId} onValueChange={(val) => { setClassId(val); setSectionId("ALL"); setPage(1); }}>
-                                    <SelectTrigger className="h-11 bg-background rounded-2xl border-slate-200 dark:border-slate-800 font-bold">
+                                    <SelectTrigger className="h-10 bg-muted/20 rounded-xl border-border font-medium">
                                         <GraduationCap className="h-4 w-4 mr-2 text-primary" />
                                         <SelectValue placeholder="All Classes" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl">
-                                        <SelectItem value="ALL" className="font-black text-primary uppercase tracking-wider">All Classes</SelectItem>
+                                    <SelectContent className="rounded-xl">
+                                        <SelectItem value="ALL" className="font-bold text-primary uppercase">All Classes</SelectItem>
                                         {classList.map((cls: any) => (
-                                            <SelectItem key={cls.id} value={cls.id} className="font-bold">{cls.name}</SelectItem>
+                                            <SelectItem key={cls.id} value={cls.id} className="font-medium">{cls.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="sm:col-span-3 lg:col-span-4">
                                 <Select value={sectionId} onValueChange={(val) => { setSectionId(val); setPage(1); }} disabled={classId === "ALL"}>
-                                    <SelectTrigger className="h-11 bg-background rounded-2xl border-slate-200 dark:border-slate-800 font-bold">
+                                    <SelectTrigger className="h-10 bg-muted/20 rounded-xl border-border font-medium">
                                         <SelectValue placeholder={classId === "ALL" ? "Select Class First" : "All Sections"} />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl">
-                                        <SelectItem value="ALL" className="font-black text-primary uppercase tracking-wider">All Sections</SelectItem>
+                                    <SelectContent className="rounded-xl">
+                                        <SelectItem value="ALL" className="font-bold text-primary uppercase">All Sections</SelectItem>
                                         {sectionList.map((sec: any) => (
-                                            <SelectItem key={sec.id} value={sec.id} className="font-bold">Section {sec.name}</SelectItem>
+                                            <SelectItem key={sec.id} value={sec.id} className="font-medium">Section {sec.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -220,13 +221,13 @@ export default function StudentsPage() {
                     <CardContent className="p-0">
                         <div className="overflow-x-auto custom-scrollbar">
                             <Table>
-                                <TableHeader className="bg-slate-50/50 dark:bg-slate-950/30">
-                                    <TableRow className="border-b-black/5 dark:border-b-white/5">
-                                        <TableHead className="font-black text-[11px] uppercase tracking-[2px] text-slate-400 px-8 h-14">Student Identity</TableHead>
-                                        <TableHead className="font-black text-[11px] uppercase tracking-[2px] text-slate-400">Class & Roll</TableHead>
-                                        <TableHead className="font-black text-[11px] uppercase tracking-[2px] text-slate-400">Guardian Details</TableHead>
-                                        <TableHead className="font-black text-[11px] uppercase tracking-[2px] text-slate-400 text-center">System Status</TableHead>
-                                        <TableHead className="text-right font-black text-[11px] uppercase tracking-[2px] text-slate-400 px-8">Manage</TableHead>
+                                <TableHeader className="bg-muted/30 border-b border-border/50">
+                                    <TableRow className="border-border/30">
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground px-8 h-12">Student Identity</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Class & Roll</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Guardian Details</TableHead>
+                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">System Status</TableHead>
+                                        <TableHead className="text-right font-bold text-[11px] uppercase tracking-wider text-muted-foreground px-8">Manage</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -243,69 +244,77 @@ export default function StudentsPage() {
                                         </TableRow>
                                     ) : (
                                         students.map((std: any) => (
-                                            <TableRow key={std.id} className="hover:bg-white/80 dark:hover:bg-white/5 transition-all group border-b-black/5 dark:border-b-white/5">
-                                                <TableCell className="px-8 py-5">
+                                            <TableRow key={std.id} className="hover:bg-muted/10 transition-colors border-border/30">
+                                                <TableCell className="px-8 py-4">
                                                     <div className="flex items-center gap-4">
-                                                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm ring-1 ring-border/50">
+                                                        <Avatar className="h-11 w-11 border-2 border-border/50 shadow-sm ring-1 ring-border/20">
                                                             <AvatarImage src={std.profilePicture} alt={std.firstName} className="object-cover" />
-                                                            <AvatarFallback className="bg-primary/10 text-primary font-black text-lg uppercase">
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg uppercase">
                                                                 {std.firstName.charAt(0)}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex flex-col">
-                                                            <span className="font-black text-[15px] text-slate-900 dark:text-white group-hover:text-primary transition-colors tracking-tight">
+                                                            <span className="font-bold text-[14px] text-foreground group-hover:text-primary transition-colors tracking-tight">
                                                                 {std.firstName} {std.lastName}
                                                             </span>
-                                                            <span className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest bg-slate-100 dark:bg-white/5 w-fit px-1.5 rounded">ID: {std.studentId}</span>
+                                                            <span className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest bg-muted/50 w-fit px-1.5 rounded-md border border-border/30">ID: {std.studentId}</span>
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-[13px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tighter">Class {std.class?.name} - {std.section?.name}</span>
-                                                        <span className="text-[11px] font-bold text-slate-400">Roll: <span className="text-primary">{std.rollNumber}</span></span>
+                                                        <span className="text-[13px] font-bold text-foreground/90 uppercase tracking-tighter">Class {std.class?.name} - {std.section?.name}</span>
+                                                        <span className="text-[11px] font-medium text-muted-foreground">Roll: <span className="text-primary font-bold">{std.rollNumber}</span></span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-[13px] font-bold text-slate-700 dark:text-slate-300">{std.admissionApplication?.fatherName || std.admissionApplication?.localGuardianName || "N/A"}</span>
-                                                        <div className="flex items-center gap-1 text-[11px] font-bold text-slate-400 tracking-tight">
+                                                        <span className="text-[13px] font-bold text-foreground/90">{std.admissionApplication?.fatherName || std.admissionApplication?.localGuardianName || "N/A"}</span>
+                                                        <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground tracking-tight">
                                                             <Phone className="h-3 w-3" /> {std.admissionApplication?.fatherPhone || std.admissionApplication?.localGuardianPhone || "N/A"}
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <div className="flex justify-center">
-                                                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full border ${std.user?.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border-rose-500/20"}`}>
-                                                            <div className={`h-1.5 w-1.5 rounded-full ${std.user?.status === "ACTIVE" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"}`} />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">{std.user?.status || "UNKNOWN"}</span>
+                                                        <div className={cn(
+                                                            "flex items-center gap-2 px-3 py-1 rounded-full border font-bold text-[10px] uppercase tracking-wider",
+                                                            std.user?.status === "ACTIVE" 
+                                                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+                                                                : "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                                                        )}>
+                                                            <div className={cn(
+                                                                "h-1.5 w-1.5 rounded-full",
+                                                                std.user?.status === "ACTIVE" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                                                            )} />
+                                                            <span>{std.user?.status || "UNKNOWN"}</span>
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-right px-8">
-                                                    <div className="flex items-center justify-end gap-3">
+                                                    <div className="flex items-center justify-end gap-2 text-muted-foreground">
                                                         {/* 🔒 Gate for Individual Actions */}
                                                         <PermissionGate required={PERMISSIONS.STUDENT_VIEW}>
-                                                            <Button variant="ghost" size="icon" onClick={() => setSelectedStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
-                                                                <Eye className="h-5 w-5" />
+                                                            <Button title="View Profile" variant="ghost" size="icon" onClick={() => setSelectedStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+                                                                <Eye className="h-4.5 w-4.5" />
                                                             </Button>
                                                         </PermissionGate>
                                                         
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Send Notification" variant="ghost" size="icon" onClick={() => setNotificationStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-500/20">
-                                                                <Bell className="h-5 w-5" />
+                                                            <Button title="Send Notification" variant="ghost" size="icon" onClick={() => setNotificationStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-500/20">
+                                                                <Bell className="h-4.5 w-4.5" />
                                                             </Button>
                                                         </PermissionGate>
-
+ 
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Reset Password" variant="ghost" size="icon" onClick={() => setResetStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all border border-transparent hover:border-rose-500/20">
-                                                                <KeyRound className="h-5 w-5" />
+                                                            <Button title="Reset Password" variant="ghost" size="icon" onClick={() => setResetStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all border border-transparent hover:border-rose-500/20">
+                                                                <KeyRound className="h-4.5 w-4.5" />
                                                             </Button>
                                                         </PermissionGate>
                                                         
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Edit Details" variant="ghost" size="icon" onClick={() => setEditingStudentId(std.id)} className="h-10 w-10 rounded-xl hover:bg-amber-500/10 hover:text-amber-600 transition-all border border-transparent hover:border-amber-500/20">
-                                                                <Edit className="h-5 w-5" />
+                                                            <Button title="Edit Details" variant="ghost" size="icon" onClick={() => setEditingStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-amber-500/10 hover:text-amber-600 transition-all border border-transparent hover:border-amber-500/20">
+                                                                <Edit className="h-4.5 w-4.5" />
                                                             </Button>
                                                         </PermissionGate>
                                                     </div>
@@ -319,9 +328,9 @@ export default function StudentsPage() {
 
                         {/* Pagination Footer */}
                         {!isLoading && meta.total > 0 && (
-                            <div className="flex flex-col sm:flex-row items-center justify-between px-8 py-6 border-t bg-slate-50/30 dark:bg-black/10 gap-4">
-                                <div className="text-[11px] font-black uppercase text-slate-400 tracking-widest">
-                                    Displaying <span className="text-slate-900 dark:text-white">{((meta.page - 1) * meta.limit) + 1} - {Math.min(meta.page * meta.limit, meta.total)}</span> of {meta.total} students
+                            <div className="flex flex-col sm:flex-row items-center justify-between px-8 py-6 border-t border-border bg-muted/20 gap-4">
+                                <div className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
+                                    Displaying <span className="text-foreground">{((meta.page - 1) * meta.limit) + 1} - {Math.min(meta.page * meta.limit, meta.total)}</span> of {meta.total} students
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Button 
@@ -329,11 +338,11 @@ export default function StudentsPage() {
                                         size="sm" 
                                         onClick={() => setPage(p => Math.max(1, p - 1))} 
                                         disabled={meta.page === 1} 
-                                        className="h-9 rounded-xl border-slate-200 dark:border-slate-800 font-bold px-4 shadow-sm transition-all hover:bg-white"
+                                        className="h-9 rounded-xl border-border font-bold px-4 shadow-sm transition-all hover:bg-primary/10 hover:text-primary"
                                     >
                                         <ChevronLeft className="h-4 w-4 mr-2" /> Previous
                                     </Button>
-                                    <div className="px-5 h-9 flex items-center justify-center bg-primary text-white dark:text-black rounded-xl font-black text-[13px] shadow-lg shadow-primary/20">
+                                    <div className="px-5 h-9 flex items-center justify-center bg-background/50 text-foreground rounded-xl font-bold text-[13px] border border-border/50">
                                         {meta.page} / {meta.totalPage}
                                     </div>
                                     <Button 
@@ -341,7 +350,7 @@ export default function StudentsPage() {
                                         size="sm" 
                                         onClick={() => setPage(p => p + 1)} 
                                         disabled={meta.page >= meta.totalPage} 
-                                        className="h-9 rounded-xl border-slate-200 dark:border-slate-800 font-bold px-4 shadow-sm transition-all hover:bg-white"
+                                        className="h-9 rounded-xl border-border font-bold px-4 shadow-sm transition-all hover:bg-primary/10 hover:text-primary"
                                     >
                                         Next <ChevronRight className="h-4 w-4 ml-2" />
                                     </Button>
