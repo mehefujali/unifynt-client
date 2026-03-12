@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Hero, About, Stats, Features, Footer } from "../enterprise-sections";
 
-export const ModernTemplate = ({ data, theme, school }: any) => {
+type ModernProps = { data: any; theme: any; school: any };
+
+export const ModernTemplate: React.FC<ModernProps> = ({ data, theme, school }) => {
   return (
     <div style={{ fontFamily: theme.typography.bodyFont }}>
       {/* Design sequence code-e fixed, kintu data JSON theke */}

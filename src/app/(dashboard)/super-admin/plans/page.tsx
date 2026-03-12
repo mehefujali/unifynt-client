@@ -87,7 +87,7 @@ export default function PlansPage() {
                     <div className="flex items-center justify-center h-[400px]">
                         <div className="text-center space-y-2">
                             <h3 className="text-lg font-bold">Access Restricted</h3>
-                            <p className="text-sm text-muted-foreground">You don't have permission to manage subscription plans.</p>
+                            <p className="text-sm text-muted-foreground">You don&apos;t have permission to manage subscription plans.</p>
                         </div>
                     </div>
                 </div>

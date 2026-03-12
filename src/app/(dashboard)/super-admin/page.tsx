@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/static-components */
+ 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 

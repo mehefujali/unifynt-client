@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Megaphone, UploadCloud, CheckCircle2, ShieldInfo } from "lucide-react";
+import { Loader2, Megaphone, UploadCloud, CheckCircle2, ShieldAlert } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,7 +122,7 @@ export default function SuperAdminAnnouncementsPage() {
                 <div className="flex items-center justify-center h-[400px]">
                     <div className="flex flex-col items-center gap-4 text-center">
                         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-                            <ShieldInfo className="h-6 w-6" />
+                            <ShieldAlert className="h-6 w-6" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold">Connection failed</h3>

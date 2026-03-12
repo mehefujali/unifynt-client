@@ -7,8 +7,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { BellRing, Mailbox } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { Socket } from "socket.io-client";
+
 interface SocketContextData {
-    socket: any;
+    socket: Socket | null;
 }
 
 const SocketContext = createContext<SocketContextData>({ socket: null });

@@ -7,9 +7,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import {
     Users, TrendingUp, GraduationCap, Wallet, Bell,
-    Clock, Lock, MoreHorizontal, UserCheck,
+    Clock, Lock, UserCheck,
     BookOpen, CalendarDays, Activity, ShieldCheck,
-    ArrowUpRight, Target, ClipboardList
+    ArrowUpRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Chart } from "react-google-charts";

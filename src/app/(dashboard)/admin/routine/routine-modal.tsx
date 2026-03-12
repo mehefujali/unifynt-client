@@ -98,15 +98,15 @@ export function RoutineModal({ isOpen, onClose, initialData }: RoutineModalProps
         enabled: isOpen && !!selectedDay && !!selectedPeriodId,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const classList = classes?.data?.data || classes?.data || (Array.isArray(classes) ? classes : []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const sectionList = sections?.data?.data || sections?.data || (Array.isArray(sections) ? sections : []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const periodList = periodsData?.data || (Array.isArray(periodsData) ? periodsData : []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const allSubjects = subjectsData?.data?.data || subjectsData?.data || (Array.isArray(subjectsData) ? subjectsData : []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const teachersList = teachersData?.data?.data || teachersData?.data || (Array.isArray(teachersData) ? teachersData : []);
     const busyRoutines = busyTeachersResponse?.data || [];
 

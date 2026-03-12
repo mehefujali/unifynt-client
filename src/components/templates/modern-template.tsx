@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MapPin, Phone, Mail, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -22,6 +23,7 @@ export function ModernTemplate({ content, theme }: Props) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {heroSection?.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img src={heroSection.logo} alt="Logo" className="h-12 w-auto" />
             ) : (
               <div className="h-10 w-10 bg-[var(--primary)] rounded-lg flex items-center justify-center text-white font-bold text-xl">

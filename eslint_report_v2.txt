@@ -1,0 +1,409 @@
+
+> unifynt@0.2.0 lint
+> eslint
+
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\academics\holidays\page.tsx
+   13:33  warning  'DialogHeader' is defined but never used                         @typescript-eslint/no-unused-vars
+   13:60  warning  'DialogFooter' is defined but never used                         @typescript-eslint/no-unused-vars
+   18:10  warning  'PermissionGate' is defined but never used                       @typescript-eslint/no-unused-vars
+   19:10  warning  'PERMISSIONS' is defined but never used                          @typescript-eslint/no-unused-vars
+   48:26  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   60:26  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  126:39  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  126:55  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  140:57  error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  246:38  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\admission\applications\application-review-modal.tsx
+   53:13  error    Definition for rule 'react-compiler/react-compiler' was not found                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-compiler/react-compiler
+   54:13  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\admission\applications\application-review-modal.tsx:54:13
+  52 |         if (application?.paymentStatus) {
+  53 |             // eslint-disable-next-line react-compiler/react-compiler
+> 54 |             setPaymentStatus(application.paymentStatus);
+     |             ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  55 |         }
+  56 |     }, [application]);
+  57 |  react-hooks/set-state-in-effect
+   75:26  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+   98:26  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  114:40  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  138:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @next/next/no-img-element
+  248:67  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\admission\settings\page.tsx
+  431:146  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\admission\settings\page.tsx:431:146
+  429 |                                                                 name={`fields.${index}.type` as const}
+  430 |                                                                 render={({ field: { onChange, value } }) => (
+> 431 |                                                                     <Select onValueChange={onChange} value={value} disabled={!canEditSettings || watch(`fields.${index}.isSystem`)}>
+      |                                                                                                                                                  ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  432 |                                                                         <SelectTrigger className="h-9 text-sm bg-background">
+  433 |                                                                             <SelectValue placeholder="Select type" />
+  434 |                                                                         </SelectTrigger>  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\examinations\exams\page.tsx
+  32:17  warning  'setLimit' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\examinations\results\page.tsx
+  20:5   warning  'Search' is defined but never used                @typescript-eslint/no-unused-vars
+  23:5   warning  'User' is defined but never used                  @typescript-eslint/no-unused-vars
+  39:22  warning  'setPageSize' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\fees\collection\page.tsx
+  11:41  warning  'CardTitle' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\forms\builder\page.tsx
+  242:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\forms\builder\page.tsx:242:9
+  240 |       if (f) {
+  241 |         initializedRef.current = true;
+> 242 |         setTitle(f.title);
+      |         ^^^^^^^^ Avoid calling setState() directly within an effect
+  243 |         setDescription(f.description || "");
+  244 |         setStatus(f.status);
+  245 |         const loaded = (f.fields as any[]).map((field: any) => ({  react-hooks/set-state-in-effect
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\forms\form-modal.tsx
+   10:24  warning  'Settings' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   13:61  warning  'FormMessage' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  189:63  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\forms\form-modal.tsx:189:63
+  187 |                                     <div className="space-y-4">
+  188 |                                         {fields.map((item, index) => {
+> 189 |                                             const fieldType = form.watch(`fields.${index}.type`);
+      |                                                               ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  190 |                                             const showOptions = ["SELECT", "RADIO", "CHECKBOX"].includes(fieldType);
+  191 |
+  192 |                                             return (  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\inquiries\data-table.tsx
+  32:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\inquiries\data-table.tsx:32:17
+  30 |   emptyMessage = "No data found.",
+  31 | }: DataTableProps<TData, TValue>) {
+> 32 |   const table = useReactTable({
+     |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  33 |     data,
+  34 |     columns,
+  35 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\notices\data-table.tsx
+  37:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\notices\data-table.tsx:37:17
+  35 |   onPageChange,
+  36 | }: DataTableProps<TData, TValue>) {
+> 37 |   const table = useReactTable({
+     |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  38 |     data,
+  39 |     columns,
+  40 |     getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\notices\notice-form-modal.tsx
+  144:42  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\notices\notice-form-modal.tsx:144:42
+  142 |                             </div>
+  143 |                             <Switch
+> 144 |                                 checked={form.watch("isPublic")}
+      |                                          ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  145 |                                 onCheckedChange={(val) => form.setValue("isPublic", val)}
+  146 |                                 disabled={mutation.isPending}
+  147 |                                 className="data-[state=checked]:bg-emerald-500"  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\page.tsx
+  10:18  warning  'MoreHorizontal' is defined but never used  @typescript-eslint/no-unused-vars
+  12:19  warning  'Target' is defined but never used          @typescript-eslint/no-unused-vars
+  12:27  warning  'ClipboardList' is defined but never used   @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\payroll\data-table.tsx
+  109:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\payroll\data-table.tsx:109:19
+  107 |     ];
+  108 |
+> 109 |     const table = useReactTable({ data, columns, pageCount, getCoreRowModel: getCoreRowModel(), manualPagination: true, onPaginationChange, state: { pagination } });
+      |                   ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  110 |
+  111 |     const handleClear = () => { 
+  112 |         onSearchChange("");   react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\routine\routine-modal.tsx
+  108:11  warning  The 'allSubjects' logical expression could make the dependencies of useMemo Hook (at line 119) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'allSubjects' in its own useMemo() Hook    react-hooks/exhaustive-deps
+  110:11  warning  The 'teachersList' logical expression could make the dependencies of useMemo Hook (at line 147) change on every render. To fix this, wrap the initialization of 'teachersList' in its own useMemo() Hook                                         react-hooks/exhaustive-deps
+  111:11  warning  The 'busyRoutines' logical expression could make the dependencies of useMemo Hook (at line 127) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'busyRoutines' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\settings\page.tsx
+  28:16  warning  'TabsContent' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\settings\website\template-selection.tsx
+  6:19  warning  'LayoutTemplate' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\sms\compose\page.tsx
+  41:11  warning  'watchClass' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\staff\add-staff-modal.tsx
+  36:32  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\staff\add-staff-modal.tsx:36:32
+  34 |     });
+  35 |
+> 36 |     const watchCreateAccount = watch("userData.createAccount");
+     |                                ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  37 |
+  38 |     const mutation = useMutation({
+  39 |         mutationFn: (data: FormData) => StaffService.createStaff(data as any),  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\staff\data-table.tsx
+  43:10  warning  'PermissionGate' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  80:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\staff\data-table.tsx:80:19
+  78 |     const canFilterByRole = hasPermission([PERMISSIONS.STAFF_CREATE, PERMISSIONS.STAFF_EDIT]);
+  79 |
+> 80 |     const table = useReactTable({
+     |                   ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  81 |         data,
+  82 |         columns,
+  83 |         pageCount: pageCount,  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\students\add-student-modal.tsx
+  116:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\students\data-table.tsx
+  61:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\students\data-table.tsx:61:19
+  59 | }: DataTableProps<TData, TValue>) {
+  60 |
+> 61 |     const table = useReactTable({
+     |                   ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  62 |         data,
+  63 |         columns,
+  64 |         pageCount: pageCount,  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\students\edit-student-modal.tsx
+   51:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  217:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\students\view-student-modal.tsx
+  128:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\teachers\add-teacher-modal.tsx
+  78:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\teachers\columns.tsx
+  14:3  warning  'ShieldCheck' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\teachers\data-table.tsx
+  60:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\teachers\data-table.tsx:60:19
+  58 |     const canManageFaculty = hasPermission([PERMISSIONS.TEACHER_CREATE, PERMISSIONS.TEACHER_EDIT]);
+  59 |
+> 60 |     const table = useReactTable({
+     |                   ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  61 |         data,
+  62 |         columns,
+  63 |         pageCount,  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\teachers\edit-teacher-modal.tsx
+    4:28  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+  124:18  warning  'error' is defined but never used      @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\admin\user-profile\page.tsx
+  21:16  warning  'TabsContent' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\announcements\page.tsx
+   9:19  warning  'Megaphone' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  16:29  warning  'CardDescription' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  59:29  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\announcements\page.tsx:59:29
+  57 |     }, [announcement, form]);
+  58 |
+> 59 |     const isActiveWatched = form.watch("isActive");
+     |                             ^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  60 |
+  61 |     const updateMutation = useMutation({
+  62 |         mutationFn: async (data: any) => {  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\audit-logs\columns.tsx
+  34:19  warning  'variant' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\audit-logs\page.tsx
+   8:10  warning  'ShieldCheck' is defined but never used           @typescript-eslint/no-unused-vars
+  13:11  warning  'queryClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\email-packages\page.tsx
+  22:10  warning  'Badge' is defined but never used                   @typescript-eslint/no-unused-vars
+  44:13  warning  'hasPermission' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  70:18  warning  'error' is defined but never used                   @typescript-eslint/no-unused-vars
+  81:18  warning  'error' is defined but never used                   @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\notifications\page.tsx
+   14:5   warning  'CardDescription' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   32:5   warning  'FormDescription' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   52:5   warning  'BellRing' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  109:31  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\notifications\page.tsx:109:31
+  107 |
+  108 |     const { watch } = form;
+> 109 |     const currentTargetType = watch("targetType");
+      |                               ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  110 |
+  111 |     const { data: schoolsDataResponse, isLoading: isLoadingSchools } = useQuery({
+  112 |         queryKey: ["schools-list", schoolSearchQuery, schoolPage],  react-hooks/incompatible-library
+  453:61  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @next/next/no-img-element
+  506:37  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @next/next/no-img-element
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\page.tsx
+   9:23  warning  'CalendarDays' is defined but never used          @typescript-eslint/no-unused-vars
+  10:51  warning  'Loader2' is defined but never used               @typescript-eslint/no-unused-vars
+  19:12  warning  'currentTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\plans\columns.tsx
+  5:24  warning  'CheckCircle2' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\plans\data-table.tsx
+  30:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\plans\data-table.tsx:30:19
+  28 |     data,
+  29 | }: DataTableProps<TData, TValue>) {
+> 30 |     const table = useReactTable({
+     |                   ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  31 |         data,
+  32 |         columns,
+  33 |         getCoreRowModel: getCoreRowModel(),  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\plans\page.tsx
+  90:81  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\plans\plan-modal.tsx
+  144:46  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\plans\plan-modal.tsx:144:46
+  142 |                                 </div>
+  143 |                                 <Switch
+> 144 |                                     checked={watch("isActive")}
+      |                                              ^^^^^ React Hook Form's `useForm()` API returns a `watch()` function which cannot be memoized safely.
+  145 |                                     onCheckedChange={(val) => setValue("isActive", val, { shouldDirty: true })}
+  146 |                                 />
+  147 |                             </div>  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\schools\columns.tsx
+  5:29  warning  'School' is defined but never used          @typescript-eslint/no-unused-vars
+  5:48  warning  'MoreHorizontal' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\schools\data-table.tsx
+  46:19  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\schools\data-table.tsx:46:19
+  44 | }: DataTableProps<TData, TValue>) {
+  45 |
+> 46 |     const table = useReactTable({
+     |                   ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  47 |         data,
+  48 |         columns,
+  49 |         pageCount,  react-hooks/incompatible-library
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\site-templates\page.tsx
+  5:49  warning  'AlertCircle' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\sms-packages\package-modal.tsx
+  11:74  warning  'SheetFooter' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\app\(dashboard)\super-admin\sms-packages\page.tsx
+   19:10  warning  'format' is defined but never used                               @typescript-eslint/no-unused-vars
+   23:10  warning  'Badge' is defined but never used                                @typescript-eslint/no-unused-vars
+   45:13  warning  'hasPermission' is assigned a value but never used               @typescript-eslint/no-unused-vars
+   71:18  warning  'error' is defined but never used                                @typescript-eslint/no-unused-vars
+   82:18  warning  'error' is defined but never used                                @typescript-eslint/no-unused-vars
+  133:81  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\admission\DynamicAdmissionForm.tsx
+  150:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\layout\header.tsx
+  19:5  warning  'Bell' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\templates\enterprise-sections.tsx
+  20:10  warning  'FileText' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\templates\index.tsx
+   6:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  18:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\templates\modern-template.tsx
+   5:12  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   6:10  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  25:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\templates\modern\index.tsx
+  5:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\ui\file-upload.tsx
+  4:40  warning  'ImageIcon' is defined but never used  @typescript-eslint/no-unused-vars
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\components\ui\image-cropper.tsx
+  90:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\providers\socket-provider.tsx
+  11:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+H:\Personal\unifynt\unifynt-website\unifynt\src\services\inquiry.service.ts
+  16:10  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 101 problems (22 errors, 79 warnings)
+
