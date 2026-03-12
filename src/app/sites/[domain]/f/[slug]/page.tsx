@@ -242,7 +242,7 @@ export default function PublicFormPage() {
                               <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                               <Input
                                 type="tel"
-                                placeholder={field.placeholder || "+880 1XXX-XXXXXX"}
+                                placeholder={field.placeholder || "+91 0000000000"}
                                 className={cn("h-12 pl-10 rounded-2xl bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus-visible:ring-primary/20", isError && "border-rose-400")}
                                 {...register(field.id, { required: field.required ? "Phone number is required" : false })}
                               />

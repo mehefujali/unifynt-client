@@ -78,10 +78,10 @@ const SidebarItemNode = ({
                         ? "justify-center h-10 w-10 mx-auto"
                         : "justify-between px-3 py-2.5",
                     isActive && !hasSubItems
-                        ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-semibold"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
                         : isActive && hasSubItems
-                            ? "bg-transparent text-zinc-900 dark:text-zinc-50 font-semibold"
-                            : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-zinc-900 dark:hover:text-zinc-200"
+                            ? "bg-transparent text-sidebar-foreground font-semibold"
+                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                 )}
             >
                 {isActive && !isCollapsed && !hasSubItems && (
@@ -136,8 +136,8 @@ const SidebarItemNode = ({
                                         className={cn(
                                             "relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-200 group/sub",
                                             isSubActive
-                                                ? "text-zinc-900 dark:text-zinc-100 font-semibold bg-zinc-100/50 dark:bg-zinc-800/50"
-                                                : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/50"
+                                                ? "text-sidebar-accent-foreground font-semibold bg-sidebar-accent/50"
+                                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
                                         )}
                                     >
                                         <div
@@ -237,7 +237,7 @@ export default function Sidebar() {
     return (
         <aside
             className={cn(
-                "hidden h-screen flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#0a0a0a] transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0",
+                "hidden h-screen flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0",
                 isCollapsed ? "w-20" : "w-64"
             )}
         >
@@ -270,7 +270,7 @@ export default function Sidebar() {
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col whitespace-nowrap">
-                            <span className="font-bold text-[18px] tracking-tight text-zinc-900 dark:text-zinc-50 leading-none">
+                            <span className="font-bold text-[18px] tracking-tight text-sidebar-foreground leading-none">
                                 Unifynt
                             </span>
                         </div>
@@ -316,7 +316,7 @@ export default function Sidebar() {
                         )}
                         title="View Personal Profile"
                     >
-                        <Avatar className="h-9 w-9 border border-zinc-200 dark:border-zinc-800">
+                        <Avatar className="h-9 w-9 border border-sidebar-border">
                             <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
                             <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-300 font-semibold text-xs">
                                 {getInitials(displayName)}
@@ -325,10 +325,10 @@ export default function Sidebar() {
 
                         {!isCollapsed && (
                             <div className="flex flex-col whitespace-nowrap">
-                                <span className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[110px] leading-tight">
+                                <span className="text-[13px] font-semibold text-sidebar-foreground truncate max-w-[110px] leading-tight">
                                     {displayName}
                                 </span>
-                                <span className="text-[11px] font-medium text-zinc-500 truncate max-w-[110px]">
+                                <span className="text-[11px] font-medium text-sidebar-foreground/50 truncate max-w-[110px]">
                                     {user?.role ? user.role.replace("_", " ") : "USER"}
                                 </span>
                             </div>

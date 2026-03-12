@@ -127,24 +127,20 @@ export default function AdminDashboard() {
         tooltip: { textStyle: { fontName: 'Inter, sans-serif' } },
     };
 
-    const StatCard = ({ title, value, icon: Icon, colorClass, gradientClass, isProtected = false, permission = "" }: any) => {
+    const StatCard = ({ title, value, icon: Icon, colorClass, isProtected = false, permission = "" }: any) => {
         const content = (
             <div className={cn(
-                "relative overflow-hidden p-6 rounded-3xl border bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60",
-                "shadow-sm hover:shadow-xl transition-all duration-500 group border-zinc-200/50 dark:border-zinc-800/50 flex flex-col justify-between h-full"
+                "relative overflow-hidden p-6 rounded-2xl border bg-card/50 dark:bg-card/40 backdrop-blur-sm",
+                "shadow-sm hover:shadow-md transition-all duration-300 group border-border/50 flex flex-col justify-between h-full"
             )}>
-                <div className={cn(
-                    "absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-500",
-                    gradientClass
-                )} />
                 <div className="relative z-10 flex items-center justify-between mb-4">
-                    <p className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{title}</p>
-                    <div className={cn("p-3 rounded-2xl shadow-sm bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800", colorClass)}>
-                        <Icon className="h-5 w-5" />
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+                    <div className={cn("p-2.5 rounded-xl bg-background border border-border/50", colorClass)}>
+                        <Icon className="h-4 w-4" />
                     </div>
                 </div>
                 <div className="relative z-10">
-                    <h3 className="text-4xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight tabular-nums group-hover:scale-105 origin-left transition-transform duration-500">{value}</h3>
+                    <h3 className="text-3xl font-bold text-foreground tracking-tight tabular-nums">{value}</h3>
                 </div>
             </div>
         );
@@ -202,16 +198,16 @@ export default function AdminDashboard() {
                 </div>
             }
         >
-            <div className="p-4 md:p-8 space-y-8 bg-zinc-50/30 dark:bg-zinc-950/20 min-h-screen">
+            <div className="p-4 md:p-8 space-y-8 min-h-screen">
                 <AnnouncementModal />
 
                 {/* header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
                     <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-3">
-                            <Activity className="h-3.5 w-3.5" /> Workspace Active
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold mb-3 uppercase tracking-wider">
+                            <Activity className="h-3 w-3" /> System Operational
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                             {greeting}{displayName ? `, ${displayName}` : "!"}
                         </h1>
                         <p className="text-sm font-medium text-zinc-500 mt-2 max-w-xl">
@@ -239,30 +235,26 @@ export default function AdminDashboard() {
                         title="Total Students"
                         value={overview?.totalStudents || 0}
                         icon={GraduationCap}
-                        colorClass="text-blue-500 dark:text-blue-400 shadow-blue-500/20"
-                        gradientClass="bg-blue-500"
+                        colorClass="text-blue-500"
                     />
                     <StatCard
                         title="Active Teachers"
                         value={overview?.totalTeachers || 0}
                         icon={Users}
-                        colorClass="text-purple-500 dark:text-purple-400 shadow-purple-500/20"
-                        gradientClass="bg-purple-500"
+                        colorClass="text-purple-500"
                     />
                     <StatCard
                         title="Collected Fees"
                         value={`₹${(overview?.totalCollected || 0).toLocaleString()}`}
                         icon={Wallet}
-                        colorClass="text-emerald-500 dark:text-emerald-400 shadow-emerald-500/20"
-                        gradientClass="bg-emerald-500"
+                        colorClass="text-emerald-500"
                         isProtected permission={PERMISSIONS.FEE_VIEW}
                     />
                     <StatCard
                         title="Pending Dues"
                         value={`₹${(overview?.totalDue || 0).toLocaleString()}`}
                         icon={TrendingUp}
-                        colorClass="text-rose-500 dark:text-rose-400 shadow-rose-500/20"
-                        gradientClass="bg-rose-500"
+                        colorClass="text-rose-500"
                         isProtected permission={PERMISSIONS.FEE_VIEW}
                     />
                 </div>
@@ -271,16 +263,16 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                     {/* Class Distribution */}
-                    <div className="lg:col-span-2 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl shadow-sm flex flex-col min-h-[420px] overflow-hidden">
-                        <div className="p-6 border-b border-zinc-100/50 dark:border-zinc-800/30 flex items-center justify-between shrink-0 bg-white/50 dark:bg-zinc-900/50">
+                    <div className="lg:col-span-2 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col min-h-[420px] overflow-hidden">
+                        <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
                             <div>
-                                <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-xl text-primary"><BookOpen className="h-4 w-4" /></div>
+                                <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
+                                    <div className="p-1.5 bg-primary/10 rounded-lg text-primary"><BookOpen className="h-4 w-4" /></div>
                                     Enrollment Demographics
                                 </h2>
-                                <p className="text-sm font-medium text-zinc-500 mt-1">Student distribution across all registered classes</p>
+                                <p className="text-xs font-medium text-muted-foreground mt-1">Student distribution across registered classes</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 hidden sm:flex"><MoreHorizontal className="h-5 w-5 text-zinc-500" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-accent hidden sm:flex"><MoreHorizontal className="h-4 w-4 text-muted-foreground" /></Button>
                         </div>
 
                         <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
@@ -289,17 +281,17 @@ export default function AdminDashboard() {
                                     {classDistribution.map((c: any, index: number) => {
                                         const percent = maxStudents > 0 ? (c.students / maxStudents) * 100 : 0;
                                         return (
-                                            <div key={index} className="group p-5 bg-zinc-50/50 dark:bg-zinc-900/30 backdrop-blur-sm border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300">
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <span className="text-xs font-black uppercase tracking-widest text-zinc-500 group-hover:text-primary transition-colors pr-2">
+                                            <div key={index} className="group p-4 bg-background/50 border border-border/40 rounded-xl hover:border-primary/20 transition-all duration-300">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                                                         Class {c.name}
                                                     </span>
                                                 </div>
-                                                <div className="flex items-baseline gap-1.5 mb-4">
-                                                    <span className="text-3xl font-black text-zinc-900 dark:text-zinc-100 leading-none tabular-nums">
+                                                <div className="flex items-baseline gap-1 mb-3">
+                                                    <span className="text-2xl font-bold text-foreground leading-none tabular-nums">
                                                         {c.students}
                                                     </span>
-                                                    <span className="text-xs font-bold text-zinc-400">Stds</span>
+                                                    <span className="text-[10px] font-medium text-muted-foreground">Students</span>
                                                 </div>
                                                 <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                                                     <div
@@ -321,10 +313,10 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Attendance */}
-                    <div className="lg:col-span-1 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl shadow-sm flex flex-col min-h-[420px] overflow-hidden">
-                        <div className="p-6 border-b border-zinc-100/50 dark:border-zinc-800/30 flex items-center justify-between shrink-0 bg-white/50 dark:bg-zinc-900/50">
-                            <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500 dark:text-blue-400"><UserCheck className="h-4 w-4" /></div>
+                    <div className="lg:col-span-1 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col min-h-[420px] overflow-hidden">
+                        <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
+                            <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
+                                <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500"><UserCheck className="h-4 w-4" /></div>
                                 Live Attendance
                             </h2>
                         </div>
@@ -367,14 +359,14 @@ export default function AdminDashboard() {
                                 <p className="text-sm font-bold uppercase tracking-widest text-zinc-500">Financial Reports Restricted</p>
                             </div>
                         }>
-                            <div className="bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl shadow-sm flex flex-col h-full min-h-[420px] overflow-hidden">
-                                <div className="p-6 border-b border-zinc-100/50 dark:border-zinc-800/30 flex items-center justify-between shrink-0 bg-white/50 dark:bg-zinc-900/50">
+                            <div className="bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col h-full min-h-[420px] overflow-hidden">
+                                <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
                                     <div>
-                                        <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                                            <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400"><Wallet className="h-4 w-4" /></div>
+                                        <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
+                                            <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-600"><Wallet className="h-4 w-4" /></div>
                                             Financial Overview
                                         </h2>
-                                        <p className="text-sm font-medium text-zinc-500 mt-1">Current month collection vs pending dues</p>
+                                        <p className="text-xs font-medium text-muted-foreground mt-1">Collection vs pending dues</p>
                                     </div>
                                 </div>
                                 <div className="flex-1 w-full flex items-center justify-center p-6">
@@ -400,20 +392,20 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Notice Board */}
-                    <div className="lg:col-span-1 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl shadow-sm flex flex-col h-full min-h-[420px] overflow-hidden">
-                        <div className="p-6 border-b border-zinc-100/50 dark:border-zinc-800/30 flex items-center justify-between shrink-0 bg-white/50 dark:bg-zinc-900/50">
-                            <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                                <div className="p-2 bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400"><Bell className="h-4 w-4" /></div>
+                    <div className="lg:col-span-1 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl shadow-sm flex flex-col h-full min-h-[420px] overflow-hidden">
+                        <div className="p-6 border-b border-border/30 flex items-center justify-between shrink-0">
+                            <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-3">
+                                <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-600"><Bell className="h-4 w-4" /></div>
                                 Notice Board
                             </h2>
-                            <Button variant="ghost" size="sm" className="h-8 text-xs font-bold rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800">View All</Button>
+                            <Button variant="ghost" size="sm" className="h-8 text-xs font-bold rounded-lg hover:bg-accent px-3">View All</Button>
                         </div>
                         <div className="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3">
                             {recentNotices?.length > 0 ? recentNotices.map((notice: any) => (
                                 <div key={notice.id} className="group flex items-start gap-4 p-4 bg-zinc-50/50 dark:bg-zinc-900/30 hover:bg-white dark:hover:bg-zinc-900 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-zinc-200/50 dark:hover:border-zinc-800/50 hover:shadow-md">
-                                    <div className="h-12 w-12 shrink-0 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-800 shadow-sm text-zinc-700 dark:text-zinc-300 flex flex-col items-center justify-center group-hover:border-primary/30 group-hover:text-primary transition-colors">
-                                        <span className="text-[10px] font-black uppercase leading-none mb-1 opacity-70">{format(new Date(notice.createdAt), 'MMM')}</span>
-                                        <span className="text-lg font-black leading-none">{format(new Date(notice.createdAt), 'dd')}</span>
+                                    <div className="h-10 w-10 shrink-0 rounded-lg bg-background border border-border/50 shadow-sm text-foreground flex flex-col items-center justify-center group-hover:border-primary/30 group-hover:text-primary transition-colors">
+                                        <span className="text-[8px] font-bold uppercase leading-none mb-1 opacity-70">{format(new Date(notice.createdAt), 'MMM')}</span>
+                                        <span className="text-base font-bold leading-none">{format(new Date(notice.createdAt), 'dd')}</span>
                                     </div>
                                     <div className="space-y-1.5 flex-1 pr-1">
                                         <p className="text-[15px] font-bold text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-2 group-hover:text-primary transition-colors">{notice.title}</p>

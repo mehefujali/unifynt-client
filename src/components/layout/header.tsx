@@ -92,13 +92,13 @@ export default function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-950/60 border-b border-zinc-200/50 dark:border-zinc-800/50 transition-all h-[72px] sm:h-[80px] flex items-center shadow-sm">
+        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/80 dark:bg-sidebar/80 backdrop-blur-md border-b border-sidebar-border/50 transition-all h-[72px] sm:h-[80px] flex items-center shadow-sm">
             <div className="flex h-full w-full items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Mobile Navigation Trigger */}
                 <div className="flex items-center gap-4 lg:hidden">
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-[42px] w-[42px] text-zinc-600 dark:text-zinc-300 bg-zinc-100/50 dark:bg-zinc-900/50 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all focus:ring-2 focus:ring-primary/20">
+                            <Button variant="ghost" size="icon" className="h-[42px] w-[42px] text-foreground bg-accent/20 hover:bg-accent/40 rounded-2xl border border-sidebar-border transition-all">
                                 <Menu className="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
@@ -121,11 +121,11 @@ export default function Header() {
                 <div className="hidden lg:flex items-center flex-1 max-w-xl mx-4">
                     <button
                         onClick={() => setOpen(true)}
-                        className="relative w-full group flex items-center gap-3 px-5 h-[46px] bg-zinc-100/50 dark:bg-zinc-900/50 backdrop-blur-md border border-zinc-200/60 dark:border-zinc-800/60 rounded-[24px] text-[13px] text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-all duration-300 hover:bg-white dark:hover:bg-zinc-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] hover:shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="relative w-full group flex items-center gap-3 px-5 h-[46px] bg-accent/10 hover:bg-accent/20 backdrop-blur-md border border-sidebar-border/60 rounded-[24px] text-[13px] text-muted-foreground hover:text-foreground transition-all duration-300 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] hover:shadow-sm focus:outline-none"
                     >
-                        <Search className="h-4 w-4 text-zinc-400 group-hover:text-primary transition-colors" />
+                        <Search className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         <span className="font-medium tracking-wide">Quick Search...</span>
-                        <kbd className="ml-auto pointer-events-none inline-flex h-[22px] select-none items-center gap-1 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-800/80 px-2 font-mono text-[10px] font-bold text-zinc-500 shadow-sm transition-colors group-hover:border-zinc-300 dark:group-hover:border-zinc-700">
+                        <kbd className="ml-auto pointer-events-none inline-flex h-[22px] select-none items-center gap-1 rounded-md border border-sidebar-border bg-card/80 px-2 font-mono text-[10px] font-bold text-muted-foreground shadow-sm group-hover:border-primary/50 transition-colors">
                             <span className="text-xs">⌘</span>K
                         </kbd>
                     </button>
@@ -134,11 +134,9 @@ export default function Header() {
                 {/* Right Action Group */}
                 <div className="flex items-center gap-2 sm:gap-4 ml-auto">
                     {/* Action Pills Container */}
-                    <div className="hidden sm:flex items-center gap-1 p-1 bg-zinc-100/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/50 rounded-full backdrop-blur-sm">
+                    <div className="hidden sm:flex items-center gap-1 p-1 bg-accent/20 border border-sidebar-border/50 rounded-full backdrop-blur-sm">
                         <ModeToggle />
-
-                        <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 mx-1" />
-
+                        <div className="w-px h-5 bg-sidebar-border mx-1" />
                         <NotificationBell />
                     </div>
 
@@ -157,7 +155,7 @@ export default function Header() {
                             </Button>
                         </DropdownMenuTrigger>
 
-                        <DropdownMenuContent className="w-72 mt-2 p-2 border border-zinc-200/60 dark:border-zinc-800/60 shadow-2xl rounded-3xl bg-white/90 dark:bg-zinc-950/90 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60" align="end">
+                        <DropdownMenuContent className="w-72 mt-2 p-2 border border-sidebar-border shadow-2xl rounded-3xl bg-popover/90 backdrop-blur-xl" align="end">
                             <DropdownMenuLabel className="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 mb-2 shadow-sm">
                                 <div className="flex flex-col space-y-1.5">
                                     <div className="flex items-center justify-between">
