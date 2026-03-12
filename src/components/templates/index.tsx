@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 
 import { Hero, About, Stats, Features, Footer } from "./enterprise-sections";
 
-export const ModernTemplate = ({ data, theme, school }: any) => {
+type TemplateProps = { data: any; theme: any; school: any };
+
+export const ModernTemplate: React.FC<TemplateProps> = ({ data, theme, school }) => {
   return (
     <div style={{ fontFamily: theme?.typography?.bodyFont || "Inter" }}>
       <Hero data={data?.hero} theme={theme} />
@@ -15,6 +18,6 @@ export const ModernTemplate = ({ data, theme, school }: any) => {
   );
 };
 
-export const TEMPLATE_MAP: Record<string, any> = {
+export const TEMPLATE_MAP: Record<string, React.FC<TemplateProps>> = {
   "template_modern_01": ModernTemplate,
 };

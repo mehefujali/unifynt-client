@@ -13,7 +13,7 @@ interface IResponse<T> {
   success: boolean;
   message: string;
   data: T;
-  meta?: any;
+  meta?: unknown;
 }
 
 export const InquiryService = {

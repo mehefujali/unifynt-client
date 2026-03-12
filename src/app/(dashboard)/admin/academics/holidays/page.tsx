@@ -10,13 +10,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { AcademicService } from "@/services/academic.service";
-import { PermissionGate } from "@/components/common/permission-gate";
-import { PERMISSIONS } from "@/config/permissions";
+// import { PermissionGate } from "@/components/common/permission-gate";
+// import { PERMISSIONS } from "@/config/permissions";
+
+interface Holiday {
+    id: string;
+    title: string;
+    startDate: string;
+    endDate: string;
+    description?: string;
+}
 
 export default function HolidaysPage() {
     const queryClient = useQueryClient();
@@ -45,6 +53,7 @@ export default function HolidaysPage() {
             setIsAddModalOpen(false);
             setTitle(""); setStartDate(""); setEndDate(""); setDescription("");
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
             toast.error(error?.response?.data?.message || "Failed to add holiday");
         }
@@ -57,6 +66,7 @@ export default function HolidaysPage() {
             queryClient.invalidateQueries({ queryKey: ["holidays"] });
             toast.success("Holiday removed successfully");
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
             toast.error(error?.response?.data?.message || "Failed to delete holiday");
         }
@@ -123,7 +133,7 @@ export default function HolidaysPage() {
                             <h3 className="text-lg font-bold text-slate-900 dark:text-white">No Upcoming Holidays</h3>
                             <p className="mt-1 max-w-sm text-sm font-medium text-slate-500">
                                 There are no declared holidays for the current academic session. 
-                                Click "Declare Holiday" above to add one.
+                                Click &quot;Declare Holiday&quot; above to add one.
                             </p>
                         </div>
                     ) : (
@@ -137,7 +147,7 @@ export default function HolidaysPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {holidays.map((holiday: any) => {
+                                {holidays.map((holiday: Holiday) => {
                                     const start = new Date(holiday.startDate);
                                     const end = new Date(holiday.endDate);
                                     const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -243,7 +253,7 @@ export default function HolidaysPage() {
                         <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg flex gap-3 border border-blue-100 dark:border-blue-900/30">
                             <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
                             <p className="text-xs text-blue-800 dark:text-blue-300 font-medium">
-                                If it's a single day holiday, pick the same date for both Start and End Date.
+                                If it&apos;s a single day holiday, pick the same date for both Start and End Date.
                             </p>
                         </div>
 

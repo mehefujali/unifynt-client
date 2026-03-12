@@ -239,6 +239,7 @@ function FormBuilderPageInner() {
       const f = allFormsData.data.find((x: any) => x.id === editId);
       if (f) {
         initializedRef.current = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTitle(f.title);
         setDescription(f.description || "");
         setStatus(f.status);

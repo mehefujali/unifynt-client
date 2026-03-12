@@ -14,6 +14,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, CheckCircle2, User, Link as LinkIcon, Mail, Phone, GraduationCap, CalendarDays, CreditCard, XCircle } from "lucide-react";
+import Image from "next/image";
+
+interface Application {
+    id: string;
+    applicantName: string;
+    applicantEmail: string;
+    phone?: string;
+    className: string;
+    academicYearName: string;
+    profileImage?: string;
+    status: string;
+    paymentStatus: string;
+    customData?: Record<string, unknown>;
+    classId: string;
+    [key: string]: unknown;
+}
 
 interface Props {
     applicationId: string | null;
@@ -38,24 +54,24 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
     const queryClient = useQueryClient();
     const [sectionId, setSectionId] = useState<string>("");
 
-    const { data: appRes, isLoading } = useQuery({
+    const { data: appRes, isLoading } = useQuery<{ data: Application }>({
         queryKey: ["application", applicationId],
         queryFn: () => AdmissionService.getApplicationById(applicationId!),
         enabled: !!applicationId,
     });
 
-    const application = appRes?.data;
+    const application: Application | undefined = appRes?.data;
 
     const [paymentStatus, setPaymentStatus] = useState<string>("");
 
     useEffect(() => {
-        if (application?.paymentStatus) {
-            // eslint-disable-next-line react-compiler/react-compiler
+        if (application?.paymentStatus && paymentStatus === "") {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPaymentStatus(application.paymentStatus);
         }
-    }, [application]);
+    }, [application, paymentStatus]);
 
-    const { data: sectionsRes, isLoading: loadingSections } = useQuery({
+    const { data: sectionsRes, isLoading: loadingSections } = useQuery<{ data: { id: string; name: string }[] }>({
         queryKey: ["sections", application?.classId],
         queryFn: async () => {
             const res = await axiosInstance.get(`/academic/sections`, { params: { classId: application?.classId } });
@@ -72,6 +88,7 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
             onClose();
             setSectionId("");
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
             toast.error(error?.response?.data?.message || "Failed to approve application");
         }
@@ -95,6 +112,7 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
             queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
             queryClient.invalidateQueries({ queryKey: ["applications"] });
         },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (error: any) => {
             toast.error(error?.response?.data?.message || "Failed to update status");
         }
@@ -111,7 +129,7 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
         updateStatusMutation.mutate({ paymentStatus: newStatus });
     };
 
-    const renderDataFields = (dataObj: any) => {
+    const renderDataFields = (dataObj: Record<string, unknown>) => {
         if (!dataObj) return null;
         
         const validEntries = Object.entries(dataObj).filter(([key, value]) => {
@@ -135,7 +153,7 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
                             {isLink ? (
                                 isImageUrl(strValue) ? (
                                     <a href={strValue} target="_blank" rel="noreferrer" className="block mt-1 hover:opacity-80 transition-opacity">
-                                        <img src={strValue} alt={key} className="h-16 w-16 object-cover rounded-md border shadow-sm" />
+                                        <Image src={strValue} alt={key} width={64} height={64} className="h-16 w-16 object-cover rounded-md border shadow-sm" unoptimized />
                                     </a>
                                 ) : (
                                     <a href={strValue} target="_blank" rel="noreferrer" className="flex items-center gap-2 mt-1 text-sm font-semibold text-primary hover:underline">
@@ -206,7 +224,7 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
                         <div className="space-y-8 pb-10">
                             <div className="space-y-4">
                                 <h3 className="text-sm font-bold text-foreground border-b pb-2">Additional Information</h3>
-                                {renderDataFields(application)}
+                                {renderDataFields(application as Record<string, unknown>)}
                             </div>
 
                             {application.customData && Object.keys(application.customData).length > 0 && (
@@ -245,7 +263,7 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
                                     <SelectValue placeholder={loadingSections ? "Loading sections..." : "Select a section for the student"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {sectionsRes?.data?.map((sec: any) => (
+                                    {sectionsRes?.data?.map((sec: { id: string; name: string }) => (
                                         <SelectItem key={sec.id} value={sec.id}>{sec.name}</SelectItem>
                                     ))}
                                 </SelectContent>
