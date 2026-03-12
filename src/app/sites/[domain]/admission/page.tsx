@@ -20,6 +20,11 @@ export default function AdmissionPage() {
         enabled: !!domain,
     });
 
+    useEffect(() => {
+        console.log("AdmissionPage mounted for domain:", domain);
+        return () => console.log("AdmissionPage unmounted");
+    }, [domain]);
+
     const [liveTheme, setLiveTheme] = useState(DEFAULT_SITE_DATA.theme);
     const [liveContent, setLiveContent] = useState<any>(DEFAULT_SITE_DATA.content);
 

@@ -254,7 +254,7 @@ export default function Sidebar() {
 
             <div
                 className={cn(
-                    "h-16 flex items-center flex-shrink-0 mt-2",
+                    "flex items-center flex-shrink-0 border-b border-sidebar-border/50 h-[72px] sm:h-[80px] transition-all",
                     isCollapsed ? "justify-center px-0" : "px-6"
                 )}
             >

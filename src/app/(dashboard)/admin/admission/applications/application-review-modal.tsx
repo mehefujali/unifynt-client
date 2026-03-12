@@ -184,9 +184,9 @@ export default function ApplicationReviewModal({ applicationId, isOpen, onClose 
                         </SheetTitle>
                         {application && (
                             <Badge variant="outline" className={
-                                application.status === "APPROVED" ? "bg-emerald-50 text-emerald-600 border-emerald-200" :
-                                application.status === "REJECTED" ? "bg-red-50 text-red-600 border-red-200" :
-                                "bg-amber-50 text-amber-600 border-amber-200"
+                                application.status === "APPROVED" ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50" :
+                                application.status === "REJECTED" ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800/50" :
+                                "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800/50"
                             }>
                                 {application.status}
                             </Badge>

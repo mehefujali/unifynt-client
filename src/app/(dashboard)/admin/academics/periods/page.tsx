@@ -3,24 +3,27 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Edit, Clock, BookOpen, Coffee } from "lucide-react";
+import { Plus, Edit, Clock, BookOpen, Coffee, FilterX, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PeriodService } from "@/services/period.service";
 import { PeriodModal } from "./period-modal";
 
-// --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
 import { usePermission } from "@/hooks/use-permission";
+import { cn } from "@/lib/utils";
 
 export default function PeriodsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState<any>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [typeFilter, setTypeFilter] = useState("ALL");
 
-    // Check edit permission for the Actions column
     const { hasPermission } = usePermission();
     const canEdit = hasPermission(PERMISSIONS.ROUTINE_EDIT);
 
@@ -31,116 +34,183 @@ export default function PeriodsPage() {
 
     const periods = serverResponse?.data || [];
 
+    // Local filtering since Periods don't usually have server-side search implemented in the same way as students
+    const filteredPeriods = periods.filter((period: any) => {
+        const matchesSearch = period.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = typeFilter === "ALL" || period.type === typeFilter;
+        return matchesSearch && matchesType;
+    });
+
+    const handleClearFilters = () => {
+        setSearchTerm("");
+        setTypeFilter("ALL");
+    };
+
     return (
-        <div className="p-6 space-y-6 animate-in fade-in zoom-in-[0.99] duration-500 ease-out">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-2xl shadow-sm border border-white/60 dark:border-white/10">
-                        <Clock className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white drop-shadow-sm">Class Timings</h2>
-                        <p className="text-muted-foreground mt-1 text-[14px] font-medium">Manage time slots, periods, and breaks for schedules.</p>
-                    </div>
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        <Clock className="h-6 w-6 text-primary" /> Class Timings
+                    </h2>
+                    <p className="text-muted-foreground text-sm font-medium">Manage time slots, periods, and breaks for schedules.</p>
                 </div>
-                
-                {/* 🔒 Gate for Create Button */}
-                <PermissionGate required={PERMISSIONS.ROUTINE_CREATE}>
-                    <Button 
-                        onClick={() => { setSelectedPeriod(null); setIsModalOpen(true); }} 
-                        className="rounded-xl font-bold px-6 shadow-md shadow-primary/20 transition-all hover:shadow-lg hover:-translate-y-0.5"
-                    >
-                        <Plus className="mr-2 h-4 w-4" /> Add Time Slot
-                    </Button>
-                </PermissionGate>
+                <div className="shrink-0 w-full md:w-auto">
+                    <PermissionGate required={PERMISSIONS.ROUTINE_CREATE}>
+                        <Button 
+                            onClick={() => { setSelectedPeriod(null); setIsModalOpen(true); }} 
+                            className="w-full md:w-auto px-6 font-bold shadow-md"
+                        >
+                            <Plus className="mr-2 h-5 w-5" /> Add Time Slot
+                        </Button>
+                    </PermissionGate>
+                </div>
             </div>
 
-            <Card className="rounded-[24px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden transition-all duration-300">
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <Table>
-                            <TableHeader className="bg-slate-50/50 dark:bg-slate-900/30">
-                                <TableRow className="hover:bg-transparent border-b-black/5 dark:border-b-white/5">
-                                    <TableHead className="pl-6 h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Slot Details</TableHead>
-                                    <TableHead className="h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Type</TableHead>
-                                    <TableHead className="h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider w-[40%]">Applicable Days</TableHead>
-                                    {canEdit && <TableHead className="text-right pr-6 h-12 text-[12px] font-bold text-slate-500 uppercase tracking-wider">Actions</TableHead>}
+            {/* Filters Section */}
+            <div className="flex flex-col xl:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
+                <div className="relative w-full xl:max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search periods..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 h-10 bg-muted/20 border-border"
+                    />
+                </div>
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger className="flex-1 sm:w-[180px] h-10 bg-muted/20 border-border font-semibold">
+                            <SelectValue placeholder="Period Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">All Types</SelectItem>
+                            <SelectItem value="CLASS">Class Sessions</SelectItem>
+                            <SelectItem value="BREAK">Intervals/Breaks</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    {(searchTerm || typeFilter !== "ALL") && (
+                        <Button variant="ghost" onClick={handleClearFilters} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-10 px-4 rounded-lg font-bold text-xs uppercase tracking-widest">
+                            <FilterX className="h-4 w-4 mr-2" /> Reset
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {/* Table Section */}
+            <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden min-h-[400px] flex flex-col">
+                <div className="overflow-x-auto flex-grow">
+                    <Table>
+                        <TableHeader className="bg-muted/30 border-b border-border uppercase">
+                            <TableRow>
+                                <TableHead className="px-6 py-4 font-bold text-foreground">Slot Name & Time</TableHead>
+                                <TableHead className="px-6 py-4 font-bold text-foreground">Type</TableHead>
+                                <TableHead className="px-6 py-4 font-bold text-foreground w-[40%]">Operating Days</TableHead>
+                                {canEdit && <th className="px-6 py-4 font-bold text-foreground text-right pr-8">Actions</th>}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={canEdit ? 4 : 3} className="h-64 text-center">
+                                        <div className="flex flex-col items-center justify-center text-zinc-500">
+                                            <Loader2 className="h-8 w-8 animate-spin mb-4 text-zinc-400" />
+                                            <p className="font-bold uppercase tracking-widest text-xs">Accessing timetable schedules...</p>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={canEdit ? 4 : 3} className="h-48 text-center text-slate-500 font-medium">Loading time slots...</TableCell>
-                                    </TableRow>
-                                ) : periods.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={canEdit ? 4 : 3} className="h-64 text-center">
-                                            <div className="flex flex-col items-center justify-center text-slate-400">
-                                                <div className="p-4 bg-white/50 dark:bg-white/5 rounded-full mb-4 ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
-                                                    <Clock className="h-8 w-8 text-slate-300" />
+                            ) : filteredPeriods.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={canEdit ? 4 : 3} className="h-64 text-center">
+                                        <div className="flex flex-col items-center justify-center gap-4 opacity-40">
+                                            <Clock className="h-16 w-16 mx-auto" />
+                                            <p className="font-bold uppercase tracking-widest text-sm">No Time Slots Found</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredPeriods.map((period: any) => (
+                                    <TableRow key={period.id} className="hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
+                                        <TableCell className="px-6 py-4">
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className="font-bold text-foreground text-base">{period.name}</span>
+                                                <div className="flex items-center gap-1.5 font-bold text-primary text-[11px] bg-primary/5 w-fit px-2 py-0.5 rounded border border-primary/10 tracking-wider">
+                                                    <Clock className="h-3 w-3" /> {period.startTime} - {period.endTime}
                                                 </div>
-                                                <p className="text-[14px] font-bold text-slate-500">No time slots found. Create one to get started.</p>
                                             </div>
                                         </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    periods.map((period: any) => (
-                                        <TableRow key={period.id} className="group hover:bg-white/60 dark:hover:bg-white/5 transition-colors border-b-black/5 dark:border-b-white/5">
-                                            <TableCell className="pl-6 py-4">
-                                                <div className="flex flex-col gap-1.5">
-                                                    <span className="font-extrabold text-[14px] text-slate-900 dark:text-white leading-tight">
-                                                        {period.name}
-                                                    </span>
-                                                    <span className="text-[12px] font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 bg-white/50 dark:bg-black/20 w-fit px-2 py-1 rounded-md border border-black/5 dark:border-white/5 shadow-sm">
-                                                        <Clock className="h-3 w-3 text-primary" /> 
-                                                        {period.startTime} - {period.endTime}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="py-4">
+                                        <TableCell className="px-6 py-4">
+                                            <Badge variant="outline" className={cn(
+                                                "font-bold text-[9px] uppercase tracking-widest px-2.5 py-0.5 border shadow-none",
+                                                period.type === "CLASS" ? "bg-blue-500/10 text-blue-600 border-blue-500/20" : "bg-orange-500/10 text-orange-600 border-orange-500/20"
+                                            )}>
                                                 {period.type === "CLASS" ? (
-                                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 font-black tracking-widest uppercase text-[10px] px-2 py-1 rounded-md">
-                                                        <BookOpen className="mr-1.5 h-3 w-3" /> Class
-                                                    </Badge>
+                                                    <><BookOpen className="mr-1.5 h-3 w-3" /> SESSION</>
                                                 ) : (
-                                                    <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20 font-black tracking-widest uppercase text-[10px] px-2 py-1 rounded-md">
-                                                        <Coffee className="mr-1.5 h-3 w-3" /> Break
-                                                    </Badge>
+                                                    <><Coffee className="mr-1.5 h-3 w-3" /> BREAK</>
                                                 )}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="px-6 py-4">
+                                            <div className="flex flex-wrap gap-1">
+                                                {period.days.map((day: string) => (
+                                                    <span key={day} className="bg-muted px-2 py-0.5 rounded text-[10px] font-bold text-muted-foreground border border-border/50 tracking-tight uppercase">
+                                                        {day.slice(0, 3)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </TableCell>
+                                        
+                                        {canEdit && (
+                                            <TableCell className="px-6 py-4 text-right pr-6">
+                                                <PermissionGate required={PERMISSIONS.ROUTINE_EDIT}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50 rounded-lg group" onClick={() => { setSelectedPeriod(period); setIsModalOpen(true); }}>
+                                                        <Edit className="h-4 w-4 transition-transform group-hover:scale-110" />
+                                                    </Button>
+                                                </PermissionGate>
                                             </TableCell>
-                                            <TableCell className="py-4">
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {period.days.map((day: string) => (
-                                                        <Badge key={day} variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-0 font-bold text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-sm">
-                                                            {day.slice(0, 3)}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            
-                                            {/* Actions Column */}
-                                            {canEdit && (
-                                                <TableCell className="text-right pr-6 py-4">
-                                                    <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                                                        {/* 🔒 Gate for Edit Button */}
-                                                        <PermissionGate required={PERMISSIONS.ROUTINE_EDIT}>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10 transition-colors bg-white/50 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-sm" onClick={() => { setSelectedPeriod(period); setIsModalOpen(true); }}>
-                                                                <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                        </PermissionGate>
-                                                    </div>
-                                                </TableCell>
-                                            )}
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
+                                        )}
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+                
+                {/* Footer simple summary if data exists */}
+                {!isLoading && filteredPeriods.length > 0 && (
+                    <div className="border-t border-border bg-muted/20 p-4">
+                        <span className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
+                            {filteredPeriods.length} Time Slots active in system
+                        </span>
                     </div>
-                </CardContent>
-            </Card>
+                )}
+            </div>
 
             <PeriodModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialData={selectedPeriod} />
         </div>
     );
+}
+
+// Minimal loader component for query states
+function Loader2({ className, ...props }: any) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={cn("animate-spin", className)}
+            {...props}
+        >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+    )
 }

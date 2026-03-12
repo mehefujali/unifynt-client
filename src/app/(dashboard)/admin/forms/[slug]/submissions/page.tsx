@@ -8,7 +8,7 @@ import { format, subDays, parseISO, startOfDay } from "date-fns";
 import { toast } from "sonner";
 import {
   ArrowLeft, FileSpreadsheet, Download, Search, LayoutTemplate, Activity,
-  RefreshCw, FileText, TableProperties, Eye, Unplug, Link2,
+  RefreshCw, FileText, TableProperties, Unplug, Link2,
   ChevronLeft, ChevronRight, BarChart3, TrendingUp, Users, CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell
 } from "recharts";
-import { cn } from "@/lib/utils";
 
-const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6"];
+const COLORS = ["#3b82f6", "#10b981", "#6366f1", "#f59e0b", "#ec4899", "#8b5cf6"];
 
 function AnalyticsView({ submissions, fields }: { submissions: any[]; fields: any[] }) {
   // Build last 14 days chart data
@@ -58,46 +57,46 @@ function AnalyticsView({ submissions, fields }: { submissions: any[]; fields: an
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Responses", value: total, icon: Users, color: "text-violet-500", bg: "bg-violet-50 dark:bg-violet-500/10" },
-          { label: "Last 7 Days",  value: last14.slice(7).reduce((s, d) => s + d.count, 0), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
-          { label: "Today",        value: last14[last14.length - 1]?.count || 0, icon: Activity,   color: "text-blue-500",   bg: "bg-blue-50 dark:bg-blue-500/10" },
-          { label: "Fields",       value: fields.length, icon: CheckCircle2, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-500/10" },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
-            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shrink-0", bg)}>
-              <Icon className={cn("h-5 w-5", color)} />
+          { label: "Total Submissions", value: total, icon: Users },
+          { label: "Last 7 Days",  value: last14.slice(7).reduce((s, d) => s + d.count, 0), icon: TrendingUp },
+          { label: "Submissions Today",   value: last14[last14.length - 1]?.count || 0, icon: Activity },
+          { label: "Total Fields",  value: fields.length, icon: CheckCircle2 },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
+            <div className="h-10 w-10 rounded-lg bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-100 dark:border-zinc-700/50">
+              <Icon className="h-5 w-5 text-zinc-500" />
             </div>
             <div>
               <p className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{value}</p>
-              <p className="text-[10px] text-zinc-500 font-medium">{label}</p>
+              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Responses over time chart */}
-      <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
+      <div className="bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-xl p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-5">
-          <BarChart3 className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">Responses Over Time</h3>
-          <span className="text-xs text-zinc-400 ml-auto">Last 14 days</span>
+          <BarChart3 className="h-4 w-4 text-zinc-400" />
+          <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-500">Submission Trends</h3>
+          <span className="text-[10px] text-zinc-400 ml-auto font-bold uppercase tracking-tighter">Last 14 days cycle</span>
         </div>
         <ResponsiveContainer width="100%" height={180}>
           <AreaChart data={last14}>
             <defs>
               <linearGradient id="responseGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} interval={1} />
-            <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.1} vertical={false} />
+            <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#94a3b8", fontWeight: 700 }} axisLine={false} tickLine={false} interval={1} />
+            <YAxis tick={{ fontSize: 9, fill: "#94a3b8", fontWeight: 700 }} axisLine={false} tickLine={false} allowDecimals={false} />
             <Tooltip
-              contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", padding: "8px 12px" }}
-              labelStyle={{ fontWeight: 700 }}
+              contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "11px", padding: "8px 12px", fontWeight: 700, textTransform: 'uppercase' }}
+              labelStyle={{ fontWeight: 900, marginBottom: '4px' }}
             />
-            <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} fill="url(#responseGrad)" name="Responses" dot={{ r: 3, fill: "#6366f1" }} />
+            <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fill="url(#responseGrad)" name="Acquisitions" dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6, strokeWidth: 0 }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -106,17 +105,17 @@ function AnalyticsView({ submissions, fields }: { submissions: any[]; fields: an
       {fieldSummaries.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {fieldSummaries.map(({ field, data }) => (
-            <div key={field.id} className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm">
-              <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">{field.label}</h4>
+            <div key={field.id} className="bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-xl p-5 shadow-sm">
+              <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">{field.label}</h4>
               {data.length === 0 ? (
-                <p className="text-xs text-zinc-400 text-center py-4">No responses yet</p>
+                <p className="text-xs text-zinc-400 text-center py-4 font-bold uppercase">No responses found</p>
               ) : (
                 <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={data} layout="vertical">
-                    <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#64748b" }} axisLine={false} tickLine={false} width={80} />
-                    <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "11px" }} />
-                    <Bar dataKey="value" radius={[0, 6, 6, 0]} name="Responses">
+                    <XAxis type="number" tick={{ fontSize: 10, fill: "#94a3b8", fontWeight: 700 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "#64748b", fontWeight: 800 }} axisLine={false} tickLine={false} width={80} />
+                    <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "11px", fontWeight: 700 }} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} name="Responses">
                       {data.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                     </Bar>
                   </BarChart>
@@ -157,7 +156,6 @@ export default function FormSubmissionsPage() {
     enabled: !!form?.id,
   });
 
-  // For analytics we need all submissions — fetch up to 1000
   const { data: allSubsResponse } = useQuery({
     queryKey: ["form-submissions-all", form?.id],
     queryFn: () => CustomFormService.getFormSubmissions(form?.id, { page: 1, limit: 1000 }),
@@ -177,7 +175,7 @@ export default function FormSubmissionsPage() {
   const syncSheetMutation = useMutation({
     mutationFn: () => CustomFormService.updateForm(form.id, { settings: { ...form.settings, syncToGoogleSheet: true } }),
     onSuccess: (response) => {
-      toast.success("Google Sheet connected!");
+      toast.success("Google Sheet linked!");
       queryClient.invalidateQueries({ queryKey: ["form", slug] });
       if (response?.data?.googleSheetUrl) window.open(response.data.googleSheetUrl, "_blank");
     },
@@ -186,7 +184,7 @@ export default function FormSubmissionsPage() {
   const disconnectSheetMutation = useMutation({
     mutationFn: () => CustomFormService.updateForm(form.id, { settings: { ...form.settings, syncToGoogleSheet: false } }),
     onSuccess: () => {
-      toast.success("Google Sheet disconnected.");
+      toast.success("Sync mapping removed.");
       queryClient.invalidateQueries({ queryKey: ["form", slug] });
       setIsDisconnectOpen(false);
     },
@@ -194,7 +192,7 @@ export default function FormSubmissionsPage() {
 
   const reconnectSheetMutation = useMutation({
     mutationFn: () => CustomFormService.updateForm(form.id, { settings: { ...form.settings, syncToGoogleSheet: true } }),
-    onSuccess: () => { toast.success("Reconnected."); queryClient.invalidateQueries({ queryKey: ["form", slug] }); },
+    onSuccess: () => { toast.success("Refreshed sync mapping."); queryClient.invalidateQueries({ queryKey: ["form", slug] }); },
   });
 
   const getExportData = () => {
@@ -211,50 +209,50 @@ export default function FormSubmissionsPage() {
   };
 
   const exportToCSV = () => {
-    if (!submissions.length) return toast.error("No data to export");
+    if (!submissions.length) return toast.error("No submissions available");
     const data = getExportData();
     const csv = data.map((row) => row.map((c: any) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    link.download = `${form.title}-Responses.csv`;
+    link.download = `${form.title}-Submissions.csv`;
     link.click();
   };
 
   const exportToExcel = () => {
-    if (!submissions.length) return toast.error("No data to export");
+    if (!submissions.length) return toast.error("No submissions available");
     const data = getExportData();
     const tsv = data.map((row) => row.join("\t")).join("\n");
     const link = document.createElement("a");
     link.href = URL.createObjectURL(new Blob([tsv], { type: "application/vnd.ms-excel;" }));
-    link.download = `${form.title}-Responses.xls`;
+    link.download = `${form.title}-Submissions.xls`;
     link.click();
   };
 
   if (isFormLoading) return (
     <div className="p-8 space-y-4">
-      <Skeleton className="h-12 w-1/3" />
+      <Skeleton className="h-12 w-1/3 rounded-xl" />
       <Skeleton className="h-[400px] w-full rounded-2xl" />
     </div>
   );
-  if (!form) return <div className="p-10 text-center text-zinc-500 font-medium">Form not found or inactive.</div>;
+  if (!form) return <div className="p-10 text-center text-zinc-400 font-black uppercase tracking-widest text-sm">Form Not Found.</div>;
 
   return (
     <div className="p-4 md:p-8 space-y-6 min-h-screen">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => router.push("/admin/forms")} className="h-9 w-9 rounded-xl border-zinc-200 dark:border-zinc-800">
+          <Button variant="outline" size="icon" onClick={() => router.push("/admin/forms")} className="h-9 w-9 rounded-xl border-zinc-200 dark:border-zinc-800 transition-all">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{form.title}</h2>
-              <span className="bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider">
-                {meta?.total || 0} responses
+              <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">{form.title}</h2>
+              <span className="bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">
+                {meta?.total || 0} Submissions
               </span>
             </div>
-            <p className="text-sm text-zinc-500 mt-0.5 flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5" /> Collecting responses
+            <p className="text-[10px] text-zinc-400 mt-0.5 flex items-center gap-1.5 font-bold uppercase tracking-widest">
+              <Activity className="h-3 w-3" /> Collecting Responses
             </p>
           </div>
         </div>
@@ -262,35 +260,35 @@ export default function FormSubmissionsPage() {
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {form.googleSheetUrl ? (
             <>
-              <a href={form.googleSheetUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 transition-colors">
-                <FileSpreadsheet className="h-3.5 w-3.5" /> View Sheet
+              <a href={form.googleSheetUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-4 h-9 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400 transition-all">
+                <FileSpreadsheet className="h-4 w-4" /> Google Sheet
               </a>
               {form.settings?.syncToGoogleSheet ? (
-                <Button onClick={() => setIsDisconnectOpen(true)} variant="outline" className="h-9 px-4 rounded-xl text-xs font-semibold border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/10">
+                <Button onClick={() => setIsDisconnectOpen(true)} variant="outline" className="h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-500/20 dark:text-rose-400 dark:hover:bg-rose-500/10">
                   <Unplug className="h-3.5 w-3.5 mr-2" /> Disconnect
                 </Button>
               ) : (
-                <Button onClick={() => reconnectSheetMutation.mutate()} disabled={reconnectSheetMutation.isPending} variant="outline" className="h-9 px-4 rounded-xl text-xs font-semibold border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-400">
-                  {reconnectSheetMutation.isPending ? <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Link2 className="h-3.5 w-3.5 mr-2" />} Reconnect
+                <Button onClick={() => reconnectSheetMutation.mutate()} disabled={reconnectSheetMutation.isPending} variant="outline" className="h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-500/20 dark:text-emerald-400">
+                  {reconnectSheetMutation.isPending ? <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Link2 className="h-3.5 w-3.5 mr-2" />} Restore
                 </Button>
               )}
             </>
           ) : (
-            <Button onClick={() => isGoogleConnected ? syncSheetMutation.mutate() : connectGoogleMutation.mutate()} disabled={syncSheetMutation.isPending || connectGoogleMutation.isPending} variant="outline" className="h-9 px-4 rounded-xl text-xs font-semibold border-zinc-200 dark:border-zinc-800 shadow-sm">
-              {(syncSheetMutation.isPending || connectGoogleMutation.isPending) ? <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin text-emerald-500" /> : <FileSpreadsheet className="h-3.5 w-3.5 mr-2 text-emerald-500" />}
-              {syncSheetMutation.isPending ? "Connecting..." : "Connect Sheet"}
+            <Button onClick={() => isGoogleConnected ? syncSheetMutation.mutate() : connectGoogleMutation.mutate()} disabled={syncSheetMutation.isPending || connectGoogleMutation.isPending} variant="outline" className="h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900">
+              {(syncSheetMutation.isPending || connectGoogleMutation.isPending) ? <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin text-zinc-400" /> : <Link2 className="h-3.5 w-3.5 mr-2 text-zinc-400" />}
+              {syncSheetMutation.isPending ? "Connecting..." : "Connect to Sheet"}
             </Button>
           )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="h-9 px-4 rounded-xl text-xs font-semibold shadow-sm gap-2">
-                <Download className="h-3.5 w-3.5" /> Export
+              <Button className="h-9 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all gap-2">
+                <Download className="h-3.5 w-3.5" /> Export Data
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 rounded-xl border-zinc-200 dark:border-zinc-800 shadow-xl">
-              <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer text-xs font-medium py-2 gap-2"><FileText className="h-3.5 w-3.5 text-blue-500" /> Export as CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer text-xs font-medium py-2 gap-2"><TableProperties className="h-3.5 w-3.5 text-emerald-500" /> Export as Excel</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-48 rounded-xl border-zinc-200 dark:border-zinc-800 shadow-xl p-1">
+              <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer text-[10px] font-black uppercase tracking-widest py-2.5 gap-3"><FileText className="h-4 w-4 text-zinc-400" /> Export CSV</DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer text-[10px] font-black uppercase tracking-widest py-2.5 gap-3"><TableProperties className="h-4 w-4 text-emerald-500" /> Export Excel</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -298,12 +296,12 @@ export default function FormSubmissionsPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="analytics" className="space-y-0">
-        <TabsList className="bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 gap-1">
-          <TabsTrigger value="analytics" className="rounded-lg px-5 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950 data-[state=active]:shadow-sm gap-2">
+        <TabsList className="bg-white dark:bg-sidebar rounded-xl p-1 border border-zinc-200 dark:border-sidebar-border gap-1">
+          <TabsTrigger value="analytics" className="rounded-lg px-6 h-9 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm data-[state=active]:border border-transparent data-[state=active]:border-zinc-200 dark:data-[state=active]:border-zinc-700 gap-2 transition-all">
             <BarChart3 className="h-3.5 w-3.5" /> Analytics
           </TabsTrigger>
-          <TabsTrigger value="responses" className="rounded-lg px-5 text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-950 data-[state=active]:shadow-sm gap-2">
-            <TableProperties className="h-3.5 w-3.5" /> Responses
+          <TabsTrigger value="responses" className="rounded-lg px-6 h-9 text-[10px] font-black uppercase tracking-widest data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm data-[state=active]:border border-transparent data-[state=active]:border-zinc-200 dark:data-[state=active]:border-zinc-700 gap-2 transition-all">
+            <TableProperties className="h-3.5 w-3.5" /> Raw Data
           </TabsTrigger>
         </TabsList>
 
@@ -312,54 +310,57 @@ export default function FormSubmissionsPage() {
         </TabsContent>
 
         <TabsContent value="responses" className="mt-4">
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-900/20">
-              <div className="relative w-full sm:max-w-sm">
+          <div className="bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
+            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/50 bg-zinc-50/50 dark:bg-zinc-900/20 flex items-center justify-between">
+              <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                <Input placeholder="Search responses..." className="pl-9 h-10 rounded-xl text-sm bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-sm" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+                <Input placeholder="Filter submissions..." className="pl-9 h-10 rounded-lg text-xs bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 font-medium" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+              </div>
+              <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-50 dark:bg-zinc-800 px-3 py-1.5 rounded-lg border border-zinc-100 dark:border-zinc-700">
+                Found {meta?.total || 0} Submissions
               </div>
             </div>
 
             <div className="flex-1 overflow-x-auto">
               <Table>
-                <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
-                  <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
-                    <TableHead className="h-11 px-5 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Date</TableHead>
+                <TableHeader className="bg-zinc-50/50 dark:bg-sidebar/30 border-b border-zinc-200 dark:border-sidebar-border">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="h-12 px-6 text-[10px] font-black uppercase tracking-widest text-zinc-500">Submission Date</TableHead>
                     {fields.slice(0, 4).map((f) => (
-                      <TableHead key={f.id} className="h-11 px-4 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider truncate max-w-[140px]">{f.label}</TableHead>
+                      <TableHead key={f.id} className="h-12 px-5 text-[10px] font-black uppercase tracking-widest text-zinc-500 truncate max-w-[140px]">{f.label}</TableHead>
                     ))}
-                    {fields.length > 4 && <TableHead className="h-11 px-4 text-xs font-bold text-zinc-500">More</TableHead>}
-                    <TableHead className="h-11 px-5 text-right text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Action</TableHead>
+                    {fields.length > 4 && <TableHead className="h-12 px-5 text-[10px] font-black uppercase tracking-widest text-zinc-400">Extra</TableHead>}
+                    <TableHead className="h-12 px-6 text-right text-[10px] font-black uppercase tracking-widest text-zinc-500">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isSubmissionsLoading ? (
-                    <TableRow><TableCell colSpan={fields.length + 2} className="h-48 text-center"><div className="flex items-center justify-center gap-2 text-zinc-400"><RefreshCw className="h-4 w-4 animate-spin" /><span className="text-sm">Loading responses...</span></div></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={fields.length + 2} className="h-64 text-center"><div className="flex flex-col items-center justify-center gap-2 text-zinc-400 animate-pulse"><RefreshCw className="h-5 w-5 animate-spin" /><p className="text-[10px] font-black uppercase tracking-widest">Loading Data...</p></div></TableCell></TableRow>
                   ) : submissions.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={fields.length + 2} className="h-64 text-center">
-                        <div className="flex flex-col items-center gap-2 opacity-50"><LayoutTemplate className="h-8 w-8 text-zinc-400" /><p className="text-sm font-medium text-zinc-500">No responses yet</p></div>
+                        <div className="flex flex-col items-center gap-2 opacity-50"><LayoutTemplate className="h-8 w-8 text-zinc-300" /><p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">No Submissions</p></div>
                       </TableCell>
                     </TableRow>
                   ) : submissions.map((sub: any) => (
-                    <TableRow key={sub.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors border-0">
-                      <TableCell className="px-5 py-3.5 text-xs font-medium text-zinc-500">{format(new Date(sub.createdAt), "dd MMM yyyy, hh:mm a")}</TableCell>
+                    <TableRow key={sub.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-all border-b border-zinc-100 dark:border-zinc-800/50 last:border-0">
+                      <TableCell className="px-6 py-4 text-[11px] font-bold text-zinc-400 uppercase">{format(new Date(sub.createdAt), "dd MMM yyyy, hh:mm a")}</TableCell>
                       {fields.slice(0, 4).map((f) => {
                         const answer = sub.answers[f.id];
                         return (
-                          <TableCell key={f.id} className="px-4 py-3.5 max-w-[140px] truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                          <TableCell key={f.id} className="px-5 py-4 max-w-[140px] truncate text-sm font-bold text-zinc-800 dark:text-zinc-200">
                             {f.type === "FILE" && answer ? (
-                              <a href={answer} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><FileText className="h-3 w-3" /> View</a>
+                              <a href={answer} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-zinc-600 dark:text-zinc-400 hover:text-primary transition-colors"><FileText className="h-3 w-3" /> Artifact</a>
                             ) : (
-                              Array.isArray(answer) ? answer.join(", ") : (answer || <span className="text-zinc-400 italic text-xs">—</span>)
+                              Array.isArray(answer) ? answer.join(", ") : (answer || <span className="text-zinc-300 italic text-[10px] uppercase font-black tracking-widest">N/A</span>)
                             )}
                           </TableCell>
                         );
                       })}
-                      {fields.length > 4 && <TableCell className="px-4 text-zinc-400 text-xs">+{fields.length - 4} more</TableCell>}
-                      <TableCell className="px-5 py-3.5 text-right">
-                        <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(sub)} className="h-7 rounded-lg text-xs font-medium border-zinc-200 dark:border-zinc-800 gap-1">
-                          <Eye className="h-3 w-3" /> View
+                      {fields.length > 4 && <TableCell className="px-5 text-zinc-300 text-[10px] font-black uppercase">+{fields.length - 4}</TableCell>}
+                      <TableCell className="px-6 py-4 text-right">
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedSubmission(sub)} className="h-8 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
+                          View Details
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -369,24 +370,28 @@ export default function FormSubmissionsPage() {
             </div>
 
             {meta && meta.total > 0 && (
-              <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-900/20 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-500">Rows:</span>
+              <div className="p-3 border-t border-zinc-200 dark:border-sidebar-border bg-zinc-50/30 dark:bg-sidebar/40 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Density:</span>
                   <Select value={`${limit}`} onValueChange={(v) => { setLimit(Number(v)); setCurrentPage(1); }}>
-                    <SelectTrigger className="h-7 w-16 rounded-lg text-xs border-zinc-200 dark:border-zinc-800"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {["10", "20", "50"].map((v) => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
+                    <SelectTrigger className="h-8 w-20 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white dark:bg-sidebar border-zinc-200 dark:border-sidebar-border outline-none"><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl border-zinc-200 dark:border-zinc-700 p-1">
+                      {["10", "20", "50", "100"].map((v) => <SelectItem key={v} value={v} className="text-[10px] font-black uppercase py-2 cursor-pointer">{v} Rows</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <span className="text-xs text-zinc-500">of <strong className="text-zinc-800 dark:text-zinc-200">{meta.total}</strong></span>
+                  <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2 py-1 rounded-md bg-zinc-100 dark:bg-zinc-800">
+                    Total: <strong className="text-zinc-900 dark:text-zinc-100">{meta.total}</strong>
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-7 w-7 p-0 rounded-lg border-zinc-200 dark:border-zinc-800">
-                    <ChevronLeft className="h-3.5 w-3.5" />
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="h-8 w-8 p-0 rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                    <ChevronLeft className="h-4 w-4 text-zinc-500" />
                   </Button>
-                  <span className="text-xs font-medium text-zinc-500 px-1">{currentPage} / {meta.totalPage || 1}</span>
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(meta.totalPage || 1, p + 1))} disabled={currentPage === (meta.totalPage || 1)} className="h-7 w-7 p-0 rounded-lg border-zinc-200 dark:border-zinc-800">
-                    <ChevronRight className="h-3.5 w-3.5" />
+                  <div className="px-3 h-8 flex items-center justify-center text-[10px] font-black text-zinc-500 bg-white dark:bg-sidebar rounded-lg border border-zinc-200 dark:border-sidebar-border uppercase tracking-widest min-w-[80px]">
+                    Page {currentPage} / {meta.totalPage || 1}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(meta.totalPage || 1, p + 1))} disabled={currentPage === (meta.totalPage || 1)} className="h-8 w-8 p-0 rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                    <ChevronRight className="h-4 w-4 text-zinc-500" />
                   </Button>
                 </div>
               </div>
@@ -397,49 +402,52 @@ export default function FormSubmissionsPage() {
 
       {/* Submission Detail Dialog */}
       <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-        <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col p-0 rounded-2xl bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-2xl">
-          <DialogHeader className="p-5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 shrink-0">
-            <DialogTitle className="text-base font-bold text-zinc-900 dark:text-zinc-100">Response Details</DialogTitle>
-            <p className="text-xs font-medium text-zinc-500">
-              Submitted {selectedSubmission && format(new Date(selectedSubmission.createdAt), "dd MMMM yyyy 'at' hh:mm a")}
+        <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-hidden flex flex-col p-0 rounded-2xl bg-white dark:bg-sidebar border-zinc-200 dark:border-sidebar-border shadow-2xl">
+          <DialogHeader className="p-6 border-b border-zinc-200 dark:border-sidebar-border bg-zinc-50/50 dark:bg-sidebar/50 shrink-0">
+            <DialogTitle className="text-[14px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100">Submission Details</DialogTitle>
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">
+              Captured {selectedSubmission && format(new Date(selectedSubmission.createdAt), "dd MMMM yyyy 'at' hh:mm a")}
             </p>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
             {fields.map((field) => {
               const answer = selectedSubmission?.answers?.[field.id];
               const display = Array.isArray(answer) ? answer.join(", ") : (answer || null);
               return (
-                <div key={field.id} className="space-y-1">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{field.label}</p>
+                <div key={field.id} className="space-y-2">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 pl-1">{field.label}</p>
                   {field.type === "FILE" && answer ? (
-                    <a href={answer} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-xs font-medium">
-                      <FileText className="h-3.5 w-3.5" /> View File
+                    <a href={answer} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-background text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-[11px] font-black uppercase tracking-widest transition-all">
+                      <FileText className="h-4 w-4" /> View File
                     </a>
                   ) : display ? (
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-zinc-900 rounded-xl px-4 py-3 whitespace-pre-wrap">{display}</p>
+                    <div className="text-[13px] font-bold text-zinc-900 dark:text-zinc-100 bg-zinc-50 dark:bg-background/60 rounded-xl px-5 py-4 border border-zinc-100 dark:border-sidebar-border leading-relaxed break-words whitespace-pre-wrap">{display}</div>
                   ) : (
-                    <p className="text-sm text-zinc-400 italic">—</p>
+                    <div className="text-[10px] font-black text-zinc-300 uppercase italic tracking-widest pl-1">— No Data —</div>
                   )}
                 </div>
               );
             })}
+          </div>
+          <div className="p-4 border-t border-zinc-200 dark:border-sidebar-border bg-zinc-50/30 dark:bg-sidebar/40 text-center">
+             <p className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter italic">Data Privacy & Security Verified</p>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Disconnect Dialog */}
       <Dialog open={isDisconnectOpen} onOpenChange={setIsDisconnectOpen}>
-        <DialogContent className="sm:max-w-[380px] rounded-2xl p-0 overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-2xl">
-          <div className="p-6 text-center">
-            <div className="mx-auto h-12 w-12 bg-rose-50 dark:bg-rose-500/10 text-rose-600 flex items-center justify-center rounded-full mb-4">
-              <Unplug className="h-6 w-6" />
+        <DialogContent className="sm:max-w-[400px] rounded-2xl p-0 overflow-hidden bg-white dark:bg-sidebar border-zinc-200 dark:border-sidebar-border shadow-2xl">
+          <div className="p-8 text-center bg-zinc-50/50 dark:bg-sidebar/10">
+            <div className="mx-auto h-14 w-14 bg-rose-50 dark:bg-rose-500/10 text-rose-600 flex items-center justify-center rounded-2xl mb-5 border border-rose-100 dark:border-rose-500/20">
+              <Unplug className="h-7 w-7" />
             </div>
-            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-2">Disconnect Google Sheet?</h2>
-            <p className="text-xs text-zinc-500">New submissions will no longer sync. You can reconnect anytime.</p>
+            <h2 className="text-base font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 mb-2">Disconnect Google Sheet?</h2>
+            <p className="text-[11px] font-bold text-zinc-500 leading-relaxed uppercase tracking-tight">Access to sync data to this Google Sheet will be stopped.</p>
           </div>
-          <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 flex gap-3">
-            <Button variant="outline" onClick={() => setIsDisconnectOpen(false)} className="flex-1 h-9 rounded-xl text-xs font-semibold">Cancel</Button>
-            <Button variant="destructive" onClick={() => disconnectSheetMutation.mutate()} disabled={disconnectSheetMutation.isPending} className="flex-1 h-9 rounded-xl text-xs font-semibold">
+          <div className="p-4 bg-white dark:bg-sidebar border-t border-zinc-200 dark:border-sidebar-border flex gap-3">
+            <Button variant="ghost" onClick={() => setIsDisconnectOpen(false)} className="flex-1 h-11 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900">Cancel</Button>
+            <Button variant="destructive" onClick={() => disconnectSheetMutation.mutate()} disabled={disconnectSheetMutation.isPending} className="flex-1 h-11 rounded-xl text-[11px] font-black uppercase tracking-widest bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/20">
               {disconnectSheetMutation.isPending ? "Disconnecting..." : "Disconnect"}
             </Button>
           </div>

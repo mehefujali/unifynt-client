@@ -6,6 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AdmissionService } from "@/services/admission.service";
+import { loadRazorpayScript } from "@/lib/load-razorpay";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,15 +20,12 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
     const [isSubmitted, setIsSubmitted] = useState(false);
 
     useEffect(() => {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.async = true;
-        document.body.appendChild(script);
-        return () => {
-            if (document.body.contains(script)) {
-                document.body.removeChild(script);
-            }
-        };
+        console.log("DynamicAdmissionForm mounted");
+        return () => console.log("DynamicAdmissionForm unmounted");
+    }, []);
+
+    useEffect(() => {
+        loadRazorpayScript();
     }, []);
 
     const { data: publicDataRes, isLoading } = useQuery({
@@ -147,7 +145,7 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
     let parsedFields: any[] = [];
     try {
         parsedFields = typeof config.fields === "string" ? JSON.parse(config.fields) : config.fields || [];
-    } catch (e) {
+    } catch {
         parsedFields = [];
     }
 

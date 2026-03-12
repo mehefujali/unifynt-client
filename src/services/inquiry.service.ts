@@ -3,7 +3,7 @@ import api from "@/lib/axios";
 export interface IInquiry {
   id: string;
   name: string;
-  email: string;
+  contact: string;
   message: string;
   schoolId: string;
   createdAt: string;
@@ -17,7 +17,7 @@ interface IResponse<T> {
 }
 
 export const InquiryService = {
-  submitInquiry: async (schoolId: string, data: { name: string; email: string; message: string }) => {
+  submitInquiry: async (schoolId: string, data: { name: string; contact: string; message: string }) => {
     const res = await api.post<IResponse<IInquiry>>(`/inquiries/public/${schoolId}`, data);
     return res.data;
   },

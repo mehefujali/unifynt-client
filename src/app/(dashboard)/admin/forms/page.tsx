@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   Plus, LayoutTemplate, ExternalLink, Copy, CheckCircle2, Search,
   FileSpreadsheet, ListChecks, MoreHorizontal, Pencil, Trash2,
-  BarChart3, FileText, Globe, Lock, Clock, ArrowRight, Loader2
+  BarChart3, FileText, Globe, Clock, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const STATUS_TABS = [
   { label: "All", value: "all" },
@@ -28,12 +36,6 @@ const STATUS_TABS = [
   { label: "Draft", value: "DRAFT" },
   { label: "Closed", value: "CLOSED" },
 ];
-
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any; bg: string }> = {
-  PUBLISHED: { label: "Published", color: "text-emerald-600 dark:text-emerald-400", icon: Globe, bg: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20" },
-  DRAFT:     { label: "Draft",     color: "text-amber-600 dark:text-amber-400",   icon: Clock, bg: "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20" },
-  CLOSED:    { label: "Closed",    color: "text-zinc-500 dark:text-zinc-400",     icon: Lock,  bg: "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700" },
-};
 
 export default function FormsPage() {
   const router = useRouter();
@@ -93,65 +95,62 @@ export default function FormsPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-8 min-h-screen">
-      {/* ── Header ── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      {/* --- Header --- */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <LayoutTemplate className="h-6 w-6 text-primary" />
-            Form Builder Studio
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">Create, deploy, and analyze forms and surveys.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">Form Management</h2>
+          <p className="text-sm text-zinc-500 mt-1">Create and manage custom forms for data collection and surveys.</p>
         </div>
         <Button
           onClick={() => router.push("/admin/forms/builder")}
-          className="h-10 px-5 rounded-xl font-semibold text-sm shadow-md gap-2 bg-primary hover:bg-primary/90 transition-all"
+          className="h-10 px-5 rounded-xl font-bold text-sm shadow-md bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all gap-2"
         >
-          <Plus className="h-4 w-4" /> New Form
+          <Plus className="h-4 w-4" /> Build New Form
         </Button>
       </div>
 
-      {/* ── Stats Row ── */}
+      {/* --- Stats Row --- */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Forms",  value: stats.total,     icon: FileText,  color: "text-violet-500",  bg: "bg-violet-50 dark:bg-violet-500/10" },
-          { label: "Published",    value: stats.published, icon: Globe,     color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
-          { label: "Drafts",       value: stats.drafts,    icon: Clock,     color: "text-amber-500",   bg: "bg-amber-50 dark:bg-amber-500/10" },
-          { label: "Responses",    value: stats.responses, icon: BarChart3, color: "text-blue-500",    bg: "bg-blue-50 dark:bg-blue-500/10" },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} className="relative overflow-hidden bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm flex items-center gap-4">
-            <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0", bg)}>
-              <Icon className={cn("h-6 w-6", color)} />
+          { label: "Total Forms",   value: stats.total,     icon: FileText },
+          { label: "Published",    value: stats.published, icon: Globe },
+          { label: "Drafts",       value: stats.drafts,    icon: Clock },
+          { label: "Submissions",   value: stats.responses, icon: BarChart3 },
+        ].map(({ label, value, icon: Icon }) => (
+          <div key={label} className="bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-xl p-5 shadow-sm flex items-center gap-4">
+            <div className="h-10 w-10 rounded-lg bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-zinc-100 dark:border-zinc-700/50">
+              <Icon className="h-5 w-5 text-zinc-500" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{value}</p>
-              <p className="text-xs text-zinc-500 font-medium">{label}</p>
+              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 leading-none">{value}</p>
+              <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-1.5">{label}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ── Filter Bar ── */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative w-full sm:max-w-sm">
+      {/* --- Filters Table --- */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-white dark:bg-sidebar p-4 rounded-xl border border-zinc-200 dark:border-sidebar-border shadow-sm">
+        <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
           <Input
-            placeholder="Search forms..."
+            placeholder="Search by title or slug..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-10 rounded-xl bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 shadow-sm"
+            className="pl-9 bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 h-10 rounded-lg text-sm font-medium"
           />
         </div>
-        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 flex-shrink-0">
+        <div className="flex items-center gap-1.5 bg-zinc-50 dark:bg-background/40 p-1 rounded-lg border border-zinc-200 dark:border-sidebar-border">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setStatusFilter(tab.value)}
               className={cn(
-                "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                "px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all",
                 statusFilter === tab.value
-                  ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-sm"
-                  : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700"
+                  : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
               )}
             >
               {tab.label}
@@ -160,127 +159,138 @@ export default function FormsPage() {
         </div>
       </div>
 
-      {/* ── Forms Grid ── */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-48 bg-zinc-100 dark:bg-zinc-900 animate-pulse rounded-2xl" />
-          ))}
-        </div>
-      ) : forms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="h-20 w-20 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-5">
-            <LayoutTemplate className="h-10 w-10 text-zinc-300 dark:text-zinc-700" />
-          </div>
-          <h3 className="text-lg font-bold text-zinc-700 dark:text-zinc-300 mb-1">No forms yet</h3>
-          <p className="text-sm text-zinc-400 max-w-xs mb-6">Create your first form or survey to start collecting responses.</p>
-          <Button onClick={() => router.push("/admin/forms/builder")} className="rounded-xl gap-2">
-            <Plus className="h-4 w-4" /> Create your first form
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {forms.map((form: any) => {
-            const cfg = STATUS_CONFIG[form.status] || STATUS_CONFIG.DRAFT;
-            const StatusIcon = cfg.icon;
-            const responseCount = form._count?.submissions || 0;
-            return (
-              <div
-                key={form.id}
-                className="group bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 flex flex-col overflow-hidden"
-              >
-                {/* card top accent by status */}
-                <div className={cn("h-1 w-full", form.status === "PUBLISHED" ? "bg-emerald-400" : form.status === "DRAFT" ? "bg-amber-400" : "bg-zinc-300")} />
-
-                <div className="p-5 flex flex-col flex-1 gap-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate group-hover:text-primary transition-colors">{form.title}</h3>
-                      <p className="text-xs text-zinc-400 font-mono mt-0.5 truncate">/{form.slug}</p>
+      {/* --- Data Table --- */}
+      <div className="bg-white dark:bg-sidebar rounded-xl border border-zinc-200 dark:border-sidebar-border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-zinc-50/50 dark:bg-sidebar/30 border-b border-zinc-200 dark:border-sidebar-border">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Form Name</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500">Status</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-center">Submissions</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right">Google Sheet</TableHead>
+                <TableHead className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-zinc-500 text-right"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center text-zinc-500">
+                      <Loader2 className="h-8 w-8 animate-spin mb-4 text-zinc-400" />
+                      <p className="text-sm font-bold uppercase tracking-widest">Loading Forms...</p>
                     </div>
-                    <span className={cn("inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border", cfg.bg, cfg.color)}>
-                      <StatusIcon className="h-2.5 w-2.5" /> {cfg.label}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <BarChart3 className="h-3.5 w-3.5 text-blue-400" />
-                      {responseCount} response{responseCount !== 1 ? "s" : ""}
-                    </span>
-                    {form.googleSheetUrl && (
-                      <span className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-                        <FileSpreadsheet className="h-3.5 w-3.5" /> Sheets sync
-                      </span>
-                    )}
-                    <span className="ml-auto text-zinc-400">{formatDistanceToNow(new Date(form.createdAt), { addSuffix: true })}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-800/60">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 h-8 rounded-lg text-xs font-semibold border-zinc-200 dark:border-zinc-800 gap-1.5"
-                      onClick={() => router.push(`/admin/forms/${form.slug}/submissions`)}
-                    >
-                      <ListChecks className="h-3.5 w-3.5" /> Responses
-                      {responseCount > 0 && (
-                        <Badge className="ml-0.5 h-4 px-1 text-[9px] bg-primary/10 text-primary border-0 font-bold">{responseCount}</Badge>
-                      )}
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 px-3 rounded-lg text-xs font-semibold border-zinc-200 dark:border-zinc-800 gap-1.5"
-                      onClick={() => router.push(`/admin/forms/builder?id=${form.id}`)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg border-zinc-200 dark:border-zinc-800">
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 rounded-xl border-zinc-200 dark:border-zinc-800 shadow-xl">
-                        <DropdownMenuItem className="text-xs font-medium gap-2 cursor-pointer py-2" onClick={() => copyLink(form.slug, form.id)}>
-                          {copiedId === form.id ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                          {copiedId === form.id ? "Copied!" : "Copy Public Link"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-xs font-medium gap-2 cursor-pointer py-2" onClick={() => window.open(publicUrl(form.slug), "_blank")}>
-                          <ExternalLink className="h-3.5 w-3.5" /> Open Public Form
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-xs font-medium gap-2 cursor-pointer py-2 text-rose-600 dark:text-rose-400 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-500/10"
-                          onClick={() => handleDelete(form.id)}
-                          disabled={deletingId === form.id}
-                        >
-                          {deletingId === form.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                          Delete Form
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {form.status === "PUBLISHED" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-3 rounded-lg text-xs font-semibold text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10 gap-1"
-                        onClick={() => window.open(publicUrl(form.slug), "_blank")}
-                      >
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                  </TableCell>
+                </TableRow>
+              ) : forms.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center text-zinc-400 font-bold uppercase tracking-widest text-xs">
+                    No forms found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                forms.map((form: any) => {
+                  const responseCount = form._count?.submissions || 0;
+                  return (
+                    <TableRow key={form.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20 transition-all group border-b border-zinc-100 dark:border-zinc-800/50 last:border-0">
+                      <TableCell className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center shrink-0">
+                            <LayoutTemplate className="h-5 w-5 text-white dark:text-zinc-900" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-zinc-950 dark:text-zinc-50 truncate group-hover:text-primary transition-colors cursor-pointer" onClick={() => router.push(`/admin/forms/builder?id=${form.id}`)}>
+                              {form.title}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 font-mono mt-0.5 truncate uppercase">/{form.slug}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge variant="outline" className={cn("font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-none", 
+                          form.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" :
+                          form.status === "DRAFT" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                          "bg-zinc-500/10 text-zinc-600 border-zinc-500/20"
+                        )}>
+                          {form.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="text-lg font-black text-zinc-900 dark:text-zinc-100">{responseCount}</span>
+                          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">Submissions</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        <div className="flex flex-col items-end gap-1">
+                          {form.googleSheetUrl ? (
+                            <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                              <FileSpreadsheet className="h-3 w-3" /> Linked
+                            </div>
+                          ) : (
+                            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Not Linked</div>
+                          )}
+                          <span className="text-[9px] font-bold text-zinc-400/60 uppercase">{formatDistanceToNow(new Date(form.createdAt), { addSuffix: true })}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                           <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 px-4 rounded-lg text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                            onClick={() => router.push(`/admin/forms/${form.slug}/submissions`)}
+                          >
+                            <ListChecks className="h-3.5 w-3.5 mr-2" /> Submissions
+                          </Button>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-lg">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 rounded-xl border-zinc-200 dark:border-zinc-800 shadow-xl p-1">
+                              <DropdownMenuItem className="text-[11px] font-bold uppercase tracking-widest gap-3 cursor-pointer py-2.5" onClick={() => router.push(`/admin/forms/builder?id=${form.id}`)}>
+                                <Pencil className="h-4 w-4 text-zinc-400" /> Edit Layout
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-[11px] font-bold uppercase tracking-widest gap-3 cursor-pointer py-2.5" onClick={() => copyLink(form.slug, form.id)}>
+                                {copiedId === form.id ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-zinc-400" />}
+                                {copiedId === form.id ? "Copied" : "Copy Link"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-[11px] font-bold uppercase tracking-widest gap-3 cursor-pointer py-2.5" onClick={() => window.open(publicUrl(form.slug), "_blank")}>
+                                <ExternalLink className="h-4 w-4 text-zinc-400" /> View Form
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="bg-zinc-100 dark:bg-zinc-800" />
+                              <DropdownMenuItem
+                                className="text-[11px] font-bold uppercase tracking-widest gap-3 cursor-pointer py-2.5 text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-900/20"
+                                onClick={() => handleDelete(form.id)}
+                                disabled={deletingId === form.id}
+                              >
+                                {deletingId === form.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                Delete Form
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </div>
-      )}
+        
+        <div className="border-t border-zinc-200 dark:border-sidebar-border bg-zinc-50/30 dark:bg-sidebar/40 p-4 flex items-center justify-between">
+          <span className="text-[10px] text-zinc-400 font-black tracking-widest uppercase">
+            Manage {forms.length} forms in your account.
+          </span>
+          <p className="text-[9px] font-bold text-zinc-400/50 uppercase tracking-tighter italic">
+            Secure Form Distribution Active
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

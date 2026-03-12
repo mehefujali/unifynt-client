@@ -18,7 +18,7 @@ import {
   ArrowLeft, Save, Eye, ExternalLink, GripVertical, Trash2, Plus, Settings,
   Type, FileText, Hash, AtSign, Phone, ChevronDown, CircleDot, CheckSquare,
   Calendar, Upload, Star, Minus, Heading1, Globe, Clock, Lock,
-  ChevronRight, Loader2
+  ChevronRight, Loader2, Database, LayoutTemplate
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,44 +29,52 @@ import { cn } from "@/lib/utils";
 import { CustomFormService } from "@/services/form.service";
 import { SiteConfigService } from "@/services/site-config.service";
 
-// ─── Field Type Definitions ───────────────────────────────────────────────────
+// --- Field Type Definitions ---
 const FIELD_PALETTE = [
-  { group: "Basic",    items: [
-    { type: "TEXT",      label: "Short Text",      icon: Type,        description: "Single line text" },
-    { type: "TEXTAREA",  label: "Long Text",        icon: FileText,    description: "Multi-line paragraph" },
-    { type: "NUMBER",    label: "Number",           icon: Hash,        description: "Numeric input" },
-    { type: "EMAIL",     label: "Email",            icon: AtSign,      description: "Email address" },
-    { type: "PHONE",     label: "Phone",            icon: Phone,       description: "Phone number" },
-  ]},
-  { group: "Choice",   items: [
-    { type: "SELECT",    label: "Dropdown",         icon: ChevronDown, description: "Pick one from a list" },
-    { type: "RADIO",     label: "Multiple Choice",  icon: CircleDot,   description: "Radio buttons" },
-    { type: "CHECKBOX",  label: "Checkboxes",       icon: CheckSquare, description: "Tick all that apply" },
-    { type: "RATING",    label: "Rating",           icon: Star,        description: "1–5 star rating" },
-  ]},
-  { group: "Advanced", items: [
-    { type: "DATE",      label: "Date Picker",      icon: Calendar,    description: "Date / datetime" },
-    { type: "FILE",      label: "File Upload",      icon: Upload,      description: "Attach a file" },
-  ]},
-  { group: "Layout",   items: [
-    { type: "DIVIDER",   label: "Divider",          icon: Minus,       description: "Horizontal rule" },
-    { type: "HEADING",   label: "Heading",          icon: Heading1,    description: "Section heading" },
-  ]},
+  {
+    group: "Base Units", items: [
+      { type: "TEXT", label: "Short Text", icon: Type, description: "Single line intake" },
+      { type: "TEXTAREA", label: "Long Text", icon: FileText, description: "Multi-line intake" },
+      { type: "NUMBER", label: "Integer", icon: Hash, description: "Numeric intake" },
+      { type: "EMAIL", label: "Electronic Mail", icon: AtSign, description: "Email intake" },
+      { type: "PHONE", label: "Telephony", icon: Phone, description: "Phone intake" },
+    ]
+  },
+  {
+    group: "Selection Units", items: [
+      { type: "SELECT", label: "Dropdown List", icon: ChevronDown, description: "Single pick selection" },
+      { type: "RADIO", label: "Radio Select", icon: CircleDot, description: "Single pick radio" },
+      { type: "CHECKBOX", label: "Multi Check", icon: CheckSquare, description: "Multiple pick selection" },
+      { type: "RATING", label: "Metric Rating", icon: Star, description: "Linear numeric rating" },
+    ]
+  },
+  {
+    group: "Advanced Assets", items: [
+      { type: "DATE", label: "Chronology", icon: Calendar, description: "Date intake unit" },
+      { type: "FILE", label: "Object Upload", icon: Upload, description: "External file object" },
+    ]
+  },
+  {
+    group: "Structure", items: [
+      { type: "DIVIDER", label: "Section Break", icon: Minus, description: "Unit separation" },
+      { type: "HEADING", label: "Header Unit", icon: Heading1, description: "Identity header" },
+    ]
+  },
 ];
 
 const ALL_TYPES = FIELD_PALETTE.flatMap((g) => g.items);
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ---
 const newField = (type: string) => ({
   id: crypto.randomUUID(),
   type,
-  label: ALL_TYPES.find((t) => t.type === type)?.label || "New Field",
+  label: ALL_TYPES.find((t) => t.type === type)?.label || "New Unit",
   placeholder: "",
   required: false,
   options: [] as string[],
 });
 
-// ─── Sortable Field Row ────────────────────────────────────────────────────────
+// --- Sortable Field Row ---
 function SortableField({ field, isSelected, onClick, onDelete }: {
   field: any; isSelected: boolean; onClick: () => void; onDelete: () => void;
 }) {
@@ -84,24 +92,24 @@ function SortableField({ field, isSelected, onClick, onDelete }: {
         "group relative flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150",
         isDragging ? "opacity-30" : "opacity-100",
         isSelected
-          ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm ring-1 ring-primary/30"
-          : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-zinc-300 dark:hover:border-zinc-700"
+          ? "border-zinc-900 dark:border-zinc-100 bg-zinc-900/5 dark:bg-zinc-100/5 shadow-sm ring-1 ring-zinc-900/10 dark:ring-zinc-100/10"
+          : "border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900/40 hover:border-zinc-400 dark:hover:border-zinc-600"
       )}
     >
-      <button {...attributes} {...listeners} className="cursor-grab text-zinc-300 hover:text-zinc-500 focus:outline-none shrink-0">
+      <button {...attributes} {...listeners} className="cursor-grab text-zinc-300 hover:text-zinc-500 focus:outline-none shrink-0 transition-colors">
         <GripVertical className="h-4 w-4" />
       </button>
-      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", isSelected ? "bg-primary/15" : "bg-zinc-100 dark:bg-zinc-900")}>
-        <Icon className={cn("h-3.5 w-3.5", isSelected ? "text-primary" : "text-zinc-500")} />
+      <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0 border border-zinc-100 dark:border-zinc-800", isSelected ? "bg-zinc-900 dark:bg-zinc-100" : "bg-zinc-50 dark:bg-zinc-800")}>
+        <Icon className={cn("h-3.5 w-3.5", isSelected ? "text-white dark:text-zinc-900" : "text-zinc-500")} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">{field.label || "Untitled"}</p>
-        <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-medium">{meta?.label || field.type}</p>
+        <p className="text-[12px] font-bold text-zinc-900 dark:text-zinc-100 truncate">{field.label || "Unnamed Unit"}</p>
+        <p className="text-[9px] text-zinc-400 uppercase font-black tracking-widest">{meta?.label || field.type}</p>
       </div>
-      {field.required && <span className="text-[9px] font-bold text-rose-500 uppercase tracking-wider">req</span>}
+      {field.required && <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">REQ</span>}
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(); }}
-        className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-rose-500 ml-1 shrink-0"
+        className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-rose-600 ml-1 shrink-0"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -109,56 +117,56 @@ function SortableField({ field, isSelected, onClick, onDelete }: {
   );
 }
 
-// ─── Field Preview ─────────────────────────────────────────────────────────────
+// --- Field Preview ---
 function FieldPreview({ field }: { field: any }) {
-  if (field.type === "DIVIDER") return <hr className="my-2 border-zinc-200 dark:border-zinc-700" />;
-  if (field.type === "HEADING") return <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-200 mt-2">{field.label}</h3>;
+  if (field.type === "DIVIDER") return <hr className="my-2 border-zinc-200 dark:border-zinc-800" />;
+  if (field.type === "HEADING") return <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-2 uppercase tracking-wide">{field.label}</h3>;
 
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+      <label className="text-[11px] font-black uppercase tracking-tight text-zinc-500 dark:text-zinc-400">
         {field.label}
-        {field.required && <span className="text-rose-500 ml-1">*</span>}
+        {field.required && <span className="text-rose-500 ml-1 italic font-normal text-[9px]">Required</span>}
       </label>
       {(field.type === "TEXT" || field.type === "EMAIL" || field.type === "NUMBER" || field.type === "PHONE") && (
-        <Input disabled placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`} className="h-9 text-sm bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700" />
+        <Input disabled placeholder={field.placeholder || `Awaiting input unit...`} className="h-9 text-xs bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border" />
       )}
       {field.type === "TEXTAREA" && (
-        <Textarea disabled placeholder={field.placeholder || "Type your answer..."} className="min-h-[80px] text-sm bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 resize-none" />
+        <Textarea disabled placeholder={field.placeholder || "Awaiting multi-line input..."} className="min-h-[80px] text-xs bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border resize-none" />
       )}
       {field.type === "SELECT" && (
-        <Select disabled><SelectTrigger className="h-9 text-sm bg-zinc-50 dark:bg-zinc-900"><SelectValue placeholder="Select an option" /></SelectTrigger></Select>
+        <Select disabled><SelectTrigger className="h-9 text-xs bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border"><SelectValue placeholder="Select internal unit" /></SelectTrigger></Select>
       )}
       {field.type === "RADIO" && (
-        <div className="space-y-1.5">
-          {(field.options?.length ? field.options : ["Option 1", "Option 2"]).map((opt: string, i: number) => (
-            <label key={i} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">
-              <span className="h-4 w-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600 flex-shrink-0" /> {opt}
+        <div className="space-y-1.5 pt-1">
+          {(field.options?.length ? field.options : ["Source Unit Alpha", "Source Unit Beta"]).map((opt: string, i: number) => (
+            <label key={i} className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer">
+              <span className="h-4 w-4 rounded-full border border-zinc-300 dark:border-zinc-700 flex-shrink-0" /> {opt}
             </label>
           ))}
         </div>
       )}
       {field.type === "CHECKBOX" && (
-        <div className="space-y-1.5">
-          {(field.options?.length ? field.options : ["Option 1", "Option 2"]).map((opt: string, i: number) => (
-            <label key={i} className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 cursor-pointer">
-              <span className="h-4 w-4 rounded border-2 border-zinc-300 dark:border-zinc-600 flex-shrink-0" /> {opt}
+        <div className="space-y-1.5 pt-1">
+          {(field.options?.length ? field.options : ["Asset Mapping 1", "Asset Mapping 2"]).map((opt: string, i: number) => (
+            <label key={i} className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer">
+              <span className="h-4 w-4 rounded border border-zinc-300 dark:border-zinc-700 flex-shrink-0" /> {opt}
             </label>
           ))}
         </div>
       )}
-      {field.type === "DATE" && <Input disabled type="date" className="h-9 text-sm bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700" />}
+      {field.type === "DATE" && <Input disabled type="date" className="h-9 text-xs bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border" />}
       {field.type === "RATING" && (
-        <div className="flex gap-1.5">{[1,2,3,4,5].map((n) => <Star key={n} className="h-6 w-6 text-zinc-300 dark:text-zinc-600" />)}</div>
+        <div className="flex gap-1.5">{[1, 2, 3, 4, 5].map((n) => <Star key={n} className="h-6 w-6 text-zinc-200 dark:text-zinc-800" />)}</div>
       )}
       {field.type === "FILE" && (
-        <div className="border-2 border-dashed border-zinc-200 dark:border-zinc-700 rounded-lg p-4 text-center text-xs text-zinc-400">Drop a file or click to upload</div>
+        <div className="border-2 border-dashed border-zinc-200 dark:border-sidebar-border rounded-xl p-6 text-center text-[10px] font-black uppercase tracking-widest text-zinc-400 bg-zinc-50/50 dark:bg-sidebar/20">Awaiting Object Synchronisation</div>
       )}
     </div>
   );
 }
 
-// ─── Field Settings Panel ─────────────────────────────────────────────────────
+// --- Field Settings Panel ---
 function FieldSettingsPanel({ field, onChange }: { field: any; onChange: (updated: any) => void }) {
   const hasOptions = ["SELECT", "RADIO", "CHECKBOX"].includes(field.type);
   const [optionsText, setOptionsText] = useState(field.options?.join("\n") || "");
@@ -173,27 +181,27 @@ function FieldSettingsPanel({ field, onChange }: { field: any; onChange: (update
 
   return (
     <div className="space-y-5 p-5">
-      <div className="space-y-1.5">
-        <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Field Label</label>
-        <Input value={field.label} onChange={(e) => onChange({ ...field, label: e.target.value })} className="h-9 text-sm" />
+      <div className="space-y-2">
+        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Unit Identity</label>
+        <Input value={field.label} onChange={(e) => onChange({ ...field, label: e.target.value })} className="h-10 text-xs font-bold border-zinc-200 dark:border-sidebar-border" />
       </div>
       {!["DIVIDER", "HEADING", "RATING"].includes(field.type) && (
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Placeholder Text</label>
-          <Input value={field.placeholder || ""} onChange={(e) => onChange({ ...field, placeholder: e.target.value })} className="h-9 text-sm" />
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Visual Hint</label>
+          <Input value={field.placeholder || ""} onChange={(e) => onChange({ ...field, placeholder: e.target.value })} className="h-10 text-xs font-bold border-zinc-200 dark:border-sidebar-border" />
         </div>
       )}
       {hasOptions && (
-        <div className="space-y-1.5">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Options (one per line)</label>
-          <Textarea value={optionsText} onChange={(e) => handleOptionsChange(e.target.value)} className="min-h-[120px] text-sm font-mono resize-none" />
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-1">Entry Variables (Line Separated)</label>
+          <Textarea value={optionsText} onChange={(e) => handleOptionsChange(e.target.value)} className="min-h-[140px] text-xs font-bold resize-none border-zinc-200 dark:border-sidebar-border" />
         </div>
       )}
       {!["DIVIDER", "HEADING"].includes(field.type) && (
-        <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-50 dark:bg-sidebar/50 border border-zinc-200 dark:border-sidebar-border transition-all">
           <div>
-            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Required</p>
-            <p className="text-[10px] text-zinc-400">Respondents must fill this.</p>
+            <p className="text-[11px] font-black uppercase tracking-tight text-zinc-700 dark:text-zinc-300">Mandatory Unit</p>
+            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Strict intake required</p>
           </div>
           <Switch checked={field.required} onCheckedChange={(v) => onChange({ ...field, required: v })} />
         </div>
@@ -202,31 +210,22 @@ function FieldSettingsPanel({ field, onChange }: { field: any; onChange: (update
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---
 function FormBuilderPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
   const queryClient = useQueryClient();
 
-  const [title, setTitle] = useState("Untitled Form");
+  const [title, setTitle] = useState("NEW REGISTRY LAYER");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "CLOSED">("DRAFT");
-  const [fields, setFields] = useState<any[]>([{ ...newField("TEXT"), label: "Full Name", required: true }]);
+  const [fields, setFields] = useState<any[]>([{ ...newField("TEXT"), label: "SUBJECT IDENTITY", required: true }]);
   const [selectedId, setSelectedId] = useState<string | null>(fields[0]?.id || null);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Slug is always auto-derived from title — not editable
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "untitled-form";
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "untitled-registry";
 
-  // load existing form for edit
-  useQuery({
-    queryKey: ["form-for-builder", editId],
-    queryFn: () => CustomFormService.getFormBySlug(editId!),
-    enabled: !!editId,
-  });
-
-  // Fetch all forms to find the one by id
   const { data: allFormsData } = useQuery({
     queryKey: ["forms-for-builder", editId],
     queryFn: () => CustomFormService.getAllForms({ page: 1, limit: 200 }),
@@ -266,25 +265,20 @@ function FormBuilderPageInner() {
       const payload = {
         title, description, slug, status,
         fields: fields.map((f) => ({ id: f.id, label: f.label, type: f.type, required: f.required, placeholder: f.placeholder || "", options: f.options || [] })),
-        settings: {
-          notifyAdmin: false,
-          isMultipleStep: false,
-          syncToGoogleSheet: false,
-        },
+        settings: { notifyAdmin: false, isMultipleStep: false, syncToGoogleSheet: false },
       };
       return editId ? CustomFormService.updateForm(editId, payload) : CustomFormService.createForm(payload);
     },
     onSuccess: () => {
-      toast.success(editId ? "Form updated!" : "Form created!");
+      toast.success(editId ? "Registry updated." : "Registry initialized.");
       queryClient.invalidateQueries({ queryKey: ["forms"] });
       router.push("/admin/forms");
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || "Failed to save form.");
+      toast.error(err?.response?.data?.message || "Registry synchronization failed.");
     },
   });
 
-  // DnD
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -323,79 +317,77 @@ function FormBuilderPageInner() {
   const StatusIcon = STATUS_ICONS[status];
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-50 dark:bg-zinc-950">
-      {/* ── Top Bar ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-5 h-14 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shrink-0 shadow-sm">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/admin/forms")} className="h-8 w-8 rounded-lg">
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-background">
+      {/* Top Bar */}
+      <div className="flex items-center gap-3 px-5 h-14 bg-white dark:bg-sidebar border-b border-zinc-200 dark:border-sidebar-border shrink-0 shadow-sm">
+        <Button variant="ghost" size="icon" onClick={() => router.push("/admin/forms")} className="h-9 w-9 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all">
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
         <div className="flex-1 min-w-0">
           <input
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Untitled Form"
-            className="text-sm font-bold text-zinc-900 dark:text-zinc-100 bg-transparent border-none outline-none w-full placeholder:text-zinc-400"
+            onChange={(e) => setTitle(e.target.value.toUpperCase())}
+            placeholder="NEW REGISTRY LAYER"
+            className="text-[13px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 bg-transparent border-none outline-none w-full placeholder:text-zinc-300 transition-all"
           />
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Status selector */}
           <Select value={status} onValueChange={(v: any) => setStatus(v)}>
-            <SelectTrigger className="h-8 w-36 rounded-lg text-xs font-semibold border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center gap-1.5">
+            <SelectTrigger className="h-9 w-36 rounded-xl text-[10px] font-black uppercase tracking-widest border-zinc-200 dark:border-zinc-800 outline-none">
+              <div className="flex items-center gap-1.5 pt-0.5">
                 <StatusIcon className={cn("h-3 w-3", status === "PUBLISHED" ? "text-emerald-500" : status === "DRAFT" ? "text-amber-500" : "text-zinc-400")} />
                 <SelectValue />
               </div>
             </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="DRAFT" className="text-xs">Draft</SelectItem>
-              <SelectItem value="PUBLISHED" className="text-xs">Published</SelectItem>
-              <SelectItem value="CLOSED" className="text-xs">Closed</SelectItem>
+            <SelectContent className="rounded-xl border-zinc-200 dark:border-zinc-800 p-1">
+              <SelectItem value="DRAFT" className="text-[10px] font-black uppercase tracking-widest py-2 cursor-pointer">Local Draft</SelectItem>
+              <SelectItem value="PUBLISHED" className="text-[10px] font-black uppercase tracking-widest py-2 cursor-pointer">Live Deployment</SelectItem>
+              <SelectItem value="CLOSED" className="text-[10px] font-black uppercase tracking-widest py-2 cursor-pointer">Restricted</SelectItem>
             </SelectContent>
           </Select>
 
           {slug && status === "PUBLISHED" && (
-            <Button variant="outline" size="sm" className="h-8 px-3 rounded-lg text-xs gap-1.5 border-zinc-200" onClick={() => window.open(publicUrl, "_blank")}>
-              <Eye className="h-3 w-3" /> Preview
+            <Button variant="outline" size="sm" className="h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 transition-all" onClick={() => window.open(publicUrl, "_blank")}>
+              <Eye className="h-3.5 w-3.5" /> Port
             </Button>
           )}
 
-          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="h-8 px-4 rounded-lg text-xs font-bold gap-1.5 shadow-md">
-            {saveMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-            {editId ? "Update" : "Save"}
+          <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="h-9 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-900 transition-all gap-2 shadow-lg shadow-zinc-900/10">
+            {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {editId ? "Synchronize" : "Initialize"}
           </Button>
         </div>
       </div>
 
-      {/* ── 3-Panel Layout ─────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-
-        {/* Left: Field Palette */}
-        <div className="w-56 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-y-auto shrink-0">
-          <div className="p-3 border-b border-zinc-100 dark:border-zinc-800/60">
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Field Types</p>
+        {/* Left: Palette */}
+        <div className="w-60 bg-white dark:bg-sidebar border-r border-zinc-200 dark:border-sidebar-border flex flex-col shrink-0">
+          <div className="p-4 border-b border-zinc-50 dark:border-sidebar-border flex items-center gap-2">
+            <Database className="h-3.5 w-3.5 text-zinc-400" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pt-0.5">Asset Inventory</p>
           </div>
-          <div className="p-2 space-y-3">
+          <div className="flex-1 overflow-y-auto p-2.5 space-y-4 custom-scrollbar">
             {FIELD_PALETTE.map((group) => (
               <div key={group.group}>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 px-2 mb-1">{group.group}</p>
-                <div className="space-y-0.5">
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 px-2 pb-2 pl-3">{group.group}</p>
+                <div className="space-y-1">
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     return (
                       <button
                         key={item.type}
                         onClick={() => addField(item.type)}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors group"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left bg-zinc-50/0 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all group"
                       >
-                        <div className="h-6 w-6 rounded-md bg-zinc-100 dark:bg-zinc-900 group-hover:bg-primary/10 flex items-center justify-center shrink-0 transition-colors">
-                          <Icon className="h-3 w-3 text-zinc-500 group-hover:text-primary transition-colors" />
+                        <div className="h-7 w-7 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 flex items-center justify-center shrink-0 transition-all">
+                          <Icon className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 truncate">{item.label}</p>
+                          <p className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 truncate group-hover:text-zinc-900 dark:group-hover:text-zinc-100">{item.label}</p>
                         </div>
-                        <Plus className="h-3 w-3 text-zinc-300 group-hover:text-primary ml-auto shrink-0 transition-colors" />
+                        <Plus className="h-3 w-3 text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ml-auto shrink-0 transition-colors" />
                       </button>
                     );
                   })}
@@ -405,15 +397,14 @@ function FormBuilderPageInner() {
           </div>
         </div>
 
-        {/* Center: Field List + Form Preview */}
         <div className="flex flex-1 overflow-hidden">
-
-          {/* Field List / Builder Canvas */}
-          <div className="w-72 border-r border-zinc-200 dark:border-zinc-800 flex flex-col bg-zinc-50 dark:bg-zinc-900/50 shrink-0">
-            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Fields ({fields.length})</p>
+          {/* Center: List */}
+          <div className="w-80 border-r border-zinc-200 dark:border-sidebar-border flex flex-col bg-slate-50 dark:bg-background/40 shrink-0">
+            <div className="p-4 border-b border-zinc-200 dark:border-sidebar-border bg-white dark:bg-sidebar flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pt-0.5">Primary Schema</p>
+              <span className="text-[9px] font-black bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-400 uppercase">{fields.length} Units</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 custom-scrollbar">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 <SortableContext items={fields.map((f) => f.id)} strategy={verticalListSortingStrategy}>
                   {fields.map((field) => (
@@ -428,43 +419,48 @@ function FormBuilderPageInner() {
                 </SortableContext>
                 <DragOverlay>
                   {activeId ? (
-                    <div className="bg-white dark:bg-zinc-950 border border-primary rounded-xl p-3 shadow-2xl opacity-90">
-                      <p className="text-xs font-semibold text-zinc-700">{fields.find((f) => f.id === activeId)?.label}</p>
+                    <div className="bg-white dark:bg-zinc-900 border-2 border-zinc-900 dark:border-zinc-100 rounded-xl p-4 shadow-2xl transition-all scale-105">
+                      <p className="text-[11px] font-black uppercase text-zinc-900 dark:text-zinc-100">{fields.find((f) => f.id === activeId)?.label}</p>
                     </div>
                   ) : null}
                 </DragOverlay>
               </DndContext>
               {fields.length === 0 && (
-                <div className="text-center py-12 text-zinc-400">
-                  <Plus className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-xs">Click a field type to add it</p>
+                <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+                  <div className="h-12 w-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4 opacity-50 border border-zinc-200 dark:border-zinc-700">
+                    <Database className="h-6 w-6 text-zinc-400" />
+                  </div>
+                  <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-loose">Initialize schema units from the asset inventory.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Live Form Preview */}
-          <div className="flex-1 overflow-y-auto p-6 bg-zinc-100 dark:bg-zinc-900/30">
-            <div className="max-w-lg mx-auto">
-              <div className="bg-white dark:bg-zinc-950 rounded-2xl shadow-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
-                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800">
-                  <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{title || "Untitled Form"}</h2>
-                  {description && <p className="text-sm text-zinc-500 mt-1">{description}</p>}
+          {/* Form Preview */}
+          <div className="flex-1 overflow-y-auto p-8 bg-slate-50 dark:bg-background/20 custom-scrollbar">
+            <div className="max-w-xl mx-auto">
+              <div className="bg-white dark:bg-sidebar rounded-[24px] shadow-2xl shadow-zinc-200/50 dark:shadow-none border border-zinc-200 dark:border-sidebar-border overflow-hidden">
+                <div className="h-2 bg-zinc-900 dark:bg-zinc-100" />
+                <div className="p-8 border-b border-zinc-50 dark:border-zinc-800">
+                  <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight">{title || "NEW REGISTRY LAYER"}</h2>
+                  {description && <p className="text-xs font-bold text-zinc-400 mt-2 uppercase tracking-wide leading-relaxed">{description}</p>}
                 </div>
-                <div className="p-6 space-y-5">
+                <div className="p-8 space-y-8">
                   {fields.length === 0 ? (
-                    <p className="text-sm text-zinc-400 text-center py-8">Add fields from the left panel to see a preview.</p>
+                    <div className="py-20 text-center space-y-4">
+                      <LayoutTemplate className="h-10 w-10 text-zinc-100 dark:text-zinc-800 mx-auto" />
+                      <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Awaiting Schema Unit Deployment</p>
+                    </div>
                   ) : (
                     fields.map((field) => (
                       <div
                         key={field.id}
                         onClick={() => setSelectedId(field.id)}
                         className={cn(
-                          "p-3 rounded-xl cursor-pointer transition-all border-2",
+                          "p-4 rounded-2xl cursor-pointer transition-all border-2",
                           selectedId === field.id
-                            ? "border-primary/40 bg-primary/5"
-                            : "border-transparent hover:border-zinc-200 dark:hover:border-zinc-700"
+                            ? "border-zinc-900/10 dark:border-zinc-100/10 bg-zinc-50/50 dark:bg-zinc-900/40"
+                            : "border-transparent hover:border-zinc-100 dark:hover:border-zinc-800/40"
                         )}
                       >
                         <FieldPreview field={field} />
@@ -472,24 +468,26 @@ function FormBuilderPageInner() {
                     ))
                   )}
                   {fields.length > 0 && (
-                    <Button className="w-full rounded-xl mt-2" disabled>Submit</Button>
+                    <Button className="w-full h-11 rounded-xl mt-4 font-black uppercase text-[11px] tracking-widest bg-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 shadow-xl shadow-zinc-900/10" disabled>Synchronize Object</Button>
                   )}
                 </div>
               </div>
 
-              {/* Description + URL display */}
-              <div className="mt-4 bg-white dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-3">
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Form description (optional)..."
-                  className="h-8 text-sm"
-                />
+              <div className="mt-6 bg-white dark:bg-sidebar rounded-2xl border border-zinc-200 dark:border-sidebar-border p-6 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest pl-1">Registry Narrative</p>
+                  <Input
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Enter extended context narrative..."
+                    className="h-10 text-xs font-bold border-zinc-100 dark:border-zinc-800"
+                  />
+                </div>
                 {slug && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-                    <span className="text-[10px] font-mono text-zinc-400 flex-1 truncate">/{slug}</span>
-                    <Button variant="ghost" size="sm" className="h-6 px-2 shrink-0" onClick={() => window.open(publicUrl, "_blank")}>
-                      <ExternalLink className="h-3 w-3" />
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 transition-all group">
+                    <span className="text-[10px] font-black text-zinc-400 flex-1 truncate uppercase tracking-widest">Local Deployment Node: <span className="text-zinc-900 dark:text-zinc-100">/{slug}</span></span>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg hover:bg-zinc-900 hover:text-white dark:hover:bg-zinc-100 dark:hover:text-zinc-900" onClick={() => window.open(publicUrl, "_blank")}>
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
@@ -498,20 +496,22 @@ function FormBuilderPageInner() {
           </div>
         </div>
 
-        {/* Right: Field Settings */}
-        <div className="w-64 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0">
-          <div className="p-3 border-b border-zinc-100 dark:border-zinc-800/60 flex items-center gap-2">
+        {/* Right: Settings */}
+        <div className="w-64 bg-white dark:bg-sidebar border-l border-zinc-200 dark:border-sidebar-border flex flex-col shrink-0">
+          <div className="p-4 border-b border-zinc-50 dark:border-zinc-800/60 flex items-center gap-2">
             <Settings className="h-3.5 w-3.5 text-zinc-400" />
-            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Field Settings</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 pt-0.5">Unit Parameters</p>
           </div>
           {selectedField ? (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               <FieldSettingsPanel field={selectedField} onChange={updateField} />
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-              <ChevronRight className="h-8 w-8 text-zinc-200 dark:text-zinc-800 mb-3" />
-              <p className="text-xs text-zinc-400">Click a field to edit its settings.</p>
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center opacity-40">
+              <div className="h-10 w-10 rounded-full border border-zinc-200 dark:border-zinc-800 flex items-center justify-center mb-4">
+                <ChevronRight className="h-5 w-5 text-zinc-300" />
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-4">Identify a schema unit to modify parameters.</p>
             </div>
           )}
         </div>
@@ -522,7 +522,7 @@ function FormBuilderPageInner() {
 
 export default function FormBuilderPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center text-sm text-zinc-400">Loading builder...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-[10px] font-black uppercase tracking-widest text-zinc-400 bg-zinc-50 dark:bg-zinc-950 animate-pulse">Initializing Mapping Engine...</div>}>
       <FormBuilderPageInner />
     </Suspense>
   );

@@ -17,6 +17,7 @@ import {
   Megaphone,
   Bell,
   Mailbox,
+  TrendingUp,
 } from "lucide-react";
 
 export type SubItem = {
@@ -132,6 +133,12 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
     ],
   },
   {
+    title: "Student Promotion",
+    href: "/admin/promotion",
+    icon: TrendingUp,
+    requiredPermissions: ["STUDENT_EDIT"],
+  },
+  {
     title: "Academics",
     href: "#",
     icon: BookOpen,
@@ -171,11 +178,6 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
           "ROUTINE_EDIT",
           "ROUTINE_DELETE",
         ],
-      },
-      {
-        title: "Student Promotion",
-        href: "/admin/academics/promotion",
-        requiredPermissions: ["STUDENT_EDIT"],
       },
     ],
   },
@@ -403,6 +405,7 @@ export const navItems: Record<string, NavItem[]> = {
   STUDENT: [
     { title: "Dashboard", href: "/student", icon: LayoutDashboard },
     { title: "Routine", href: "/student/routine", icon: CalendarDays },
+    { title: "Fees", href: "/student/fees", icon: Banknote },
     { title: "Result", href: "/student/result", icon: GraduationCap },
   ],
 };

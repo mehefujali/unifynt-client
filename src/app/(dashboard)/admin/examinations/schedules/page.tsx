@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { examService } from "@/services/exam.service";
 
 import { Plus, Edit2, Trash2, Loader2, CalendarRange, Clock, ShieldAlert, UserPlus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ScheduleModal from "./schedule-modal";
@@ -100,100 +99,135 @@ export default function ExamSchedulesPage() {
         </div>
       }
     >
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight">Exam Schedules</h1>
+    <div className="p-4 md:p-8 space-y-8 bg-transparent">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-zinc-200 dark:border-sidebar-border">
+        <div className="flex flex-col gap-2">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
+                <div className="h-12 w-12 bg-zinc-100 dark:bg-sidebar rounded-xl flex items-center justify-center border border-zinc-200 dark:border-sidebar-border shadow-sm">
+                    <CalendarRange className="h-6 w-6 text-zinc-600 dark:text-zinc-400" />
+                </div>
+                Exam Schedules
+            </h1>
+            <p className="text-sm text-zinc-500 max-w-2xl leading-relaxed">
+                Create and manage subject-wise examination timetables, marks allocation and evaluator assignments.
+            </p>
         </div>
+      </div>      <div className="p-6 bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-2xl shadow-sm space-y-5 transition-colors">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <span className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Select Examination</span>
+            <Select value={examId} onValueChange={setExamId}>
+              <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border text-[13px] font-bold shadow-none focus:ring-1 focus:ring-zinc-400 transition-all">
+                <SelectValue placeholder="Select Examination" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {examsList.map((exam: any) => (<SelectItem key={exam.id} value={exam.id} className="font-medium">{exam.name}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-4 border-b border-border/50">
-            <CardTitle className="text-lg font-medium">Select Target</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Select value={examId} onValueChange={setExamId}>
-                <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all">
-                  <SelectValue placeholder="Select Examination" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {examsList.map((exam: any) => (<SelectItem key={exam.id} value={exam.id} className="rounded-lg">{exam.name}</SelectItem>))}
-                </SelectContent>
-              </Select>
-
-              <Select value={classId} onValueChange={setClassId}>
-                <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all">
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {classList.map((c: any) => (<SelectItem key={c.id} value={c.id} className="rounded-lg">{c.name}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="space-y-2">
+            <span className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Select Class</span>
+            <Select value={classId} onValueChange={setClassId}>
+              <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border text-[13px] font-bold shadow-none focus:ring-1 focus:ring-zinc-400 transition-all">
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {classList.map((c: any) => (<SelectItem key={c.id} value={c.id} className="font-medium">{c.name}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
 
         {isFilterComplete ? (
-          <Card className="border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950 overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/50 bg-zinc-50/50 dark:bg-zinc-900/50 px-6">
-              <CardTitle className="text-lg font-medium">Subject Timetable & Marks Setup</CardTitle>
-              
-              {/* 🔒 Gate for Add Subject Button (Requires Edit/Create power for Exams) */}
-              <PermissionGate required={[PERMISSIONS.EXAM_CREATE, PERMISSIONS.EXAM_EDIT]}>
-                <Button onClick={() => { setSelectedSchedule(null); setIsModalOpen(true); }} className="rounded-xl bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900 h-9">
-                  <Plus className="mr-2 h-4 w-4" /> Add Subject
-                </Button>
-              </PermissionGate>
-            </CardHeader>
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="flex h-40 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-              ) : schedulesList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-500">
-                  <CalendarRange className="h-12 w-12 text-zinc-300 mb-3" />
-                  <p>No subjects scheduled yet for this class.</p>
+        <div className="bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-2xl shadow-sm overflow-hidden flex flex-col transition-colors">
+          <div className="p-5 border-b border-zinc-100 dark:border-sidebar-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-zinc-50/30 dark:bg-background/40">
+            <h3 className="font-bold text-base text-zinc-800 dark:text-zinc-100">Subject Timetable & Marks Setup</h3>
+            
+            {/* 🔒 Gate for Add Subject Button (Requires Edit/Create power for Exams) */}
+            <PermissionGate required={[PERMISSIONS.EXAM_CREATE, PERMISSIONS.EXAM_EDIT]}>
+              <Button 
+                onClick={() => { setSelectedSchedule(null); setIsModalOpen(true); }} 
+                className="h-10 px-6 text-[13px] font-black shadow-lg shadow-zinc-900/10 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl transition-all"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Registry Item
+              </Button>
+            </PermissionGate>
+          </div>
+
+          <div className="flex-1 overflow-x-auto custom-scrollbar">
+            {isLoading ? (
+              <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+              </div>
+            ) : schedulesList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-background/40 flex items-center justify-center mb-4 border border-zinc-200 dark:border-white/5">
+                  <CalendarRange className="h-8 w-8 text-zinc-400" />
                 </div>
+                <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">No Subjects Found</h3>
+                <p className="text-[13px] font-medium text-zinc-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                  No subjects have been scheduled for this class and examination yet.
+                </p>
+              </div>
               ) : (
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-zinc-500 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-border/50 uppercase">
-                    <tr>
-                      <th className="px-6 py-4 font-medium">Subject Date</th>
-                      <th className="px-6 py-4 font-medium">Subject Info</th>
-                      <th className="px-6 py-4 font-medium">Timing</th>
-                      <th className="px-6 py-4 font-medium text-center">Marks (Full / Pass)</th>
-                      {canEditOrDelete && <th className="px-6 py-4 font-medium text-right">Actions</th>}
-                    </tr>
-                  </thead>
+              <table className="w-full text-sm text-left">
+                <thead className="bg-zinc-50/80 dark:bg-background/60 hover:bg-zinc-50 dark:hover:bg-background/60 border-b border-zinc-200 dark:border-sidebar-border uppercase">
+                  <tr>
+                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-zinc-500">Subject Date</th>
+                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-zinc-500">Subject Info</th>
+                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-zinc-500">Timing</th>
+                    <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-zinc-500 text-center">Marks (Full / Pass)</th>
+                    {canEditOrDelete && <th className="px-6 py-4 text-[11px] font-extrabold uppercase tracking-widest text-zinc-500 text-right">Actions</th>}
+                  </tr>
+                </thead>
                   <tbody className="divide-y divide-border/50">
                     {schedulesList.map((schedule: any) => (
-                      <tr key={schedule.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50 transition-colors">
+                      <tr key={schedule.id} className="hover:bg-zinc-50/50 dark:hover:bg-sidebar/50 border-b border-zinc-100 dark:border-sidebar-border transition-colors last:border-0">
                         <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-zinc-900 dark:text-zinc-100">{formatDate(schedule.examDate)}</span>
+                          <p className="text-[14px] font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">{formatDate(schedule.examDate)}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-[14px] font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">{schedule.subject?.subjectName}</p>
+                          <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-500 uppercase tracking-widest">{schedule.subject?.subjectCode}</span>
+                        </td>
+                        <td className="px-6 py-4 text-zinc-600">
+                          <div className="flex items-center gap-2">
+                             <Clock className="h-3.5 w-3.5 text-zinc-400" />
+                             <span className="text-[12px] font-bold uppercase">{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                          {schedule.subject?.subjectName} <span className="text-zinc-400 font-normal">({schedule.subject?.subjectCode})</span>
-                        </td>
-                        <td className="px-6 py-4 text-zinc-600 flex items-center gap-1.5 mt-1">
-                          <Clock className="h-3.5 w-3.5" /> {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
-                        </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100">{schedule.fullMarks}</span> <span className="text-zinc-400">/</span> <span className="font-medium text-red-500">{schedule.passMarks}</span>
+                          <div className="inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700">
+                            <span className="text-[13px] font-black text-zinc-900 dark:text-zinc-100">{schedule.fullMarks}</span>
+                            <span className="text-zinc-400">/</span>
+                            <span className="text-[13px] font-black text-rose-600 dark:text-rose-400">{schedule.passMarks}</span>
+                          </div>
                         </td>
                         
                         {/* Actions Column */}
                         {canEditOrDelete && (
-                            <td className="px-6 py-4 text-right space-x-2">
-                                {/* 🔒 Gate for Edit Button */}
-                                <PermissionGate required={PERMISSIONS.EXAM_EDIT}>
-                                    <Button variant="ghost" size="icon" title="Assign Evaluators" onClick={() => handleAssignEvaluator(schedule)} className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"><UserPlus className="h-4 w-4" /></Button>
-                                    <Button variant="ghost" size="icon" title="Edit Schedule" onClick={() => handleEdit(schedule)} className="h-8 w-8 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20"><Edit2 className="h-4 w-4" /></Button>
-                                </PermissionGate>
-                                
-                                {/* 🔒 Gate for Delete Button */}
-                                <PermissionGate required={PERMISSIONS.EXAM_DELETE}>
-                                    <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(schedule.id); }} disabled={deleteMutation.isPending} className="h-8 w-8 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 className="h-4 w-4" /></Button>
-                                </PermissionGate>
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                    {/* 🔒 Gate for Edit Button */}
+                                    <PermissionGate required={PERMISSIONS.EXAM_EDIT}>
+                                        <Button variant="ghost" size="icon" title="Assign Evaluators" onClick={() => handleAssignEvaluator(schedule)} className="h-9 w-9 rounded-xl text-zinc-600 hover:text-emerald-600 hover:bg-emerald-50 dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/30 transition-all">
+                                            <UserPlus className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" title="Edit Schedule" onClick={() => handleEdit(schedule)} className="h-9 w-9 rounded-xl text-zinc-600 hover:text-blue-600 hover:bg-blue-50 dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30 transition-all">
+                                            <Edit2 className="h-4 w-4" />
+                                        </Button>
+                                    </PermissionGate>
+                                    
+                                    {/* 🔒 Gate for Delete Button */}
+                                    <PermissionGate required={PERMISSIONS.EXAM_DELETE}>
+                                        <Button variant="ghost" size="icon" onClick={() => { if (confirm("Are you sure?")) deleteMutation.mutate(schedule.id); }} disabled={deleteMutation.isPending} className="h-9 w-9 rounded-xl text-zinc-600 hover:text-rose-600 hover:bg-rose-50 dark:text-zinc-400 dark:hover:text-rose-400 dark:hover:bg-rose-900/30 transition-all">
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </PermissionGate>
+                                </div>
                             </td>
                         )}
                       </tr>
@@ -201,15 +235,17 @@ export default function ExamSchedulesPage() {
                   </tbody>
                 </table>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ) : (
-           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-4 ring-1 ring-inset ring-border/50">
+           <div className="flex flex-col items-center justify-center py-28 text-center bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-2xl shadow-sm transition-colors">
+            <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-background/40 flex items-center justify-center mb-4 border border-zinc-200 dark:border-white/5">
               <CalendarRange className="h-8 w-8 text-zinc-400" />
             </div>
-            <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">Select Exam & Class</h3>
-            <p className="text-sm text-zinc-500 mt-1 max-w-sm">Please choose an exam and class from above to manage the schedule.</p>
+            <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">Selection Required</h3>
+            <p className="text-[13px] font-medium text-zinc-500 mt-1 max-w-sm mx-auto leading-relaxed">
+              Please choose an examination and academic class from the filters above to retrieve and manage the schedules.
+            </p>
           </div>
         )}
 

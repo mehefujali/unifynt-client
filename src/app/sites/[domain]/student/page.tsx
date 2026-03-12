@@ -13,13 +13,13 @@ import {
   Clock,
   ChevronRight,
   Megaphone,
-  BookOpen,
   TrendingUp,
   FileText,
   Wallet,
   CheckCircle2,
   Timer,
   AlertCircle,
+  Banknote,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -168,6 +168,12 @@ export default function StudentPortalDashboard() {
     },
   ];
 
+  const statCardsWithLinks = [
+    { ...statCards[0], href: "#" },
+    { ...statCards[1], href: "/student/fees" },
+    { ...statCards[2], href: "/student/result" },
+  ];
+
   const accentMap: Record<string, string> = {
     blue: "from-blue-400/20 to-transparent text-blue-500",
     amber: "from-amber-400/20 to-transparent text-amber-500",
@@ -176,8 +182,8 @@ export default function StudentPortalDashboard() {
 
   const quickLinks = [
     { label: "Routine", icon: CalendarDays, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-100 dark:border-blue-500/20", href: "/student/routine" },
+    { label: "Fees", icon: Banknote, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-100 dark:border-emerald-500/20", href: "/student/fees" },
     { label: "Results", icon: GraduationCap, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-500/10", border: "border-purple-100 dark:border-purple-500/20", href: "/student/result" },
-    { label: "Syllabus", icon: BookOpen, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-100 dark:border-emerald-500/20", href: "#" },
     { label: "Exams", icon: FileText, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10", border: "border-amber-100 dark:border-amber-500/20", href: "#" },
   ];
 
@@ -200,9 +206,10 @@ export default function StudentPortalDashboard() {
 
       {/* ── Stats Bento ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {statCards.map((card) => (
-          <div
+        {statCardsWithLinks.map((card) => (
+          <Link
             key={card.label}
+            href={card.href}
             className="bg-white dark:bg-[#0d0d0d] border border-zinc-200/60 dark:border-zinc-800/60 p-5 rounded-[24px] shadow-sm flex flex-col justify-between h-[130px] relative overflow-hidden group hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
           >
             {/* Ambient glow orb */}
@@ -221,7 +228,7 @@ export default function StudentPortalDashboard() {
               </h3>
               <p className={cn("text-[11px] font-bold mt-1.5", card.subColor)}>{card.sub}</p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

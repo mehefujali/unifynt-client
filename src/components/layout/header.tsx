@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-    Bell,
     Search,
     Menu,
     LogOut,
@@ -92,7 +91,7 @@ export default function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white/80 dark:bg-sidebar/80 backdrop-blur-md border-b border-sidebar-border/50 transition-all h-[72px] sm:h-[80px] flex items-center shadow-sm">
+        <header className="sticky top-0 z-40 w-full flex-shrink-0 bg-white dark:bg-sidebar border-b border-sidebar-border/50 transition-all h-[72px] sm:h-[80px] flex items-center shadow-sm">
             <div className="flex h-full w-full items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Mobile Navigation Trigger */}
                 <div className="flex items-center gap-4 lg:hidden">

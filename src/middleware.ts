@@ -25,7 +25,14 @@ export default async function middleware(req: NextRequest) {
       .replace(".localhost:3000", "")
       .replace(":3000", "");
 
-    if (currentHost) {
+    const isInternal = url.pathname.startsWith("/_next") || 
+                       url.pathname.startsWith("/api") || 
+                       url.pathname.startsWith("/sites") || 
+                       url.pathname.startsWith("/admin") ||
+                       url.pathname.includes("."); // Simple check for static files
+
+    if (currentHost && !isInternal) {
+      console.log(`Middleware rewriting: ${hostname}${url.pathname} -> /sites/${currentHost}${url.pathname}`);
       return NextResponse.rewrite(
         new URL(`/sites/${currentHost}${url.pathname}`, req.url),
       );

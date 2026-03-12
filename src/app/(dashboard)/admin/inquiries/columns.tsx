@@ -16,12 +16,12 @@ export const inquiryColumns: ColumnDef<IInquiry>[] = [
     ),
   },
   {
-    accessorKey: "email",
-    header: "Email",
+    accessorKey: "contact",
+    header: "Contact Info",
     cell: ({ row }) => (
-      <div className="flex items-center text-sm text-muted-foreground gap-2">
-        <Mail className="h-3.5 w-3.5" />
-        {row.original.email}
+      <div className="flex items-center text-sm font-medium gap-2">
+        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+        {row.original.contact}
       </div>
     ),
   },
@@ -47,17 +47,21 @@ export const inquiryColumns: ColumnDef<IInquiry>[] = [
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Message from {row.original.name}</DialogTitle>
-              <DialogDescription>
-                {row.original.email} • {format(new Date(row.original.createdAt), "MMM dd, yyyy h:mm a")}
+              <DialogDescription className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {row.original.contact}</span>
+                <span className="text-muted-foreground/30">•</span>
+                <span>{format(new Date(row.original.createdAt), "MMM dd, yyyy h:mm a")}</span>
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-4 p-4 rounded-xl bg-zinc-50 border border-zinc-100 text-sm whitespace-pre-wrap leading-relaxed min-h-[150px]">
+            <div className="mt-4 p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/50 text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed min-h-[150px] shadow-sm">
               {row.original.message}
             </div>
-            <div className="flex justify-end mt-4">
-              <Button onClick={() => window.location.href = `mailto:${row.original.email}`}>
-                Reply via Email
-              </Button>
+            <div className="flex justify-end mt-6">
+              {row.original.contact.includes("@") && (
+                <Button onClick={() => window.location.href = `mailto:${row.original.contact}`}>
+                  Reply via Email
+                </Button>
+              )}
             </div>
           </DialogContent>
         </Dialog>

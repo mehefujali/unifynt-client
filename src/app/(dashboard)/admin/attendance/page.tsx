@@ -4,14 +4,14 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, ShieldAlert } from "lucide-react";
+import { CalendarIcon, ShieldAlert, UsersIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import AttendanceGrid from "./attendance-grid";
 import { AcademicService } from "@/services/academic.service";
@@ -86,97 +86,114 @@ export default function AttendancePage() {
         </div>
       }
     >
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-semibold tracking-tight">Daily Attendance</h1>
-        </div>
-
-        <Card className="border-0 shadow-sm ring-1 ring-border/50 rounded-2xl bg-white dark:bg-zinc-950">
-          <CardHeader className="pb-4 border-b border-border/50">
-            <CardTitle className="text-lg font-medium">Filter Criteria</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Select value={academicYearId} onValueChange={setAcademicYearId}>
-                <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all">
-                  <SelectValue placeholder="Academic Year" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {academicYears?.data?.map((year: any) => (
-                    <SelectItem key={year.id} value={year.id} className="rounded-lg">
-                      {year.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={classId} onValueChange={setClassId}>
-                <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all">
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {classes?.data?.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id} className="rounded-lg">
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={sectionId} onValueChange={setSectionId} disabled={!classId}>
-                <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all disabled:opacity-50">
-                  <SelectValue placeholder="Select Section" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  {(Array.isArray(sections) ? sections : sections?.data?.data || sections?.data || [])?.map((s: any) => (
-                    <SelectItem key={s.id} value={s.id} className="rounded-lg">
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {isSubjectWise && (
-                <Select value={periodId} onValueChange={setPeriodId} disabled={!classId}>
-                  <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 focus:ring-2 focus:ring-primary transition-all disabled:opacity-50">
-                    <SelectValue placeholder="Select Period" />
+      <div className="p-4 md:p-8 space-y-8 bg-transparent">
+        {/* Header Section */}
+        <div className="flex flex-col gap-2 pb-5 border-b border-zinc-200 dark:border-zinc-800">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
+                <div className="h-12 w-12 bg-zinc-100 dark:bg-white/5 rounded-xl flex items-center justify-center border border-zinc-200 dark:border-white/10 shadow-sm">
+                    <UsersIcon className="h-6 w-6 text-zinc-600 dark:text-zinc-400" />
+                </div>
+                Daily Attendance
+            </h1>
+            <p className="text-sm text-zinc-500 max-w-2xl leading-relaxed">
+                Record and manage student attendance accurately. Select the criteria below to load the student registry.
+            </p>
+        </div>        <div className="p-6 bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-2xl shadow-sm space-y-5 transition-colors">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Academic Year</Label>
+                <Select value={academicYearId} onValueChange={setAcademicYearId}>
+                  <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border text-[13px] font-bold shadow-none">
+                    <SelectValue placeholder="Academic Year" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    {(Array.isArray(periods) ? periods : periods?.data || [])?.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id} className="rounded-lg">
-                        {p.name} ({format(new Date(`2000-01-01T${p.startTime}`), "hh:mm a")} - {format(new Date(`2000-01-01T${p.endTime}`), "hh:mm a")})
+                    {academicYears?.data?.map((year: any) => (
+                      <SelectItem key={year.id} value={year.id} className="font-medium">
+                        {year.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "rounded-xl h-11 justify-start text-left font-normal bg-zinc-50 dark:bg-zinc-900 border-0 ring-1 ring-inset ring-border/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shadow-none",
-                      !date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-xl" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={(d) => d && setDate(d)}
-                    initialFocus
-                    className="rounded-xl"
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Class</Label>
+                <Select value={classId} onValueChange={setClassId}>
+                  <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border text-[13px] font-bold shadow-none">
+                    <SelectValue placeholder="Select Class" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {classes?.data?.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id} className="font-medium">
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Section</Label>
+                <Select value={sectionId} onValueChange={setSectionId} disabled={!classId}>
+                  <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border text-[13px] font-bold shadow-none disabled:opacity-50">
+                    <SelectValue placeholder="Select Section" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    {(Array.isArray(sections) ? sections : sections?.data?.data || sections?.data || [])?.map((s: any) => (
+                      <SelectItem key={s.id} value={s.id} className="font-medium">
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full rounded-xl h-11 justify-start text-left text-[13px] font-bold bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border hover:bg-zinc-100 dark:hover:bg-background/30 transition-all shadow-none",
+                        !date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {date ? format(date, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(d) => d && setDate(d)}
+                      initialFocus
+                      className="rounded-xl"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {isSubjectWise && (
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest">Period</Label>
+                  <Select value={periodId} onValueChange={setPeriodId} disabled={!classId}>
+                    <SelectTrigger className="rounded-xl h-11 bg-zinc-50 dark:bg-background/20 border-zinc-200 dark:border-sidebar-border text-[13px] font-bold shadow-none disabled:opacity-50">
+                      <SelectValue placeholder="Select Period" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {(Array.isArray(periods) ? periods : periods?.data || [])?.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id} className="font-medium">
+                          {p.name} ({format(new Date(`2000-01-01T${p.startTime}`), "hh:mm a")})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {isFilterComplete ? (
           <AttendanceGrid
@@ -187,13 +204,13 @@ export default function AttendancePage() {
             periodId={isSubjectWise ? periodId : undefined}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mb-4 ring-1 ring-inset ring-border/50">
+          <div className="flex flex-col items-center justify-center py-24 text-center bg-white dark:bg-sidebar border border-zinc-200 dark:border-sidebar-border rounded-2xl shadow-sm transition-colors">
+            <div className="h-16 w-16 rounded-2xl bg-zinc-100 dark:bg-background/40 flex items-center justify-center mb-4 border border-zinc-200 dark:border-white/5">
               <CalendarIcon className="h-8 w-8 text-zinc-400" />
             </div>
-            <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">No Target Selected</h3>
-            <p className="text-sm text-zinc-500 mt-1 max-w-sm">
-              Please select an academic year, class, section, and date to manage attendance.
+            <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100">Selection Required</h3>
+            <p className="text-[13px] font-medium text-zinc-500 mt-1 max-w-sm">
+              Please select appropriate filters to load and manage the attendance registry.
             </p>
           </div>
         )}

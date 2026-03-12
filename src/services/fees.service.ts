@@ -105,5 +105,18 @@ export const FeesService = {
   getTransactions: async (params?: Record<string, any>) => {
     const res = await api.get("/fees/transactions", { params }); // backend route match kore niben
     return res.data;
-},
+  },
+  initiateOnlinePayment: async (payload: { invoiceId: string; amount: number }) => {
+    const res = await api.post("/fees/payments/initiate-online", payload);
+    return res.data.data;
+  },
+  verifyOnlinePayment: async (payload: {
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+    invoiceId: string;
+  }) => {
+    const res = await api.post("/fees/payments/verify-online", payload);
+    return res.data;
+  },
 };

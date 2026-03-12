@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Save, Eye, RotateCcw } from "lucide-react";
+import { Save, RotateCcw } from "lucide-react";
 import { MarksheetConfig, defaultMarksheetConfig } from "@/types/marksheet-config";
 import { BuilderEditor } from "./builder-editor";
 import { MarksheetPreview } from "./marksheet-preview";
@@ -101,40 +101,48 @@ export default function MarksheetBuilderPage() {
     if (!isMounted) return null; // Prevent hydration flash
 
     return (
-        <div className="flex h-[calc(100vh-theme(spacing.16))] w-full bg-zinc-50 overflow-hidden">
+        <div className="flex h-[calc(100vh-theme(spacing.16))] w-full bg-transparent overflow-hidden">
 
             {/* LEFT PANE: Settings Editor */}
-            <div className="w-[400px] flex-shrink-0 border-r border-zinc-200 bg-zinc-50 flex flex-col h-full shadow-sm z-10 relative">
-                <div className="p-4 border-b border-zinc-200 bg-white">
-                    <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Report Card Builder</h1>
-                    <p className="text-sm text-zinc-500 mt-1">Customize the layout, wording, and design of your marksheet.</p>
+            <div className="w-[400px] flex-shrink-0 border-r border-zinc-200 dark:border-sidebar-border bg-white dark:bg-sidebar flex flex-col h-full shadow-sm z-10 relative transition-colors">
+                <div className="p-6 border-b border-zinc-100 dark:border-sidebar-border bg-zinc-50/30 dark:bg-background/40">
+                    <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight uppercase">Report Card Builder</h1>
+                    <p className="text-[12px] font-medium text-zinc-500 mt-1 leading-relaxed">Customize the layout, wording, and design of your marksheet registry.</p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                     <BuilderEditor config={config} onChange={setConfig} />
                 </div>
 
-                <div className="p-4 border-t border-zinc-200 bg-white shadow-[0_-4px_10px_rgba(0,0,0,0.02)] space-y-3">
-                    <Button onClick={handleSave} className="w-full font-bold bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl shadow-sm">
+                <div className="p-6 border-t border-zinc-100 dark:border-sidebar-border bg-white dark:bg-sidebar shadow-[0_-4px_10px_rgba(0,0,0,0.02)] space-y-3 transition-colors">
+                    <Button 
+                        onClick={handleSave} 
+                        className="w-full h-11 text-[13px] font-black bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl shadow-lg shadow-zinc-900/10 dark:shadow-none transition-all"
+                    >
                         <Save className="mr-2 h-4 w-4" /> Save Configuration
                     </Button>
-                    <Button onClick={handleReset} variant="outline" className="w-full font-semibold rounded-xl border-zinc-200 text-zinc-600 hover:text-zinc-900">
+                    <Button 
+                        onClick={handleReset} 
+                        variant="ghost" 
+                        className="w-full h-11 text-[13px] font-bold rounded-xl text-zinc-500 hover:text-rose-600 hover:bg-rose-50 dark:text-zinc-400 dark:hover:text-rose-400 dark:hover:bg-rose-900/20 transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-900/50"
+                    >
                         <RotateCcw className="mr-2 h-4 w-4" /> Reset to Default
                     </Button>
                 </div>
             </div>
 
             {/* RIGHT PANE: Live Preview */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-100 flex flex-col items-center p-8 relative">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-zinc-50/50 dark:bg-background flex flex-col items-center p-8 relative transition-colors">
                 {/* Toolbar */}
                 <div className="absolute top-4 right-8 z-20 flex gap-2">
-                    <div className="bg-white px-4 py-2 rounded-full border border-zinc-200 shadow-sm flex items-center gap-2 text-xs font-bold text-zinc-600">
-                        <Eye className="h-4 w-4 text-primary" /> Live Preview Mode
+                    <div className="bg-white dark:bg-sidebar px-4 py-2 rounded-2xl border border-zinc-200 dark:border-sidebar-border shadow-sm flex items-center gap-2 text-[11px] font-black text-zinc-600 dark:text-zinc-400 uppercase tracking-widest transition-all">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Live Preview Mode
                     </div>
                 </div>
 
                 {/* Scaled Wrapper for Preview - To fit A4 inside the pane */}
-                <div className="w-full max-w-[794px] transform origin-top transition-transform">
+                <div className="w-full max-w-[794px] transform origin-top transition-transform shadow-2xl shadow-zinc-400/10 dark:shadow-black/40 rounded-sm">
                     <MarksheetPreview data={mockStudentData} config={config} />
                 </div>
             </div>

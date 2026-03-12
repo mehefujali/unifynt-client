@@ -9,14 +9,14 @@ import { StudentService } from "@/services/student.service";
 import { AcademicService } from "@/services/academic.service";
 import { useDebounce } from "@/hooks/use-debounce";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone, KeyRound, Bell } from "lucide-react";
+import { Search, Eye, Loader2, ChevronLeft, ChevronRight, UserX, Plus, Edit, Download, ShieldAlert, GraduationCap, Phone, KeyRound, Bell, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import ViewStudentModal from "./view-student-modal";
@@ -74,8 +74,6 @@ export default function StudentsPage() {
         }),
     });
 
-    // The password reset logic has been appropriately moved to the ResetPasswordModal component
-
     const handleExport = async (format: 'excel' | 'csv') => {
         try {
             setIsExporting(true);
@@ -121,7 +119,6 @@ export default function StudentsPage() {
     const sectionList = extractData(sectionsRes);
 
     return (
-        // 🔒 Gate for Entire Directory Access
         <PermissionGate 
             required={PERMISSIONS.STUDENT_VIEW}
             fallback={
@@ -136,230 +133,242 @@ export default function StudentsPage() {
                 </div>
             }
         >
-            <div className="p-6 space-y-6 animate-in fade-in duration-500">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="p-6 space-y-6">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-foreground uppercase">Student Directory</h2>
-                        <p className="text-muted-foreground text-sm font-medium opacity-80">Manage and oversee all enrolled students.</p>
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground">Students Directory</h2>
+                        <p className="text-muted-foreground text-sm">Manage student profiles, enrollments, and academic status across the institution.</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 w-full md:w-auto">
                         {generatedPasswordInfo && (
-                            <div className="hidden lg:flex items-center gap-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 px-4 py-2 rounded-xl border border-rose-100 dark:border-rose-900/30 font-bold text-[12px] shadow-sm animate-in zoom-in fade-in duration-300">
+                            <div className="hidden lg:flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-4 py-2 rounded-xl border border-emerald-500/20 font-bold text-[12px] shadow-sm animate-in zoom-in fade-in duration-300">
                                 <KeyRound className="h-4 w-4" /> 
-                                Password Reset - 
-                                <span className="opacity-80">{generatedPasswordInfo.email}</span>:
-                                <span className="font-mono tracking-wider ml-1 px-2 py-0.5 bg-white dark:bg-black/40 rounded border border-rose-100 dark:border-rose-900/50">{generatedPasswordInfo.password}</span>
+                                Password Reset Success - {generatedPasswordInfo.email}:
+                                <span className="font-mono tracking-wider ml-1 px-2 py-0.5 bg-white dark:bg-black/40 rounded border border-emerald-500/30">{generatedPasswordInfo.password}</span>
                             </div>
                         )}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" disabled={isExporting} className="h-11 rounded-xl shadow-sm font-bold border-slate-200 dark:border-slate-800">
+                                <Button variant="outline" disabled={isExporting} className="h-10 rounded-lg shadow-sm font-semibold border-border">
                                     {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
                                     Export
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl p-2 min-w-[180px]">
-                                <DropdownMenuItem onClick={() => handleExport('excel')} className="font-bold cursor-pointer rounded-lg py-2.5">
+                            <DropdownMenuContent align="end" className="w-[200px]">
+                                <DropdownMenuItem onClick={() => handleExport('excel')} className="cursor-pointer">
                                     Export as Excel (.xlsx)
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExport('csv')} className="font-bold cursor-pointer rounded-lg py-2.5">
+                                <DropdownMenuItem onClick={() => handleExport('csv')} className="cursor-pointer">
                                     Export as CSV (.csv)
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        {/* 🔒 Gate for Add Student Action */}
                         <PermissionGate required={PERMISSIONS.STUDENT_CREATE}>
-                            <Button onClick={() => setIsAddModalOpen(true)} className="font-bold shadow-lg shadow-primary/20 h-10 px-6 rounded-xl transition-all hover:scale-[1.02]">
+                            <Button onClick={() => setIsAddModalOpen(true)} className="font-bold shadow-md h-10 px-6 rounded-lg transition-all hover:translate-y-[-1px]">
                                 <Plus className="h-4 w-4 mr-2" /> Add Student
                             </Button>
                         </PermissionGate>
                     </div>
                 </div>
 
-                <Card className="rounded-2xl bg-card border-border shadow-sm overflow-hidden">
-                    <CardHeader className="p-4 border-b border-border/30 bg-muted/20">
-                        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                            <div className="relative sm:col-span-6 lg:col-span-4">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search by name, ID or guardian..."
-                                    value={search}
-                                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                                    className="pl-11 h-10 bg-muted/20 rounded-xl border-border font-medium text-sm"
-                                />
-                            </div>
-                            <div className="sm:col-span-3 lg:col-span-4">
-                                <Select value={classId} onValueChange={(val) => { setClassId(val); setSectionId("ALL"); setPage(1); }}>
-                                    <SelectTrigger className="h-10 bg-muted/20 rounded-xl border-border font-medium">
-                                        <GraduationCap className="h-4 w-4 mr-2 text-primary" />
-                                        <SelectValue placeholder="All Classes" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="ALL" className="font-bold text-primary uppercase">All Classes</SelectItem>
-                                        {classList.map((cls: any) => (
-                                            <SelectItem key={cls.id} value={cls.id} className="font-medium">{cls.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="sm:col-span-3 lg:col-span-4">
-                                <Select value={sectionId} onValueChange={(val) => { setSectionId(val); setPage(1); }} disabled={classId === "ALL"}>
-                                    <SelectTrigger className="h-10 bg-muted/20 rounded-xl border-border font-medium">
-                                        <SelectValue placeholder={classId === "ALL" ? "Select Class First" : "All Sections"} />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl">
-                                        <SelectItem value="ALL" className="font-bold text-primary uppercase">All Sections</SelectItem>
-                                        {sectionList.map((sec: any) => (
-                                            <SelectItem key={sec.id} value={sec.id} className="font-medium">Section {sec.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <Table>
-                                <TableHeader className="bg-muted/30 border-b border-border/50">
-                                    <TableRow className="border-border/30">
-                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground px-8 h-12">Student Identity</TableHead>
-                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Class & Roll</TableHead>
-                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Guardian Details</TableHead>
-                                        <TableHead className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">System Status</TableHead>
-                                        <TableHead className="text-right font-bold text-[11px] uppercase tracking-wider text-muted-foreground px-8">Manage</TableHead>
+                {/* Filters Section - Following Super Admin Logic */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by name, ID or guardian..."
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                            className="pl-9 h-10 bg-muted/20 border-border"
+                        />
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Select value={classId} onValueChange={(val) => { setClassId(val); setSectionId("ALL"); setPage(1); }}>
+                            <SelectTrigger className="w-full sm:w-[180px] h-10 bg-muted/20">
+                                <SelectValue placeholder="All Classes" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All Classes</SelectItem>
+                                {classList.map((cls: any) => (
+                                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={sectionId} onValueChange={(val) => { setSectionId(val); setPage(1); }} disabled={classId === "ALL"}>
+                            <SelectTrigger className="w-full sm:w-[150px] h-10 bg-muted/20">
+                                <SelectValue placeholder={classId === "ALL" ? "Select Class" : "All Sections"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ALL">All Sections</SelectItem>
+                                {sectionList.map((sec: any) => (
+                                    <SelectItem key={sec.id} value={sec.id}>Section {sec.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                {/* Data Table Section - Following Super Admin Logic */}
+                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader className="bg-muted/30 border-b border-border">
+                                <TableRow>
+                                    <TableHead className="w-[300px] font-bold text-foreground">Student Identity</TableHead>
+                                    <TableHead className="font-bold text-foreground">Class & Roll</TableHead>
+                                    <TableHead className="font-bold text-foreground">Guardian Details</TableHead>
+                                    <TableHead className="font-bold text-foreground">System Status</TableHead>
+                                    <TableHead className="text-right"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-64 text-center">
+                                            <div className="flex flex-col items-center justify-center text-zinc-500">
+                                                <Loader2 className="h-8 w-8 animate-spin mb-4 text-zinc-400" />
+                                                <p>Loading student database...</p>
+                                            </div>
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        <TableRow><TableCell colSpan={5} className="h-64 text-center"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /></TableCell></TableRow>
-                                    ) : students.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="h-80 text-center text-muted-foreground">
-                                                <div className="flex flex-col items-center justify-center gap-4 opacity-30">
-                                                    <UserX className="h-20 w-20 mx-auto" />
-                                                    <p className="font-black uppercase tracking-[3px]">Zero Students Found</p>
+                                ) : students.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-64 text-center text-zinc-500">
+                                            <div className="flex flex-col items-center justify-center gap-4 opacity-40">
+                                                <UserX className="h-16 w-16 mx-auto" />
+                                                <p className="font-bold uppercase tracking-widest text-sm">No Students Found</p>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    students.map((std: any) => (
+                                        <TableRow key={std.id} className="hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-10 w-10 border border-border ring-1 ring-border/20">
+                                                        <AvatarImage src={std.profilePicture} alt={std.firstName} className="object-cover" />
+                                                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
+                                                            {std.firstName.charAt(0)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-foreground">
+                                                            {std.firstName} {std.lastName}
+                                                        </span>
+                                                        <span className="text-[11px] font-semibold text-muted-foreground px-1.5 py-0.5 bg-muted/60 rounded-md border border-border/50 w-fit mt-0.5">
+                                                            ID: {std.studentId}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        students.map((std: any) => (
-                                            <TableRow key={std.id} className="hover:bg-muted/10 transition-colors border-border/30">
-                                                <TableCell className="px-8 py-4">
-                                                    <div className="flex items-center gap-4">
-                                                        <Avatar className="h-11 w-11 border-2 border-border/50 shadow-sm ring-1 ring-border/20">
-                                                            <AvatarImage src={std.profilePicture} alt={std.firstName} className="object-cover" />
-                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg uppercase">
-                                                                {std.firstName.charAt(0)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-[14px] text-foreground group-hover:text-primary transition-colors tracking-tight">
-                                                                {std.firstName} {std.lastName}
-                                                            </span>
-                                                            <span className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest bg-muted/50 w-fit px-1.5 rounded-md border border-border/30">ID: {std.studentId}</span>
-                                                        </div>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-sm font-bold text-foreground/90 tabular-nums">Class {std.class?.name}</span>
+                                                    <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                                                        Section {std.section?.name} <span className="text-border">|</span> Roll: <span className="text-primary font-bold">{std.rollNumber}</span>
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-sm font-bold text-foreground/80">{std.admissionApplication?.fatherName || std.admissionApplication?.localGuardianName || "N/A"}</span>
+                                                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                                                        <Phone className="h-3 w-3" /> {std.admissionApplication?.fatherPhone || std.admissionApplication?.localGuardianPhone || "N/A"}
                                                     </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[13px] font-bold text-foreground/90 uppercase tracking-tighter">Class {std.class?.name} - {std.section?.name}</span>
-                                                        <span className="text-[11px] font-medium text-muted-foreground">Roll: <span className="text-primary font-bold">{std.rollNumber}</span></span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[13px] font-bold text-foreground/90">{std.admissionApplication?.fatherName || std.admissionApplication?.localGuardianName || "N/A"}</span>
-                                                        <div className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground tracking-tight">
-                                                            <Phone className="h-3 w-3" /> {std.admissionApplication?.fatherPhone || std.admissionApplication?.localGuardianPhone || "N/A"}
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <div className="flex justify-center">
-                                                        <div className={cn(
-                                                            "flex items-center gap-2 px-3 py-1 rounded-full border font-bold text-[10px] uppercase tracking-wider",
-                                                            std.user?.status === "ACTIVE" 
-                                                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
-                                                                : "bg-rose-500/10 text-rose-500 border-rose-500/20"
-                                                        )}>
-                                                            <div className={cn(
-                                                                "h-1.5 w-1.5 rounded-full",
-                                                                std.user?.status === "ACTIVE" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
-                                                            )} />
-                                                            <span>{std.user?.status || "UNKNOWN"}</span>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right px-8">
-                                                    <div className="flex items-center justify-end gap-2 text-muted-foreground">
-                                                        {/* 🔒 Gate for Individual Actions */}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={cn(
+                                                        "h-2 w-2 rounded-full",
+                                                        std.user?.status === "ACTIVE" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                                                    )} />
+                                                    <span className={cn(
+                                                        "text-sm font-bold capitalize",
+                                                        std.user?.status === "ACTIVE" ? "text-emerald-500" : "text-rose-500"
+                                                    )}>
+                                                        {std.user?.status?.toLowerCase() || "unknown"}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-[180px]">
                                                         <PermissionGate required={PERMISSIONS.STUDENT_VIEW}>
-                                                            <Button title="View Profile" variant="ghost" size="icon" onClick={() => setSelectedStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
-                                                                <Eye className="h-4.5 w-4.5" />
-                                                            </Button>
+                                                            <DropdownMenuItem onClick={() => setSelectedStudentId(std.id)} className="cursor-pointer">
+                                                                <Eye className="mr-2 h-4 w-4" /> View Profile
+                                                            </DropdownMenuItem>
                                                         </PermissionGate>
                                                         
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Send Notification" variant="ghost" size="icon" onClick={() => setNotificationStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-indigo-500/10 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-500/20">
-                                                                <Bell className="h-4.5 w-4.5" />
-                                                            </Button>
+                                                            <DropdownMenuItem onClick={() => setNotificationStudentId(std.id)} className="cursor-pointer">
+                                                                <Bell className="mr-2 h-4 w-4" /> Send Notification
+                                                            </DropdownMenuItem>
                                                         </PermissionGate>
- 
+  
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Reset Password" variant="ghost" size="icon" onClick={() => setResetStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-rose-500/10 hover:text-rose-600 transition-all border border-transparent hover:border-rose-500/20">
-                                                                <KeyRound className="h-4.5 w-4.5" />
-                                                            </Button>
+                                                            <DropdownMenuItem onClick={() => setResetStudentId(std.id)} className="cursor-pointer">
+                                                                <KeyRound className="mr-2 h-4 w-4" /> Reset Password
+                                                            </DropdownMenuItem>
                                                         </PermissionGate>
                                                         
                                                         <PermissionGate required={PERMISSIONS.STUDENT_EDIT}>
-                                                            <Button title="Edit Details" variant="ghost" size="icon" onClick={() => setEditingStudentId(std.id)} className="h-9 w-9 rounded-xl hover:bg-amber-500/10 hover:text-amber-600 transition-all border border-transparent hover:border-amber-500/20">
-                                                                <Edit className="h-4.5 w-4.5" />
-                                                            </Button>
+                                                            <DropdownMenuItem onClick={() => setEditingStudentId(std.id)} className="cursor-pointer">
+                                                                <Edit className="mr-2 h-4 w-4" /> Edit Details
+                                                            </DropdownMenuItem>
                                                         </PermissionGate>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
 
-                        {/* Pagination Footer */}
-                        {!isLoading && meta.total > 0 && (
-                            <div className="flex flex-col sm:flex-row items-center justify-between px-8 py-6 border-t border-border bg-muted/20 gap-4">
-                                <div className="text-[11px] font-bold uppercase text-muted-foreground tracking-widest">
-                                    Displaying <span className="text-foreground">{((meta.page - 1) * meta.limit) + 1} - {Math.min(meta.page * meta.limit, meta.total)}</span> of {meta.total} students
+                    {/* Pagination - Following Super Admin Logic */}
+                    {!isLoading && meta.total > 0 && (
+                        <div className="border-t border-border bg-muted/20 p-4 flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground font-bold">
+                                Showing <span className="text-foreground">{((meta.page - 1) * meta.limit) + 1}</span> to <span className="text-foreground">{Math.min(meta.page * meta.limit, meta.total)}</span> of <span className="text-foreground">{meta.total}</span> students
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={meta.page === 1}
+                                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <div className="px-3 text-xs font-bold text-foreground/70 bg-background/50 py-1 rounded-md border border-border/50">
+                                    Page {meta.page} of {meta.totalPage}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        onClick={() => setPage(p => Math.max(1, p - 1))} 
-                                        disabled={meta.page === 1} 
-                                        className="h-9 rounded-xl border-border font-bold px-4 shadow-sm transition-all hover:bg-primary/10 hover:text-primary"
-                                    >
-                                        <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-                                    </Button>
-                                    <div className="px-5 h-9 flex items-center justify-center bg-background/50 text-foreground rounded-xl font-bold text-[13px] border border-border/50">
-                                        {meta.page} / {meta.totalPage}
-                                    </div>
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        onClick={() => setPage(p => p + 1)} 
-                                        disabled={meta.page >= meta.totalPage} 
-                                        className="h-9 rounded-xl border-border font-bold px-4 shadow-sm transition-all hover:bg-primary/10 hover:text-primary"
-                                    >
-                                        Next <ChevronRight className="h-4 w-4 ml-2" />
-                                    </Button>
-                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setPage(p => p + 1)}
+                                    disabled={meta.page >= meta.totalPage}
+                                    className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </div>
+                    )}
+                </div>
 
+                {/* Modals */}
                 <AddStudentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
                 <ViewStudentModal studentId={selectedStudentId} isOpen={!!selectedStudentId} onClose={() => setSelectedStudentId(null)} />
                 <EditStudentModal studentId={editingStudentId} isOpen={!!editingStudentId} onClose={() => setEditingStudentId(null)} />

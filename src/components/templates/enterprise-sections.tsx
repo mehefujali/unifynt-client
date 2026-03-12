@@ -17,7 +17,7 @@ import { NoticeService } from "@/services/notice.service";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
-import { FileText, BellRing, ArrowUpRight, ArrowRight, Loader2 } from "lucide-react";
+import { BellRing, ArrowUpRight, ArrowRight, Loader2 } from "lucide-react";
 import { InquiryService } from "@/services/inquiry.service";
 import { toast } from "sonner";
 
@@ -576,12 +576,12 @@ export const Faq = ({ data }: any) => (
 
 // --- 8. CONTACT (Elegant Form & Info) ---
 export const Contact = ({ data, theme, school }: any) => {
-  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [formData, setFormData] = useState({ name: "", contact: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
+    if (!formData.name || !formData.contact || !formData.message) {
       toast.error("Please fill out all fields");
       return;
     }
@@ -594,7 +594,7 @@ export const Contact = ({ data, theme, school }: any) => {
     try {
       await InquiryService.submitInquiry(schoolIdToUse, formData);
       toast.success("Message sent successfully! We'll be in touch.");
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ name: "", contact: "", message: "" });
     } catch {
       toast.error("Failed to send message. Please try again.");
     } finally {
@@ -632,17 +632,15 @@ export const Contact = ({ data, theme, school }: any) => {
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               className="w-full border-b border-zinc-200 pb-2 text-lg font-medium outline-none focus:border-zinc-500 transition-colors bg-transparent text-zinc-900" 
-              placeholder="John Doe" 
+              placeholder="" 
             />
           </div>
           <div className="space-y-2 pt-4">
-            <label className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Email Address</label>
+            <label className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Email or Mobile Number</label>
             <input 
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              value={formData.contact}
+              onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
               className="w-full border-b border-zinc-200 pb-2 text-lg font-medium outline-none focus:border-zinc-500 transition-colors bg-transparent text-zinc-900" 
-              placeholder="john@example.com" 
             />
           </div>
           <div className="space-y-2 pt-4">
@@ -652,7 +650,7 @@ export const Contact = ({ data, theme, school }: any) => {
               onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
               className="w-full border-b border-zinc-200 pb-2 text-lg font-medium outline-none focus:border-zinc-500 transition-colors resize-none bg-transparent text-zinc-900" 
               rows={3} 
-              placeholder="How can we help?" 
+              placeholder="" 
             />
           </div>
           <Button 
