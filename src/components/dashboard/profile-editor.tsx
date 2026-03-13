@@ -20,8 +20,16 @@ import {
     User as UserIcon,
     Image as ImageIcon,
     ShieldCheck,
-    ShieldAlert
+    ShieldAlert,
+    Palette,
+    ChevronDown,
+    ChevronUp
 } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+
+import { useThemeColor, THEME_PRESETS, type ThemePreset } from "@/providers/theme-color-provider";
+import { cn } from "@/lib/utils";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -30,7 +38,6 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
@@ -179,9 +186,11 @@ export function ProfileEditor() {
         },
         onSuccess: () => {
             toast.success("OTP sent to your email!");
-            setIsTwoFactorModalOpen(true);
         },
-        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to request 2FA"),
+        onError: (error: any) => {
+            setIsTwoFactorModalOpen(false);
+            toast.error(error.response?.data?.message || "Failed to request 2FA");
+        },
     });
 
     const verify2FAMutation = useMutation({
@@ -264,16 +273,29 @@ export function ProfileEditor() {
 
             <div className="flex flex-col xl:flex-row gap-8">
                 {/* Sidebar Navigation */}
-                <div className="w-full xl:w-72 shrink-0">
-                    <div className="sticky top-8 bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm rounded-2xl p-3">
+                <div className="w-full xl:w-64 shrink-0">
+                    <div className="sticky top-8 bg-card border border-border shadow-sm rounded-xl p-3 overflow-hidden">
                         <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
-                            <TabsList className="flex flex-col h-auto bg-transparent space-y-1 p-0">
-                                <TabsTrigger value="personal" className="w-full justify-start px-4 py-3.5 text-sm font-bold rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-primary data-[state=active]:shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-all">
-                                    <UserIcon className="mr-3 h-4 w-4" /> Personal Information
+                            <TabsList className="flex flex-col h-auto bg-transparent space-y-2 p-0">
+                                <TabsTrigger 
+                                    value="personal" 
+                                    className="w-full justify-start px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all duration-300"
+                                >
+                                    <UserIcon className="mr-3 h-4 w-4" /> Personal Info
                                 </TabsTrigger>
-                                <Separator className="my-2 opacity-50" />
-                                <TabsTrigger value="security" className="w-full justify-start px-4 py-3.5 text-sm font-bold rounded-xl data-[state=active]:bg-red-50 dark:data-[state=active]:bg-red-500/10 data-[state=active]:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 transition-all text-muted-foreground">
-                                    <Lock className="mr-3 h-4 w-4" /> Account Security
+                                
+                                <TabsTrigger 
+                                    value="security" 
+                                    className="w-full justify-start px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all duration-300 text-muted-foreground"
+                                >
+                                    <Lock className="mr-3 h-4 w-4" /> Security
+                                </TabsTrigger>
+
+                                <TabsTrigger 
+                                    value="appearance" 
+                                    className="w-full justify-start px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl data-[state=active]:bg-cyan-500 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all duration-300 text-muted-foreground"
+                                >
+                                    <Palette className="mr-3 h-4 w-4" /> Aesthetics
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -282,76 +304,87 @@ export function ProfileEditor() {
 
                 {/* Main Content Form */}
                 <div className="flex-1">
-                    <form id="profile-form" onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}>
+                    {/* Color Customizer Hook */}
+                    <AppearanceTab active={activeTab === "appearance"} />
 
+                    <form id="profile-form" onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}>
                         {/* TAB: PERSONAL INFO */}
                         {activeTab === "personal" && (
                             <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                                <Card className="border-border/60 shadow-sm overflow-hidden rounded-2xl bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
-                                    <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-200/50 dark:border-zinc-800/50 px-8 py-6">
-                                        <CardTitle className="text-xl">Basic Details</CardTitle>
-                                        <CardDescription>Update your photo and fundamental profile information.</CardDescription>
+                                <Card className="border border-border shadow-sm overflow-hidden rounded-xl">
+                                    <CardHeader className="bg-muted/30 border-b border-border px-8 py-6">
+                                        <CardTitle className="text-xl font-bold tracking-tight flex items-center gap-3">
+                                            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                <UserIcon className="h-4 w-4" />
+                                            </div>
+                                            Identity Fundamentals
+                                        </CardTitle>
+                                        <CardDescription className="text-xs font-medium">Update your digital persona and contact information across the workspace.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="p-8 space-y-8">
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 pb-8 border-b border-zinc-200/50 dark:border-zinc-800/50">
+                                        <div className="flex flex-col md:flex-row items-center gap-8 pb-8 border-b border-border/50">
                                             <div className="relative group cursor-pointer shrink-0" onClick={() => fileInputRef.current?.click()}>
-                                                <Avatar className="h-32 w-32 border-4 border-white dark:border-zinc-950 shadow-lg group-hover:scale-105 transition-all bg-zinc-100 dark:bg-zinc-900">
+                                                <Avatar className="h-32 w-32 border-2 border-border shadow-md transition-all duration-300 relative z-10">
                                                     <AvatarImage src={currentLogo} alt="Profile Picture" className="object-cover" />
-                                                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary text-4xl font-extrabold">
+                                                    <AvatarFallback className="bg-muted text-muted-foreground text-3xl font-bold">
                                                         {form.getValues("firstName")?.charAt(0) || "U"}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                                                    <ImageIcon className="h-8 w-8 text-white" />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px] z-20">
+                                                    <UploadCloud className="h-8 w-8 text-white" />
                                                 </div>
                                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
                                             </div>
-                                            <div className="space-y-3">
-                                                <h4 className="font-extrabold text-lg">Profile Picture</h4>
-                                                <p className="text-sm text-muted-foreground leading-relaxed max-w-md">Upload a square image to uniquely identify your account across the workspace.</p>
-                                                <Button type="button" variant="outline" size="sm" className="mt-2 shadow-sm font-bold h-10 px-6 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 border-zinc-200 dark:border-zinc-800" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                                                    {isUploading ? "Uploading..." : "Upload New Photo"}
-                                                </Button>
+                                            <div className="space-y-2 text-center md:text-left">
+                                                <h4 className="font-bold text-lg">Display Portrait</h4>
+                                                <p className="text-xs text-muted-foreground font-medium leading-relaxed max-w-sm">Upload a professional portrait. This identifies you in communications and records.</p>
+                                                <div className="pt-2">
+                                                    <Button type="button" variant="outline" size="sm" className="font-bold h-9 px-4 rounded-lg" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4 text-primary" />}
+                                                        Change Photo
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">First Name</Label>
-                                                <Input className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 font-medium text-[15px]" {...form.register("firstName")} />
-                                                {form.formState.errors.firstName && <p className="text-red-500 text-xs mt-1 font-semibold">{form.formState.errors.firstName.message}</p>}
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">First Name</Label>
+                                                <Input className="h-11 shadow-sm bg-muted/10 border-border/50 focus-visible:ring-primary/20 font-medium" {...form.register("firstName")} />
+                                                {form.formState.errors.firstName && <p className="text-red-500 text-[11px] mt-1 font-semibold">{form.formState.errors.firstName.message}</p>}
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Last Name</Label>
-                                                <Input className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 font-medium text-[15px]" {...form.register("lastName")} />
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Last Name</Label>
+                                                <Input className="h-11 shadow-sm bg-muted/10 border-border/50 focus-visible:ring-primary/20 font-medium" {...form.register("lastName")} />
                                             </div>
+                                            
                                             <div className="space-y-2 md:col-span-2">
-                                                <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Current Email Address</Label>
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Email Identity</Label>
                                                 <div className="relative">
-                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                                                    <Input disabled className="h-12 pl-12 shadow-sm bg-zinc-100 dark:bg-zinc-900/80 text-muted-foreground rounded-xl border-zinc-200 dark:border-zinc-800 cursor-not-allowed font-medium text-[15px]" type="email" {...form.register("email")} />
+                                                    <Mail className="absolute left-3.5 top-11/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                                                    <Input disabled className="h-11 pl-10 shadow-sm bg-muted/30 text-muted-foreground border-border/50 cursor-not-allowed font-medium" type="email" {...form.register("email")} />
                                                 </div>
-                                                <p className="text-[11px] text-muted-foreground font-medium mt-1 uppercase tracking-wider pl-1 font-semibold">* Emails are securely linked to your profile and cannot be changed.</p>
                                             </div>
+ 
                                             <div className="space-y-2">
-                                                <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Phone Number</Label>
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Contact Number</Label>
                                                 <div className="relative">
-                                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="h-12 pl-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 font-medium text-[15px]" {...form.register("phone")} />
+                                                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                                                    <Input className="h-11 pl-10 shadow-sm bg-muted/10 border-border/50 focus-visible:ring-primary/20 font-medium" {...form.register("phone")} />
                                                 </div>
                                             </div>
+ 
                                             {user?.role !== "SUPER_ADMIN" && (
                                                 <div className="space-y-2">
-                                                    <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Gender</Label>
+                                                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gender Identity</Label>
                                                     <Select onValueChange={(val) => form.setValue("gender", val)} value={form.watch("gender") || ""}>
-                                                        <SelectTrigger className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/20 font-medium text-[15px]">
+                                                        <SelectTrigger className="h-11 shadow-sm bg-muted/10 border-border/50 focus-visible:ring-primary/20 font-medium px-4">
                                                             <SelectValue placeholder="Select Gender" />
                                                         </SelectTrigger>
-                                                        <SelectContent className="rounded-xl drop-shadow-2xl">
-                                                            <SelectItem value="MALE" className="rounded-lg py-3 cursor-pointer">Male</SelectItem>
-                                                            <SelectItem value="FEMALE" className="rounded-lg py-3 cursor-pointer">Female</SelectItem>
-                                                            <SelectItem value="OTHER" className="rounded-lg py-3 cursor-pointer">Other</SelectItem>
+                                                        <SelectContent className="rounded-xl shadow-xl border-border">
+                                                            <SelectItem value="MALE" className="rounded-lg py-2.5 font-bold cursor-pointer">Male Participant</SelectItem>
+                                                            <SelectItem value="FEMALE" className="rounded-lg py-2.5 font-bold cursor-pointer">Female Participant</SelectItem>
+                                                            <SelectItem value="OTHER" className="rounded-lg py-2.5 font-bold cursor-pointer">Unspecified / Other</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
@@ -363,11 +396,11 @@ export function ProfileEditor() {
                         )}
 
                         {/* Save Button for Personal Info */}
-                        {activeTab !== "security" && (
-                            <div className="mt-8 flex justify-end">
-                                <Button type="submit" size="lg" className="px-10 h-14 font-extrabold shadow-xl hover:shadow-primary/50 text-[15px] rounded-2xl w-full md:w-auto transition-all" disabled={updateProfileMutation.isPending}>
+                        {activeTab === "personal" && (
+                            <div className="mt-6 flex justify-end">
+                                <Button type="submit" size="lg" className="px-10 h-12 font-bold shadow-md rounded-xl w-full md:w-auto transition-all" disabled={updateProfileMutation.isPending}>
                                     {updateProfileMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                                    Save Profile Changes
+                                    Save Profile Details
                                 </Button>
                             </div>
                         )}
@@ -378,74 +411,95 @@ export function ProfileEditor() {
                         <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
                             
                             {/* Two-Factor Authentication Block */}
-                            <Card className="border-border/60 shadow-sm overflow-hidden rounded-2xl bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
-                                <CardHeader className="bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-200/50 dark:border-zinc-800/50 px-8 py-6 flex flex-row items-center justify-between">
-                                    <div>
-                                        <CardTitle className="text-xl flex items-center gap-2">
-                                            {user?.isTwoFactorEnabled ? <ShieldCheck className="text-green-500 h-5 w-5" /> : <ShieldAlert className="text-orange-500 h-5 w-5" />}
-                                            Two-Factor Authentication (2FA)
+                            <Card className="border border-border shadow-sm overflow-hidden rounded-xl">
+                                <CardHeader className="bg-muted/30 border-b border-border px-8 py-6 flex flex-row items-center justify-between">
+                                    <div className="space-y-1">
+                                        <CardTitle className="text-xl font-bold tracking-tight flex items-center gap-3">
+                                            <div className={cn(
+                                                "h-9 w-9 rounded-lg flex items-center justify-center shadow-sm",
+                                                user?.isTwoFactorEnabled ? "bg-emerald-500/10 text-emerald-500" : "bg-orange-500/10 text-orange-500"
+                                            )}>
+                                                {user?.isTwoFactorEnabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
+                                            </div>
+                                            Two-Factor Authentication
                                         </CardTitle>
-                                        <CardDescription className="mt-1">Add an extra layer of security to your account.</CardDescription>
+                                        <CardDescription className="text-xs font-medium">Protect your account with an extra layer of security.</CardDescription>
                                     </div>
-                                    <div>
-                                        <Switch
-                                            checked={user?.isTwoFactorEnabled}
-                                            onCheckedChange={(checked) => {
-                                                if (checked) {
-                                                    request2FAMutation.mutate();
-                                                } else {
-                                                    disable2FAMutation.mutate();
-                                                }
-                                            }}
-                                            disabled={request2FAMutation.isPending || disable2FAMutation.isPending}
-                                            className="data-[state=checked]:bg-green-500"
-                                        />
-                                    </div>
+                                    <Switch
+                                        checked={user?.isTwoFactorEnabled}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setIsTwoFactorModalOpen(true);
+                                                request2FAMutation.mutate();
+                                            } else {
+                                                disable2FAMutation.mutate();
+                                            }
+                                        }}
+                                        disabled={request2FAMutation.isPending || disable2FAMutation.isPending}
+                                    />
                                 </CardHeader>
                                 <CardContent className="p-8">
-                                    <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-3xl">
-                                        When Two-Factor Authentication is enabled, you will be required to enter a secure 6-digit OTP code sent to your registered email address every time you log in. This heavily restricts unauthorized access to your institution&apos;s data.
-                                    </p>
-                                    <div className="mt-6">
-                                        {user?.isTwoFactorEnabled ? (
-                                            <div className="inline-flex items-center gap-2 text-sm font-extrabold text-green-600 dark:text-green-500 bg-green-50 dark:bg-green-500/10 px-4 py-2 rounded-lg border border-green-200 dark:border-green-500/20">
-                                                <CheckCircle2 className="h-4 w-4" /> 2FA is currently Active
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                        <div className="lg:col-span-2 space-y-4">
+                                            <p className="text-sm font-medium text-muted-foreground leading-relaxed">
+                                                Enabling Two-Factor Authentication (2FA) adds a critical security layer. Every time you log in, you will be required to enter a secure code sent to your verified email address.
+                                            </p>
+                                            <div className="flex flex-wrap gap-4 pt-2">
+                                                {user?.isTwoFactorEnabled ? (
+                                                    <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-500/20">
+                                                        <ShieldCheck className="h-3.5 w-3.5" /> Security Optimized
+                                                    </div>
+                                                ) : (
+                                                    <div className="inline-flex items-center gap-2 text-xs font-bold text-orange-600 bg-orange-50 dark:bg-orange-500/10 px-4 py-2 rounded-lg border border-orange-200 dark:border-orange-500/20">
+                                                        <ShieldAlert className="h-3.5 w-3.5" /> Vulnerability Detected
+                                                    </div>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div className="inline-flex items-center gap-2 text-sm font-extrabold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 px-4 py-2 rounded-lg border border-orange-200 dark:border-orange-500/20">
-                                                <ShieldAlert className="h-4 w-4" /> 2FA is currently Disabled
+                                        </div>
+                                        <div className="bg-muted/30 rounded-xl p-6 border border-border/50 flex flex-col justify-center items-center text-center space-y-2">
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                                                <KeyRound className="h-5 w-5" />
                                             </div>
-                                        )}
+                                            <h5 className="font-bold text-sm">Mandatory Protocol</h5>
+                                            <p className="text-xs text-muted-foreground">Highly recommended for all administrative personnel.</p>
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
-
-                            <Card className="border-border/60 shadow-sm overflow-hidden rounded-2xl bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60">
-                                <CardHeader className="bg-red-50/50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30 px-8 py-6">
-                                    <CardTitle className="text-xl text-red-600 dark:text-red-400 flex items-center gap-2"><Lock className="h-5 w-5" /> Account Credentials</CardTitle>
-                                    <CardDescription>Update your personal account password.</CardDescription>
+ 
+                            <Card className="border border-destructive/20 shadow-sm overflow-hidden rounded-xl">
+                                <CardHeader className="bg-destructive/5 border-b border-destructive/10 px-8 py-6">
+                                    <CardTitle className="text-xl font-bold tracking-tight text-destructive flex items-center gap-3">
+                                        <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+                                            <Lock className="h-4 w-4" />
+                                        </div>
+                                        Security Credentials
+                                    </CardTitle>
+                                    <CardDescription className="text-xs font-medium">Update the master password used to access your vault.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-8">
                                     <form onSubmit={passwordForm.handleSubmit((data) => updatePasswordMutation.mutate(data))} className="space-y-6 max-w-xl">
                                         <div className="space-y-2">
-                                            <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Current Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 font-mono text-lg tracking-widest focus-visible:ring-primary/20" {...passwordForm.register("oldPassword")} />
-                                            {passwordForm.formState.errors.oldPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.oldPassword.message}</p>}
+                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current Password</Label>
+                                            <Input type="password" placeholder="••••••••" className="h-11 shadow-sm bg-muted/10 border-border/50 font-mono text-lg tracking-widest" {...passwordForm.register("oldPassword")} />
+                                            {passwordForm.formState.errors.oldPassword && <p className="text-red-500 text-[11px] mt-1 font-semibold">{passwordForm.formState.errors.oldPassword.message}</p>}
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" /> New Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 font-mono text-lg tracking-widest focus-visible:ring-primary/20" {...passwordForm.register("newPassword")} />
-                                            {passwordForm.formState.errors.newPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.newPassword.message}</p>}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">New Password</Label>
+                                                <Input type="password" placeholder="••••••••" className="h-11 shadow-sm bg-muted/10 border-border/50 font-mono text-lg tracking-widest" {...passwordForm.register("newPassword")} />
+                                                {passwordForm.formState.errors.newPassword && <p className="text-red-500 text-[11px] mt-1 font-semibold">{passwordForm.formState.errors.newPassword.message}</p>}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirm Password</Label>
+                                                <Input type="password" placeholder="••••••••" className="h-11 shadow-sm bg-muted/10 border-border/50 font-mono text-lg tracking-widest" {...passwordForm.register("confirmPassword")} />
+                                                {passwordForm.formState.errors.confirmPassword && <p className="text-red-500 text-[11px] mt-1 font-semibold">{passwordForm.formState.errors.confirmPassword.message}</p>}
+                                            </div>
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground">Confirm New Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-zinc-50 dark:bg-zinc-900/50 rounded-xl border-zinc-200 dark:border-zinc-800 font-mono text-lg tracking-widest focus-visible:ring-primary/20" {...passwordForm.register("confirmPassword")} />
-                                            {passwordForm.formState.errors.confirmPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.confirmPassword.message}</p>}
-                                        </div>
-                                        <div className="pt-6">
-                                            <Button type="submit" size="lg" variant="destructive" className="w-full md:w-auto px-10 h-14 font-extrabold shadow-xl text-[15px] rounded-2xl hover:shadow-red-500/50 transition-all" disabled={updatePasswordMutation.isPending}>
-                                                {updatePasswordMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
-                                                Update Secure Password
+                                        <div className="pt-4 flex justify-end">
+                                            <Button type="submit" size="lg" variant="destructive" className="w-full md:w-auto px-10 h-11 font-bold shadow-md rounded-xl transition-all" disabled={updatePasswordMutation.isPending}>
+                                                {updatePasswordMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-2 h-4 w-4" />}
+                                                Update Password
                                             </Button>
                                         </div>
                                     </form>
@@ -460,75 +514,82 @@ export function ProfileEditor() {
             <Dialog open={isTwoFactorModalOpen} onOpenChange={(open) => {
                 if (!open && !verify2FAMutation.isPending) setIsTwoFactorModalOpen(false);
             }}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md border-border rounded-xl">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            <ShieldCheck className="h-5 w-5 text-primary" /> Setup Verification
+                        <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                            {request2FAMutation.isPending ? (
+                                <><Loader2 className="h-5 w-5 text-primary animate-spin" /> Preparing Security OTP...</>
+                            ) : (
+                                <><ShieldCheck className="h-5 w-5 text-primary" /> Verification Required</>
+                            )}
                         </DialogTitle>
-                        <DialogDescription>
-                            We have sent a secure 6-digit OTP code to <strong className="text-foreground">{user?.email}</strong>. Enter it below to enable Two-Factor Authentication.
+                        <DialogDescription className="text-xs">
+                            {request2FAMutation.isPending 
+                                ? "We are generating a secure code for your identity verification..." 
+                                : <>We&apos;ve sent a 6-digit code to <strong className="text-foreground">{user?.email}</strong>.</>
+                            }
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-6 space-y-4">
+                    <div className="py-4 space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verification Code</Label>
+                            <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Auth Code</Label>
                             <Input 
                                 value={otpCode}
                                 onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
                                 placeholder="000000"
-                                className="h-14 text-center text-3xl font-mono tracking-[0.5em] bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 focus-visible:ring-primary/30"
+                                className="h-12 text-center text-2xl font-mono tracking-[0.4em] bg-muted/20 border-border focus-visible:ring-primary/20"
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2">
                         <Button 
                             variant="outline" 
                             onClick={() => setIsTwoFactorModalOpen(false)} 
                             disabled={verify2FAMutation.isPending}
-                            className="font-bold border-zinc-200 dark:border-zinc-800"
+                            className="font-bold h-10 rounded-lg px-6"
                         >
                             Cancel
                         </Button>
                         <Button 
                             onClick={() => verify2FAMutation.mutate()} 
-                            disabled={otpCode.length !== 6 || verify2FAMutation.isPending}
-                            className="font-extrabold shadow-lg hover:shadow-primary/50"
+                            disabled={otpCode.length !== 6 || verify2FAMutation.isPending || request2FAMutation.isPending}
+                            className="font-bold h-10 rounded-lg px-6 shadow-sm"
                         >
-                            {verify2FAMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                            Verify & Enable 2FA
+                            {verify2FAMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Verify & Activate
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* SMART IMAGE PROCESSING MODAL */}
+            {/* IMAGE ADJUSTER MODAL */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[500px] border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl bg-white/95 dark:bg-zinc-950/95 backdrop-blur-3xl p-6">
+                <DialogContent className="sm:max-w-[480px] border-border rounded-xl p-6">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-black tracking-tight">Adjust Image</DialogTitle>
-                        <DialogDescription className="text-sm font-medium mt-1">
-                            Position your profile image perfectly.
+                        <DialogTitle className="text-xl font-bold tracking-tight">Adjust Portrait</DialogTitle>
+                        <DialogDescription className="text-xs font-medium">
+                            Position your profile image within the frame.
                         </DialogDescription>
                     </DialogHeader>
-
-                    <div className="relative h-[350px] w-full bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden my-4 border border-zinc-200/50 dark:border-zinc-800/50">
+ 
+                    <div className="relative h-[320px] w-full bg-muted/30 rounded-lg overflow-hidden my-4 border border-border">
                         {imageSrc && (
                             <Cropper
-                                image={imageSrc}
+                                image={imageSrc || undefined}
                                 crop={crop}
                                 zoom={zoom}
-                                aspect={1} // Strict Square Aspect
+                                aspect={1}
                                 onCropChange={setCrop}
                                 onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
                                 onZoomChange={setZoom}
                                 showGrid={false}
-                                cropShape="round" // Creates a professional circular preview mask
+                                cropShape="round"
                             />
                         )}
                     </div>
-
-                    <div className="flex flex-col gap-2 mt-4 px-2">
-                        <div className="flex items-center justify-between text-[11px] font-black text-muted-foreground uppercase tracking-widest">
+ 
+                    <div className="space-y-2 mt-4">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                             <span>Zoom Out</span>
                             <span>Zoom In</span>
                         </div>
@@ -538,23 +599,281 @@ export function ProfileEditor() {
                             min={1}
                             max={3}
                             step={0.05}
-                            aria-labelledby="Zoom"
                             onChange={(e) => setZoom(Number(e.target.value))}
-                            className="w-full h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-primary"
+                            className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
                         />
                     </div>
-
-                    <DialogFooter className="mt-8 gap-3 sm:gap-0">
-                        <Button variant="outline" className="font-bold h-12 rounded-xl text-[15px] border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800" onClick={() => setIsModalOpen(false)} disabled={isUploading}>
+ 
+                    <DialogFooter className="mt-6 gap-3">
+                        <Button variant="outline" className="font-bold h-10 rounded-lg border-border" onClick={() => setIsModalOpen(false)} disabled={isUploading}>
                             Cancel
                         </Button>
-                        <Button onClick={handleProcessImage} disabled={isUploading} className="font-extrabold h-12 px-8 rounded-xl text-[15px] shadow-lg hover:shadow-primary/50 transition-all">
-                            {isUploading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                            Set Image
+                        <Button onClick={handleProcessImage} disabled={isUploading} className="font-bold h-10 px-8 rounded-lg shadow-sm transition-all">
+                            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Apply Changes
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+function AppearanceTab({ active }: { active: boolean }) {
+    const { 
+        primaryColor, setPrimaryColor, 
+        sidebarColor, setSidebarColor,
+        navbarColor, setNavbarColor,
+        canvasColor, setCanvasColor,
+        currentThemeId, setTheme,
+        resetAll
+    } = useThemeColor();
+    const [showAllThemes, setShowAllThemes] = useState(false);
+
+    if (!active) return null;
+
+    // Filter themes to show versions that match the current primary mode
+    // To keep it clean, we show the 8 main variants first, then others on "See More"
+    const visibleThemes = showAllThemes 
+        ? THEME_PRESETS 
+        : THEME_PRESETS.slice(0, 8); 
+
+    return (
+        <div className="max-w-[1200px] animate-in slide-in-from-right-4 duration-500 space-y-8 pb-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-6">
+                <div className="space-y-1">
+                    <h3 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
+                        <Palette className="h-6 w-6 text-primary" /> Visual Identity & Themes
+                    </h3>
+                    <p className="text-sm text-muted-foreground font-medium">Select a professional preset or craft your unique brand aesthetic.</p>
+                </div>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={resetAll}
+                    className="h-10 px-6 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30 transition-all shadow-sm border-dashed"
+                >
+                    Reset All Identity
+                </Button>
+            </div>
+
+            {/* Theme Presets Gallery */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                    <div className="h-4 w-1 bg-primary rounded-full" />
+                    <Label className="text-xs font-black uppercase tracking-[0.2em] opacity-60">Professional Presets</Label>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {visibleThemes.map((theme: ThemePreset) => (
+                        <button
+                            key={theme.id}
+                            onClick={() => setTheme(theme.id)}
+                            className={cn(
+                                "group relative flex flex-col items-start p-3 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden bg-white dark:bg-zinc-950 shadow-sm",
+                                currentThemeId === theme.id 
+                                    ? "border-primary ring-4 ring-primary/5 scale-[1.02]" 
+                                    : "border-border/40 hover:border-primary/40 hover:shadow-md"
+                            )}
+                        >
+                            <div className="w-full h-24 rounded-xl mb-3 overflow-hidden relative border border-border/10">
+                                {/* Preview Mockup */}
+                                <div className="absolute inset-0 flex">
+                                    <div className="w-1/3 h-full border-r border-border/5" style={{ backgroundColor: theme.sidebar }}>
+                                        <div className="h-full w-full opacity-20 bg-[radial-gradient(circle_at_20%_20%,#fff_0,transparent_50%)]" />
+                                    </div>
+                                    <div className="flex-1 h-full p-2 flex flex-col gap-1.5" style={{ backgroundColor: theme.canvas }}>
+                                        <div className="h-2 w-full rounded-[2px]" style={{ backgroundColor: theme.navbar }} />
+                                        <div className="flex gap-1.5 items-start mt-1">
+                                            <div className="h-10 flex-1 rounded-md shadow-sm border border-border/10 bg-white dark:bg-zinc-950 p-1">
+                                                <div className="h-1 w-1/2 rounded-full mb-1" style={{ backgroundColor: theme.primary }} />
+                                                <div className="h-0.5 w-full bg-border/20 rounded-full mb-0.5" />
+                                                <div className="h-0.5 w-2/3 bg-border/20 rounded-full" />
+                                            </div>
+                                            <div className="h-6 w-4 rounded-md border border-border/10 bg-white dark:bg-zinc-950" />
+                                        </div>
+                                    </div>
+                                </div>
+                                {currentThemeId === theme.id && (
+                                    <div className="absolute top-2 right-2 h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-300">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center justify-between w-full">
+                                <span className="text-sm font-black tracking-tight">{theme.name}</span>
+                                <Badge variant="outline" className="text-[8px] h-3.5 px-1 uppercase font-bold opacity-50 group-hover:opacity-100 transition-opacity">
+                                    {theme.mode}
+                                </Badge>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">{theme.description}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {!showAllThemes && THEME_PRESETS.length > 8 && (
+                    <div className="flex justify-center pt-4">
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setShowAllThemes(true)}
+                            className="group font-black text-[11px] uppercase tracking-[0.2em] hover:bg-primary/5 hover:text-primary transition-all rounded-xl px-8"
+                        >
+                            Explore All 36 Professional Styles
+                            <ChevronDown className="ml-2 h-4 w-4 group-hover:translate-y-0.5 transition-transform" />
+                        </Button>
+                    </div>
+                )}
+                
+                {showAllThemes && (
+                    <div className="flex justify-center pt-4">
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setShowAllThemes(false)}
+                            className="group font-black text-[11px] uppercase tracking-[0.2em] hover:bg-primary/5 hover:text-primary transition-all rounded-xl px-8"
+                        >
+                            Show Less
+                            <ChevronUp className="ml-2 h-4 w-4 group-hover:-translate-y-0.5 transition-transform" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+            {/* Advanced Branding Kit */}
+            <div className="pt-10 border-t border-border/40 space-y-8">
+                <div className="flex flex-col gap-1 px-1">
+                    <div className="flex items-center gap-3">
+                        <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <ImageIcon className="h-3.5 w-3.5" />
+                        </div>
+                        <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/60">Pro Brand Kit Editor</Label>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground font-medium ml-9">Precisely define your institution&apos;s HEX identity for internal and public touchpoints.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* Primary Brand Color */}
+                    <ColorControl 
+                        label="Primary Identity" 
+                        value={primaryColor || "#0F172A"} 
+                        onChange={setPrimaryColor} 
+                        onReset={() => setPrimaryColor(null)}
+                        description="Buttons & Accents"
+                    />
+
+                    {/* Sidebar Brand Color */}
+                    <ColorControl 
+                        label="Sidebar Surface" 
+                        value={sidebarColor || "#FFFFFF"} 
+                        onChange={setSidebarColor} 
+                        onReset={() => setSidebarColor(null)}
+                        description="Navigation Layout"
+                    />
+
+                    {/* Navbar Brand Color */}
+                    <ColorControl 
+                        label="Toolbar Surface" 
+                        value={navbarColor || "#FFFFFF"} 
+                        onChange={setNavbarColor} 
+                        onReset={() => setNavbarColor(null)}
+                        description="Top Header Bar"
+                    />
+
+                    {/* Canvas Background Color */}
+                    <ColorControl 
+                        label="Canvas Layout" 
+                        value={canvasColor || "#F8FAFC"} 
+                        onChange={setCanvasColor} 
+                        onReset={() => setCanvasColor(null)}
+                        description="Main Background"
+                    />
+                </div>
+            </div>
+
+            {/* Contrast Guard Footer */}
+            <div className="mt-12 group">
+                <div className="relative overflow-hidden p-5 border border-primary/20 rounded-2xl bg-gradient-to-br from-primary/[0.04] to-transparent backdrop-blur-sm transition-all hover:bg-primary/[0.06]">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors" />
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                            <ShieldCheck className="h-6 w-6" />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-[11px] font-black text-primary uppercase tracking-[0.25em]">Algorithm-Powered Readability</p>
+                            <p className="text-[12px] text-muted-foreground font-medium leading-relaxed max-w-[500px]">
+                                Our engine calculates the <span className="text-foreground font-bold">Luminance Density</span> of your surfaces and automatically re-maps foreground tokens to maintain WCAG-grade accessibility.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function ColorControl({ label, value, onChange, onReset, description }: { 
+    label: string, 
+    value: string, 
+    onChange: (val: string) => void, 
+    onReset: () => void,
+    description: string 
+}) {
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(value);
+        toast.success(`Copied: ${value}`);
+    };
+
+    return (
+        <Card className="border-border/60 shadow-none rounded-2xl overflow-hidden bg-white/50 dark:bg-zinc-950/50 transition-all hover:border-primary/40 group">
+            <div className="p-4 space-y-4">
+                <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-0.5">
+                        <Label className="text-[10px] font-black uppercase tracking-[0.15em] text-foreground/40">{label}</Label>
+                        <span className="text-[10px] text-muted-foreground/60 font-bold">{description}</span>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    {/* Visual Picker */}
+                    <div className="relative h-11 w-11 rounded-xl border border-border/60 overflow-hidden shadow-sm group-hover:border-primary/40 transition-all cursor-pointer">
+                        <input 
+                            type="color" 
+                            value={value} 
+                            onChange={(e) => onChange(e.target.value)} 
+                            className="absolute inset-0 h-[200%] w-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer border-none bg-transparent" 
+                        />
+                    </div>
+
+                    {/* HEX Input Field */}
+                    <div className="flex-1 relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-muted-foreground/40 font-mono">#</span>
+                        <Input 
+                            value={value.replace('#', '').toUpperCase()} 
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^[0-9A-Fa-f]{0,6}$/.test(val)) {
+                                    onChange(`#${val}`);
+                                }
+                            }}
+                            className="h-11 pl-7 pr-10 text-[11px] font-mono font-black border-border/40 rounded-xl focus-visible:ring-primary/10 bg-zinc-50/50 dark:bg-zinc-900/50"
+                            maxLength={6}
+                        />
+                        <button 
+                            onClick={copyToClipboard}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-primary transition-colors"
+                        >
+                            <ImageIcon className="h-3 w-3" />
+                        </button>
+                    </div>
+                    
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={onReset} 
+                        className="h-11 w-11 rounded-xl hover:bg-destructive/5 hover:text-destructive transition-all opacity-0 group-hover:opacity-100"
+                    >
+                        <ShieldAlert className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+        </Card>
     );
 }

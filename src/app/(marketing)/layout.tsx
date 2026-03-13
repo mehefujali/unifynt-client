@@ -1,5 +1,6 @@
 import { LandingHeader } from "@/components/landing/header";
 import { LandingFooter } from "@/components/landing/footer";
+import { FloatingContact } from "@/components/floating-contact";
 
 export default function MarketingLayout({
   children,
@@ -12,6 +13,7 @@ export default function MarketingLayout({
       <main className="flex-grow">
         {children}
       </main>
+      <FloatingContact />
       <LandingFooter />
     </div>
   );

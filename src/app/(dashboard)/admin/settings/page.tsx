@@ -241,32 +241,49 @@ export default function AdminWorkspaceProfilePage() {
     const currentLogo = form.watch("logo");
 
     return (
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
-            <div className="mb-8">
-                <h1 className="text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
-                    <Building2 className="h-8 w-8 text-primary" /> Workspace Configuration
-                </h1>
-                <p className="text-muted-foreground mt-2 text-sm font-medium">Manage your institution&apos;s global identity, contact details, and security.</p>
+        <div className="max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-700">
+            <div className="mb-10">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="h-10 w-2 bg-primary rounded-full" />
+                    <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase italic">
+                        Workspace <span className="text-primary/80">Settings</span>
+                    </h1>
+                </div>
+                <p className="text-muted-foreground ml-5 text-sm font-bold tracking-wide opacity-70">Global identity, institutional branding, and infrastructure security.</p>
             </div>
 
-            <div className="flex flex-col xl:flex-row gap-8">
+            <div className="flex flex-col xl:flex-row gap-10 items-start">
                 {/* Sidebar Navigation */}
-                <div className="w-full xl:w-72 shrink-0">
-                    <div className="sticky top-8 bg-background border shadow-sm rounded-xl p-3">
+                <div className="w-full xl:w-80 shrink-0 sticky top-10">
+                    <div className="glass-metal p-5 rounded-3xl border border-border/40 shadow-xl bg-white/50 dark:bg-zinc-950/50 backdrop-blur-2xl">
                         <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
-                            <TabsList className="flex flex-col h-auto bg-transparent space-y-1 p-0">
-                                <TabsTrigger value="identity" className="w-full justify-start px-4 py-3.5 text-sm font-bold rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted transition-all">
-                                    <Palette className="mr-3 h-4 w-4" /> Identity & Branding
+                            <TabsList className="flex flex-col h-auto bg-transparent space-y-2 p-0">
+                                <TabsTrigger 
+                                    value="identity" 
+                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-muted/80 transition-all duration-300 group"
+                                >
+                                    <Palette className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Identity & Branding
                                 </TabsTrigger>
-                                <TabsTrigger value="contact" className="w-full justify-start px-4 py-3.5 text-sm font-bold rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted transition-all">
-                                    <Mail className="mr-3 h-4 w-4" /> Contact & Location
+                                <TabsTrigger 
+                                    value="contact" 
+                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-muted/80 transition-all duration-300 group"
+                                >
+                                    <Mail className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Contact & Location
                                 </TabsTrigger>
-                                <TabsTrigger value="legal" className="w-full justify-start px-4 py-3.5 text-sm font-bold rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none hover:bg-muted transition-all">
-                                    <FileText className="mr-3 h-4 w-4" /> Legal & Administration
+                                <TabsTrigger 
+                                    value="legal" 
+                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-muted/80 transition-all duration-300 group"
+                                >
+                                    <FileText className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Legal & Administration
                                 </TabsTrigger>
-                                <Separator className="my-2 opacity-50" />
-                                <TabsTrigger value="security" className="w-full justify-start px-4 py-3.5 text-sm font-bold rounded-lg data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive data-[state=active]:shadow-none hover:bg-muted transition-all text-muted-foreground">
-                                    <ShieldCheck className="mr-3 h-4 w-4" /> Account Security
+                                <div className="py-3 px-4">
+                                    <Separator className="opacity-20" />
+                                </div>
+                                <TabsTrigger 
+                                    value="security" 
+                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:shadow-lg hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group opacity-70"
+                                >
+                                    <ShieldCheck className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Account Security
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
@@ -279,73 +296,95 @@ export default function AdminWorkspaceProfilePage() {
 
                         {/* TAB: IDENTITY & BRANDING */}
                         {activeTab === "identity" && (
-                            <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                                <Card className="border-border/60 shadow-sm overflow-hidden rounded-xl">
-                                    <CardHeader className="bg-muted/30 border-b px-8 py-6">
-                                        <CardTitle className="text-xl">Branding Assets</CardTitle>
-                                        <CardDescription>Upload your workspace logo and choose brand colors.</CardDescription>
+                            <div className="space-y-8 animate-in slide-in-from-right-10 duration-700">
+                                <Card className="glass-metal border border-border/40 shadow-2xl rounded-3xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl">
+                                    <CardHeader className="bg-primary/5 border-b border-border/40 px-10 py-10">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-12 w-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
+                                                <Palette className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-2xl font-black uppercase tracking-tight">Institution Branding</CardTitle>
+                                                <CardDescription className="font-bold opacity-60">Visual assets and workspace URLs.</CardDescription>
+                                            </div>
+                                        </div>
                                     </CardHeader>
-                                    <CardContent className="p-8 space-y-8">
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 pb-8 border-b border-border/50">
-                                            <div className="relative group cursor-pointer shrink-0" onClick={() => fileInputRef.current?.click()}>
-                                                <Avatar className="h-32 w-32 border-4 border-background shadow-lg group-hover:scale-105 transition-all bg-white">
-                                                    <AvatarImage src={currentLogo} alt="Logo" className="object-cover" />
-                                                    <AvatarFallback className="bg-primary/5 text-primary text-4xl font-extrabold">
-                                                        {form.getValues("name")?.charAt(0) || "W"}
+                                    <CardContent className="p-10 space-y-10">
+                                        <div className="flex flex-col md:flex-row items-center gap-12 pb-12 border-b border-border/20">
+                                            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                                <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-cyan-400 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
+                                                <Avatar className="h-40 w-40 border-8 border-background shadow-2xl scale-100 group-hover:scale-[1.03] transition-all duration-500 bg-white ring-1 ring-border/20">
+                                                    <AvatarImage src={currentLogo} alt="Logo" className="object-contain p-2" />
+                                                    <AvatarFallback className="bg-primary/5 text-primary text-5xl font-black">
+                                                        {form.getValues("name")?.charAt(0) || "U"}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                                                    <ImageIcon className="h-8 w-8 text-white" />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
+                                                    <div className="bg-white/20 p-4 rounded-full border border-white/40 shadow-xl">
+                                                        <ImageIcon className="h-8 w-8 text-white" />
+                                                    </div>
                                                 </div>
                                                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
                                             </div>
-                                            <div className="space-y-3">
-                                                <h4 className="font-extrabold text-lg">Workspace Logo</h4>
-                                                <p className="text-sm text-muted-foreground leading-relaxed max-w-md">We recommend a clear, square-oriented image. High resolution is preferred. Our smart adjuster will help you fit it perfectly.</p>
-                                                <Button type="button" variant="outline" size="sm" className="mt-2 shadow-sm font-bold h-10 px-6" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
-                                                    {isUploading ? "Processing..." : "Upload New Logo"}
-                                                </Button>
+                                            <div className="space-y-4 flex-1 text-center md:text-left">
+                                                <h4 className="font-black text-2xl tracking-tighter uppercase italic">Institutional <span className="text-primary">Logo</span></h4>
+                                                <p className="text-sm text-muted-foreground leading-relaxed font-bold opacity-70">Elevate your workspace with a professional emblem. 500x500px square format recommended for optimal cross-platform clarity.</p>
+                                                <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
+                                                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-2xl h-12 px-8 font-black uppercase tracking-widest text-[10px] shadow-sm border-primary/20 hover:bg-primary/5 transition-all">
+                                                        {isUploading ? <Loader2 className="mr-3 h-4 w-4 animate-spin text-primary" /> : <UploadCloud className="mr-3 h-4 w-4 text-primary" />}
+                                                        Change Artifact
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                            <div className="space-y-2 md:col-span-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Workspace / School Name</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10 font-medium text-lg" {...form.register("name")} />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                            <div className="space-y-3 md:col-span-2">
+                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Workspace Full Identifier</Label>
+                                                <Input 
+                                                    className="h-16 px-6 bg-muted/20 border-border/40 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl text-xl font-black tracking-tight shadow-inner transition-all" 
+                                                    placeholder="School/Institution Name"
+                                                    {...form.register("name")} 
+                                                />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subdomain URL</Label>
-                                                <div className="flex shadow-sm rounded-md border focus-within:ring-1 focus-within:ring-ring bg-muted/10 overflow-hidden">
-                                                    <Input className="h-12 border-0 shadow-none focus-visible:ring-0 bg-transparent font-mono" {...form.register("subdomain")} />
-                                                    <div className="px-4 h-12 flex items-center bg-muted/50 border-l text-muted-foreground text-sm font-semibold">.unifynt.com</div>
+                                            <div className="space-y-3">
+                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Platform Subdomain</Label>
+                                                <div className="flex glass-metal rounded-2xl border border-border/40 overflow-hidden shadow-inner focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                                                    <Input 
+                                                        className="h-14 bg-transparent border-0 shadow-none px-6 text-lg font-bold tracking-tight text-primary" 
+                                                        {...form.register("subdomain")} 
+                                                    />
+                                                    <div className="bg-zinc-100 dark:bg-zinc-900 px-6 h-14 flex items-center border-l border-border/40 text-xs font-black uppercase tracking-widest opacity-60">.unifynt.com</div>
                                                 </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Custom Domain <span className="text-[10px] normal-case opacity-60">(Optional)</span></Label>
-                                                <div className="relative">
-                                                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="h-12 pl-10 shadow-sm bg-muted/10 font-mono" placeholder="www.yourschool.com" {...form.register("customDomain")} />
+                                            <div className="space-y-3">
+                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Enterprise Domain</Label>
+                                                <div className="relative group">
+                                                    <Globe className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                                    <Input 
+                                                        className="h-14 pl-14 px-6 bg-muted/20 border-border/40 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl text-lg font-bold tracking-tight shadow-inner transition-all" 
+                                                        placeholder="www.academy.edu" 
+                                                        {...form.register("customDomain")} 
+                                                    />
                                                 </div>
                                             </div>
 
-                                            {/* Colors */}
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Primary Theme Color</Label>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="relative h-12 w-12 rounded-lg border shadow-sm overflow-hidden shrink-0">
-                                                        <input type="color" className="absolute -top-2 -left-2 h-16 w-16 cursor-pointer" {...form.register("primaryColor")} />
+                                            <div className="space-y-5">
+                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Primary Signature Color</Label>
+                                                <div className="flex items-center gap-4 bg-muted/10 p-4 rounded-2xl border border-border/20">
+                                                    <div className="h-14 w-14 rounded-xl border-2 border-white dark:border-zinc-800 shadow-xl overflow-hidden relative group shrink-0">
+                                                        <input type="color" className="absolute -inset-4 cursor-pointer scale-150" {...form.register("primaryColor")} />
                                                     </div>
-                                                    <Input className="h-12 font-mono uppercase bg-muted/10" {...form.register("primaryColor")} />
+                                                    <Input className="h-14 bg-transparent border-0 font-black tracking-[0.1em] text-lg uppercase" {...form.register("primaryColor")} />
                                                 </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Secondary Theme Color</Label>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="relative h-12 w-12 rounded-lg border shadow-sm overflow-hidden shrink-0">
-                                                        <input type="color" className="absolute -top-2 -left-2 h-16 w-16 cursor-pointer" {...form.register("secondaryColor")} />
+                                            <div className="space-y-5">
+                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Secondary Accent Color</Label>
+                                                <div className="flex items-center gap-4 bg-muted/10 p-4 rounded-2xl border border-border/20">
+                                                    <div className="h-14 w-14 rounded-xl border-2 border-white dark:border-zinc-800 shadow-xl overflow-hidden relative group shrink-0">
+                                                        <input type="color" className="absolute -inset-4 cursor-pointer scale-150" {...form.register("secondaryColor")} />
                                                     </div>
-                                                    <Input className="h-12 font-mono uppercase bg-muted/10" {...form.register("secondaryColor")} />
+                                                    <Input className="h-14 bg-transparent border-0 font-black tracking-[0.1em] text-lg uppercase" {...form.register("secondaryColor")} />
                                                 </div>
                                             </div>
                                         </div>
@@ -463,10 +502,15 @@ export default function AdminWorkspaceProfilePage() {
 
                         {/* Save Button for Workspace Settings */}
                         {activeTab !== "security" && (
-                            <div className="mt-8 flex justify-end">
-                                <Button type="submit" size="lg" className="px-10 h-14 font-extrabold shadow-xl text-lg w-full md:w-auto" disabled={updateProfileMutation.isPending}>
-                                    {updateProfileMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                                    Save Workspace Configuration
+                            <div className="mt-10 flex justify-end">
+                                <Button 
+                                    type="submit" 
+                                    size="lg" 
+                                    className="px-12 h-16 font-black uppercase tracking-[0.2em] shadow-2xl text-sm w-full md:w-auto rounded-3xl group" 
+                                    disabled={updateProfileMutation.isPending}
+                                >
+                                    {updateProfileMutation.isPending ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />}
+                                    Commit Global Changes
                                 </Button>
                             </div>
                         )}

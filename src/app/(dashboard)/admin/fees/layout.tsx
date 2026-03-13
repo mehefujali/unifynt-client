@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, Settings, ReceiptText, Banknote, LayoutDashboard } from "lucide-react";
+import { Wallet, Settings, ReceiptText, Banknote, LayoutDashboard, History } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,12 @@ export default function FeesLayout({ children }: { children: React.ReactNode }) 
             name: "Collection POS", 
             href: "/admin/fees/collection", 
             icon: Banknote,
+            requiredPermission: PERMISSIONS.FEE_VIEW 
+        },
+        { 
+            name: "Transactions", 
+            href: "/admin/fees/transactions", 
+            icon: History,
             requiredPermission: PERMISSIONS.FEE_VIEW 
         },
     ];

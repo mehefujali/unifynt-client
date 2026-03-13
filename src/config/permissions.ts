@@ -69,6 +69,14 @@ export const PERMISSIONS = {
   FORM_DELETE: "FORM_DELETE",
   GOOGLE_SHEET_SYNC: "GOOGLE_SHEET_SYNC",
 
+  NOTICE_VIEW: "NOTICE_VIEW",
+  NOTICE_CREATE: "NOTICE_CREATE",
+  NOTICE_EDIT: "NOTICE_EDIT",
+  NOTICE_DELETE: "NOTICE_DELETE",
+
+  INQUIRY_VIEW: "INQUIRY_VIEW",
+  INQUIRY_DELETE: "INQUIRY_DELETE",
+
   SITE_SETTINGS_EDIT: "SITE_SETTINGS_EDIT",
   USER_VIEW: "USER_VIEW",
   USER_CREATE: "USER_CREATE",
@@ -188,6 +196,12 @@ export const APP_PERMISSIONS = {
       { id: PERMISSIONS.FORM_EDIT, label: "Update Form Fields" },
       { id: PERMISSIONS.FORM_DELETE, label: "Delete Custom Forms" },
       { id: PERMISSIONS.GOOGLE_SHEET_SYNC, label: "Manage Google Sheets Integration" },
+      { id: PERMISSIONS.NOTICE_VIEW, label: "View Notice Board" },
+      { id: PERMISSIONS.NOTICE_CREATE, label: "Post New Notices" },
+      { id: PERMISSIONS.NOTICE_EDIT, label: "Edit Existing Notices" },
+      { id: PERMISSIONS.NOTICE_DELETE, label: "Remove Notices" },
+      { id: PERMISSIONS.INQUIRY_VIEW, label: "View System Inquiries" },
+      { id: PERMISSIONS.INQUIRY_DELETE, label: "Delete Inquiries" },
     ]
   },
   SYSTEM_ADMINISTRATION: {
