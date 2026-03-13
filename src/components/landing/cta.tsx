@@ -50,10 +50,7 @@ export const LandingCTA = () => {
                     
                     <div className="flex flex-col sm:flex-row gap-4">
                         <Button className="h-16 px-10 rounded-full text-lg font-bold bg-white text-zinc-950 shadow-xl hover:scale-105 transition-transform">
-                            Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
-                        <Button variant="outline" className="h-16 px-10 rounded-full text-lg font-bold border-white/10 hover:bg-white/5 transition-colors">
-                            Book a Demo
+                            Start 7-Day Free Trial <ArrowRight className="ml-2 h-5 w-5" />
                         </Button>
                     </div>
                 </div>

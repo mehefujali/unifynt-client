@@ -30,7 +30,7 @@ export const LandingHeader = () => {
     };
 
     const navLinks = [
-        { label: "Features", url: "#features" },
+        { label: "Features", url: "/features" },
         { label: "Solutions", url: "#solutions" },
         { label: "Resources", url: "#resources" },
         { label: "Pricing", url: "#pricing" },

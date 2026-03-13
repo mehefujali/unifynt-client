@@ -174,8 +174,8 @@ export const LandingFeatures = () => {
                             </div>
 
                             <div className="relative z-10 p-8 md:p-10 flex flex-col h-full pointer-events-none">
-                                <div className="h-14 w-14 mb-8 bg-zinc-50 rounded-2xl flex items-center justify-center border border-zinc-100 shadow-sm transition-transform duration-500 group-hover:scale-110 group-hover:shadow-md">
-                                    <Image src={feature.icon} alt={feature.title} width={32} height={32} className="object-contain drop-shadow-sm" />
+                                <div className="w-16 h-16 mb-8 transition-transform duration-500 group-hover:scale-110">
+                                    <Image src={feature.icon} alt={feature.title} width={64} height={64} className="w-full h-full object-contain" />
                                 </div>
                                 <div className="mt-auto space-y-3 w-full max-w-[85%]">
                                     <h3 className="text-2xl font-semibold text-zinc-900 tracking-tight">{feature.title}</h3>

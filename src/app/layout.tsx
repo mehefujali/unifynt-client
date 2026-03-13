@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, Bricolage_Grotesque, Outfit } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/providers/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -12,17 +12,23 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const jetbrains = JetBrains_Mono({
-  variable: "--font-mono",
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["700", "800"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: {
     default: "Unifynt | #1 School Management Service & Advanced ERP Software",
-    template: "%s | Unifynt School ERP",
+    template: "%s | Unifynt",
   },
-  description: "Unifynt is the best school management service and advanced ERP software for modern educational institutions. Streamline admissions, fees, attendance, and student tracking with our secure, cloud-based platform.",
+  description: "Experience the next generation of school management with Unifynt. Advanced ERP solution for modern educational institutions.",
   metadataBase: new URL("https://unifynt.com"),
   keywords: [
     "school management service", 
@@ -125,7 +131,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrains.variable} font-sans antialiased`}
+        className={`${inter.variable} ${bricolage.variable} ${outfit.variable} font-outfit antialiased`}
         suppressHydrationWarning 
       >
         <QueryProvider>
@@ -142,31 +148,52 @@ export default function RootLayout({
             <script
               type="application/ld+json"
               dangerouslySetInnerHTML={{
-                __html: JSON.stringify({
-                  "@context": "https://schema.org",
-                  "@type": "SoftwareApplication",
-                  "name": "Unifynt",
-                  "applicationCategory": "EducationalApplication, BusinessApplication",
-                  "operatingSystem": "Web, Android, iOS",
-                  "description": "Unifynt is the most advanced school management service and ERP software. It streamlines admissions, fee collection, attendance, and all academic operations for schools.",
-                  "url": "https://unifynt.com",
-                  "author": {
+                __html: JSON.stringify([
+                  {
+                    "@context": "https://schema.org",
+                    "@type": "SoftwareApplication",
+                    "name": "Unifynt",
+                    "applicationCategory": "EducationalApplication, BusinessApplication",
+                    "operatingSystem": "Web, Android, iOS",
+                    "description": "Unifynt is the most advanced school management service and ERP software. It streamlines admissions, fee collection, attendance, and all academic operations for schools.",
+                    "url": "https://unifynt.com",
+                    "author": {
+                      "@type": "Organization",
+                      "name": "Unifynt",
+                      "url": "https://unifynt.com",
+                      "logo": "https://unifynt.com/unifynt-logo.png"
+                    },
+                    "offers": {
+                      "@type": "Offer",
+                      "price": "0",
+                      "priceCurrency": "INR",
+                      "availability": "https://schema.org/InStock"
+                    },
+                    "aggregateRating": {
+                      "@type": "AggregateRating",
+                      "ratingValue": "4.9",
+                      "reviewCount": "150"
+                    }
+                  },
+                  {
+                    "@context": "https://schema.org",
                     "@type": "Organization",
-                    "name": "Unifynt"
-                  },
-                  "offers": {
-                    "@type": "Offer",
-                    "price": "0",
-                    "priceCurrency": "INR",
-                    "availability": "https://schema.org/InStock"
-                  },
-                  "aggregateRating": {
-                    "@type": "AggregateRating",
-                    "ratingValue": "4.9",
-                    "reviewCount": "150"
-                  },
-                  "keywords": "school management service, school ERP software, school management system, educational software, student portal"
-                })
+                    "name": "Unifynt",
+                    "url": "https://unifynt.com",
+                    "logo": "https://unifynt.com/unifynt-logo.png",
+                    "sameAs": [
+                      "https://twitter.com/unifynt",
+                      "https://linkedin.com/company/unifynt"
+                    ],
+                    "contactPoint": {
+                      "@type": "ContactPoint",
+                      "telephone": "+91-XXXXXXXXXX",
+                      "contactType": "customer service",
+                      "areaServed": "IN",
+                      "availableLanguage": ["en", "bn", "hi"]
+                    }
+                  }
+                ])
               }}
             />
             <Toaster position="top-center" richColors />
