@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, AlertCircle, School } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import ProfessionalFileUpload from "@/components/ui/file-upload";
 
 export default function DynamicAdmissionForm({ schoolId }: { schoolId: string }) {
@@ -178,15 +178,7 @@ export default function DynamicAdmissionForm({ schoolId }: { schoolId: string })
     }
 
     return (
-        <div className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-                <div className="inline-flex items-center justify-center p-4 bg-primary/10 rounded-3xl mb-6 shadow-sm">
-                    <School className="h-10 w-10 text-primary" />
-                </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">Student Admission</h1>
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Please fill in the form carefully with accurate information to properly process your application.</p>
-            </div>
-
+        <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
                 <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 border-border/50 overflow-hidden rounded-2xl bg-card">
                     <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b pb-5 pt-6 px-8">

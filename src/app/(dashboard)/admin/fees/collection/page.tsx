@@ -3,15 +3,15 @@
 
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Banknote, Loader2, CheckCircle, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react";
+import { Search, Banknote, Loader2, CheckCircle, ChevronLeft, ChevronRight, ShieldAlert, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 // --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
+import { cn } from "@/lib/utils";
 import { usePermission } from "@/hooks/use-permission";
 
 export default function CollectionPOSPage() {
@@ -28,9 +29,8 @@ export default function CollectionPOSPage() {
     const queryClient = useQueryClient();
 
     const [currentPage, setCurrentPage] = useState(1);
-    const [limit, setLimit] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState<string>("PENDING");
+    const [selectedStatus, setSelectedStatus] = useState("all");
 
     const [activeInvoice, setActiveInvoice] = useState<StudentInvoice | null>(null);
     const [paymentAmount, setPaymentAmount] = useState("");
@@ -44,14 +44,29 @@ export default function CollectionPOSPage() {
     const canCollect = hasPermission(PERMISSIONS.FEE_COLLECT);
 
     const { data: invoicesRes, isLoading } = useQuery({
-        queryKey: ["due-invoices", currentPage, limit, searchTerm, selectedStatus],
-        queryFn: () => FeesService.getStudentInvoices({
-            page: currentPage,
-            limit,
-            searchTerm: searchTerm || undefined,
-            status: selectedStatus === "all" ? undefined : selectedStatus,
+        queryKey: ["studentInvoices", searchTerm, selectedStatus, currentPage],
+        queryFn: () => FeesService.getStudentInvoices({ 
+            searchTerm, 
+            status: selectedStatus, 
+            page: currentPage, 
+            limit: 10
         }),
         enabled: !!user?.schoolId,
+    });
+
+    // Email Reminder Mutation
+    const sendEmailReminderMutation = useMutation({
+        mutationFn: (invoiceId: string) => FeesService.sendFeeEmailReminders({ invoiceIds: [invoiceId] }),
+        onSuccess: (data) => {
+            if (data.successCount > 0) {
+                toast.success("Professional email reminder sent successfully!");
+            } else {
+                toast.error("Failed to send email. Check if student email is valid.");
+            }
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Failed to initiate email reminder.");
+        }
     });
 
     const invoicesList: StudentInvoice[] = invoicesRes?.data || [];
@@ -108,67 +123,62 @@ export default function CollectionPOSPage() {
         <PermissionGate 
             required={PERMISSIONS.FEE_VIEW}
             fallback={
-                <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95 duration-500">
-                    <div className="h-20 w-20 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6 ring-8 ring-red-50/50 dark:ring-red-500/5">
+                <div className="flex-1 flex flex-col items-center justify-center min-h-[70vh] p-8 text-center animate-in fade-in duration-500">
+                    <div className="h-20 w-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-6">
                         <ShieldAlert className="h-10 w-10" />
                     </div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Access Denied</h2>
-                    <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                        You do not have permission to view or manage fee collections. Please contact your finance administrator.
+                    <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
+                    <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                        Your administrative role does not have authorization to access the finance portal.
                     </p>
                 </div>
             }
         >
-            <div className="space-y-6 animate-in fade-in zoom-in-[0.99] duration-500 ease-out p-6">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[20px] shadow-sm border border-white/60 dark:border-white/10">
-                        <Banknote className="h-7 w-7 text-primary" />
+            <div className="flex-1 space-y-4 p-8 pt-6 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between space-y-2">
+                    <h2 className="text-3xl font-bold tracking-tight">Fee Collection (POS)</h2>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search student or roll number..."
+                            className="pl-9 bg-muted/20 border-border"
+                            value={searchTerm}
+                            onChange={(e) => handleFilterChange(setSearchTerm, e.target.value)}
+                        />
                     </div>
-                    <div>
-                        <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Fee Collection (POS)</h2>
-                        <p className="text-muted-foreground text-[14px] font-bold opacity-80">Search students and collect pending fee payments.</p>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Select value={selectedStatus} onValueChange={(val) => handleFilterChange(setSelectedStatus, val)}>
+                            <SelectTrigger className="w-full sm:w-[150px] bg-muted/20 border-border">
+                                <SelectValue placeholder="Payment Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="PENDING">Pending</SelectItem>
+                                <SelectItem value="PARTIAL">Partial</SelectItem>
+                                <SelectItem value="OVERDUE">Overdue</SelectItem>
+                                <SelectItem value="PAID">Paid</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
-                <Card className="rounded-[32px] bg-white/40 dark:bg-black/20 backdrop-blur-2xl border-white/60 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden">
-                    <CardHeader className="bg-white/30 dark:bg-black/10 border-b border-black/5 dark:border-white/5 p-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-                        <div className="relative w-full md:w-96">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                                placeholder="Search by Student Name or Roll No..."
-                                className="pl-11 bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold text-[13px] h-12 rounded-2xl transition-all"
-                                value={searchTerm}
-                                onChange={(e) => handleFilterChange(setSearchTerm, e.target.value)}
-                            />
-                        </div>
-                        <div className="flex items-center gap-4 w-full md:w-auto">
-                            <Select value={selectedStatus} onValueChange={(val) => handleFilterChange(setSelectedStatus, val)}>
-                                <SelectTrigger className="bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 shadow-sm font-bold h-12 rounded-2xl w-full md:w-[200px]">
-                                    <SelectValue placeholder="Payment Status" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl">
-                                    <SelectItem value="all" className="font-bold text-primary">All Status</SelectItem>
-                                    <SelectItem value="PENDING" className="font-medium">Pending</SelectItem>
-                                    <SelectItem value="PARTIAL" className="font-medium">Partial</SelectItem>
-                                    <SelectItem value="OVERDUE" className="font-medium">Overdue</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
+                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                         <div className="w-full overflow-x-auto custom-scrollbar">
                             <Table>
-                                <TableHeader className="bg-slate-50/50 dark:bg-slate-950/30">
-                                    <TableRow className="hover:bg-transparent border-b-black/5 dark:border-b-white/5">
-                                        <TableHead className="pl-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Student Info</TableHead>
-                                        <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Invoice Title</TableHead>
-                                        <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Total Billed</TableHead>
-                                        <TableHead className="h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Paid Amount</TableHead>
-                                        <TableHead className="h-14 text-[11px] font-black text-primary uppercase tracking-[2px]">Remaining Due</TableHead>
-                                        {canCollect && <TableHead className="text-right pr-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[2px]">Action</TableHead>}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
+                            <TableHeader className="bg-muted/30 border-b border-border">
+                                <TableRow>
+                                    <TableHead className="w-[300px] font-bold text-foreground">Student Details</TableHead>
+                                    <TableHead className="font-bold text-foreground">Invoice Title</TableHead>
+                                    <TableHead className="font-bold text-foreground">Total Billed</TableHead>
+                                    <TableHead className="font-bold text-foreground">Amount Paid</TableHead>
+                                    <TableHead className="font-bold text-foreground">Remaining Due</TableHead>
+                                    {canCollect && <TableHead className="text-right font-bold text-foreground"></TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                     {isLoading ? (
                                         <TableRow><TableCell colSpan={canCollect ? 6 : 5} className="h-64 text-center text-slate-400 font-bold animate-pulse">Loading fee records...</TableCell></TableRow>
                                     ) : invoicesList.length > 0 ? (
@@ -177,47 +187,72 @@ export default function CollectionPOSPage() {
                                             const isPaid = inv.status === "PAID";
                                             
                                             return (
-                                                <TableRow key={inv.id} className="hover:bg-white/80 dark:hover:bg-white/5 transition-all border-b-black/5 dark:border-b-white/5">
-                                                    <TableCell className="pl-8 py-5">
+                                                <TableRow key={inv.id} className="hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
+                                                    <TableCell>
                                                         <div className="flex flex-col">
-                                                            <span className="font-black text-[14px] text-slate-900 dark:text-white">
+                                                            <span className="font-bold text-foreground">
                                                                 {inv.student?.firstName} {inv.student?.lastName}
                                                             </span>
-                                                            <span className="text-[12px] font-bold text-slate-500 mt-0.5">
-                                                                Roll: {inv.student?.rollNumber} | Class {inv.student?.class?.name}
+                                                            <span className="text-xs text-muted-foreground">
+                                                                Roll: {inv.student?.rollNumber} | {inv.student?.class?.name}
                                                             </span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-5">
-                                                        <div className="flex flex-col gap-1">
-                                                            <span className="font-bold text-[13px] text-slate-700 dark:text-slate-300">{inv.invoiceTitle}</span>
-                                                            <Badge variant="outline" className={`w-fit text-[10px] font-black tracking-wider uppercase border-0 px-2 py-0.5 ${isPaid ? "bg-emerald-500/10 text-emerald-600" : inv.status === "PARTIAL" ? "bg-amber-500/10 text-amber-600" : "bg-rose-500/10 text-rose-600"}`}>
+                                                    <TableCell>
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <span className="font-bold text-sm text-foreground/80">{inv.invoiceTitle}</span>
+                                                            <Badge variant="outline" className={cn(
+                                                                "w-fit font-bold text-[10px] uppercase tracking-wider border-0 px-2 py-0.5",
+                                                                isPaid ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : 
+                                                                inv.status === "PARTIAL" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : 
+                                                                "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                                            )}>
                                                                 {inv.status}
                                                             </Badge>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="py-5 font-black text-[14px] text-slate-800 dark:text-slate-200">
+                                                    <TableCell className="font-bold text-sm text-foreground/80">
                                                         ₹{inv.amountDue.toLocaleString('en-IN')}
                                                     </TableCell>
-                                                    <TableCell className="py-5 font-black text-[14px] text-emerald-600 dark:text-emerald-400">
+                                                    <TableCell className="font-bold text-sm text-emerald-500">
                                                         ₹{inv.amountPaid.toLocaleString('en-IN')}
                                                     </TableCell>
-                                                    <TableCell className="py-5 font-black text-[15px] text-rose-600 dark:text-rose-400">
+                                                    <TableCell className="font-bold text-sm text-rose-500">
                                                         ₹{remaining.toLocaleString('en-IN')}
                                                     </TableCell>
                                                     
                                                     {/* Actions Column */}
                                                     {canCollect && (
-                                                        <TableCell className="text-right pr-8 py-5">
-                                                            <PermissionGate required={PERMISSIONS.FEE_COLLECT}>
-                                                                <Button 
-                                                                    onClick={() => openPaymentModal(inv)} 
-                                                                    disabled={isPaid}
-                                                                    className="rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:shadow-xl bg-primary text-white dark:text-black"
-                                                                >
-                                                                    {isPaid ? "Fully Paid" : "Collect Payment"}
-                                                                </Button>
-                                                            </PermissionGate>
+                                                        <TableCell className="text-right pr-6">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {!isPaid && (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="icon"
+                                                                        className="h-8 w-8 rounded-lg border-border hover:bg-primary/10 hover:text-primary transition-all"
+                                                                        onClick={() => sendEmailReminderMutation.mutate(inv.id)}
+                                                                        disabled={sendEmailReminderMutation.isPending || !inv.student?.email}
+                                                                        title={inv.student?.email ? `Send email reminder to ${inv.student.email}` : "No email available"}
+                                                                    >
+                                                                        {sendEmailReminderMutation.isPending && sendEmailReminderMutation.variables === inv.id ? (
+                                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                                        ) : (
+                                                                            <Mail className="h-4 w-4" />
+                                                                        )}
+                                                                    </Button>
+                                                                )}
+                                                                <PermissionGate required={PERMISSIONS.FEE_COLLECT}>
+                                                                    <Button 
+                                                                        size="sm"
+                                                                        variant={isPaid ? "outline" : "default"}
+                                                                        onClick={() => openPaymentModal(inv)} 
+                                                                        disabled={isPaid}
+                                                                        className="rounded-lg font-bold"
+                                                                    >
+                                                                        {isPaid ? "Paid" : "Collect"}
+                                                                    </Button>
+                                                                </PermissionGate>
+                                                            </div>
                                                         </TableCell>
                                                     )}
                                                 </TableRow>
@@ -230,103 +265,103 @@ export default function CollectionPOSPage() {
                             </Table>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-center justify-between px-8 py-6 border-t border-black/5 dark:border-white/5 bg-white/30 dark:bg-black/10 backdrop-blur-md gap-4">
-                            <div className="text-[13px] font-bold text-slate-500">
-                                Showing <span className="text-slate-900 dark:text-white font-black">{invoicesList.length}</span> of <span className="text-slate-900 dark:text-white font-black">{meta?.total || 0}</span> records
-                            </div>
+                </div>
 
-                            <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[13px] font-bold text-slate-400 hidden lg:inline">Per page</span>
-                                    <Select value={`${limit}`} onValueChange={(val) => { setLimit(Number(val)); setCurrentPage(1); }}>
-                                        <SelectTrigger className="h-9 w-[75px] rounded-xl font-black bg-white dark:bg-white/5 border-slate-200 dark:border-white/10"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="rounded-xl font-bold">
-                                            {[10, 20, 50].map(v => <SelectItem key={v} value={`${v}`}>{v}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                <div className="bg-muted/20 border-t border-border p-4 flex items-center justify-between rounded-b-xl border border-t-0 bg-card">
+                    <span className="text-sm text-muted-foreground font-bold">
+                        Showing <span className="text-foreground">{invoicesList.length}</span> of <span className="text-foreground">{meta?.total || 0}</span> records
+                    </span>
 
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 disabled:opacity-30" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
-                                        <ChevronLeft className="h-4 w-4 stroke-[3]" />
-                                    </Button>
-                                    <div className="px-4 h-9 flex items-center justify-center bg-primary text-white dark:text-black rounded-xl font-black text-[13px] shadow-lg shadow-primary/20">
-                                        {currentPage} / {meta?.totalPage || 1}
-                                    </div>
-                                    <Button variant="outline" className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-white/10 disabled:opacity-30" onClick={() => setCurrentPage(prev => Math.min(meta?.totalPage || 1, prev + 1))} disabled={currentPage === (meta?.totalPage || 1) || (meta?.totalPage || 0) === 0}>
-                                        <ChevronRight className="h-4 w-4 stroke-[3]" />
-                                    </Button>
-                                </div>
-                            </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1 || isLoading}
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="px-3 text-xs font-bold text-foreground/70 bg-background/50 py-1 rounded-md border border-border/50">
+                            Page {currentPage} of {meta?.totalPage || 1}
                         </div>
-                    </CardContent>
-                </Card>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(meta?.totalPage || 1, prev + 1))}
+                            disabled={currentPage === (meta?.totalPage || 1) || (meta?.totalPage || 0) === 0 || isLoading}
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
 
                 <Dialog open={isModalOpen} onOpenChange={(open) => !open && setIsModalOpen(false)}>
-                    <DialogContent className="sm:max-w-md border-white/20 dark:border-white/10 shadow-2xl bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl rounded-[32px] p-0">
-                        <DialogHeader className="p-8 border-b border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
-                            <DialogTitle className="text-[22px] font-black text-slate-900 dark:text-white flex items-center gap-3">
-                                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-sm"><Banknote className="h-5 w-5" /></div>
+                    <DialogContent className="sm:max-w-md bg-card border-border shadow-2xl rounded-2xl p-0 overflow-hidden">
+                        <div className="p-6 border-b border-border bg-muted/30">
+                            <h3 className="text-xl font-bold tracking-tight flex items-center gap-2 text-foreground">
+                                <Banknote className="h-5 w-5 text-primary" />
                                 Receive Payment
-                            </DialogTitle>
-                        </DialogHeader>
+                            </h3>
+                        </div>
                         {activeInvoice && (
-                            <div className="p-8 space-y-6">
-                                <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-slate-500 font-bold">Student Name</span> 
-                                        <span className="font-black text-slate-900 dark:text-white text-[15px]">{activeInvoice.student?.firstName} {activeInvoice.student?.lastName}</span>
+                            <div className="p-6 space-y-6">
+                                <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground font-medium">Student</span>
+                                        <span className="font-bold">{activeInvoice.student?.firstName} {activeInvoice.student?.lastName}</span>
                                     </div>
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-slate-500 font-bold">Invoice Title</span> 
-                                        <span className="font-bold text-slate-700 dark:text-slate-300">{activeInvoice.invoiceTitle}</span>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground font-medium">Invoice</span>
+                                        <span className="font-medium">{activeInvoice.invoiceTitle}</span>
                                     </div>
-                                    <div className="flex justify-between items-center border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
-                                        <span className="text-slate-500 font-bold uppercase tracking-wider">Total Payable Due</span> 
-                                        <span className="font-black text-rose-600 text-xl">₹{((activeInvoice.amountDue + activeInvoice.fine) - activeInvoice.discount - activeInvoice.amountPaid).toLocaleString('en-IN')}</span>
+                                    <div className="h-px bg-border my-2" />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Total Due</span>
+                                        <span className="text-lg font-black text-rose-500">₹{((activeInvoice.amountDue + activeInvoice.fine) - activeInvoice.discount - activeInvoice.amountPaid).toLocaleString('en-IN')}</span>
                                     </div>
                                 </div>
 
-                                <div className="space-y-5">
-                                    <div className="space-y-2.5">
-                                        <Label className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Receiving Amount (₹)</Label>
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Receiving Amount (₹)</Label>
                                         <Input
                                             type="number"
                                             value={paymentAmount}
                                             onChange={(e) => setPaymentAmount(e.target.value)}
-                                            className="h-14 font-black text-2xl text-primary shadow-sm rounded-2xl bg-white/50 dark:bg-slate-900/50"
+                                            className="h-12 font-bold text-lg bg-muted/20 border-border"
                                         />
-                                        <p className="text-[11px] text-slate-500 font-bold">You can enter a partial amount if the parent is not paying in full.</p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-5">
-                                        <div className="space-y-2.5">
-                                            <Label className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Payment Mode</Label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Mode</Label>
                                             <Select value={paymentMode} onValueChange={setPaymentMode}>
-                                                <SelectTrigger className="h-12 shadow-sm rounded-2xl bg-white/50 dark:bg-slate-900/50 font-bold"><SelectValue /></SelectTrigger>
-                                                <SelectContent className="rounded-2xl">
-                                                    <SelectItem value="CASH" className="font-semibold">Cash</SelectItem>
-                                                    <SelectItem value="ONLINE" className="font-semibold">Online Transfer</SelectItem>
-                                                    <SelectItem value="CHEQUE" className="font-semibold">Cheque</SelectItem>
+                                                <SelectTrigger className="h-11 bg-muted/20 border-border font-medium"><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="CASH">Cash</SelectItem>
+                                                    <SelectItem value="ONLINE">Online</SelectItem>
+                                                    <SelectItem value="CHEQUE">Cheque</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="space-y-2.5">
-                                            <Label className="text-[13px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Reference (Optional)</Label>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Reference</Label>
                                             <Input
-                                                placeholder="UTR / Cheque No"
+                                                placeholder="Optional"
                                                 value={referenceNo}
                                                 onChange={(e) => setReferenceNo(e.target.value)}
-                                                className="h-12 shadow-sm rounded-2xl bg-white/50 dark:bg-slate-900/50 font-bold"
+                                                className="h-11 bg-muted/20 border-border font-medium"
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-4 pt-4 mt-2 border-t border-black/5 dark:border-white/5">
-                                    <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} disabled={isProcessing} className="rounded-2xl font-bold h-12 px-6">Cancel</Button>
-                                    <Button onClick={handleCollectPayment} className="rounded-2xl font-black px-8 shadow-xl shadow-primary/20 h-12" disabled={isProcessing}>
-                                        {isProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />} Confirm & Receipt
+                                <div className="flex justify-end gap-3 pt-4 border-t border-border">
+                                    <Button variant="ghost" onClick={() => setIsModalOpen(false)} disabled={isProcessing} className="font-bold">Cancel</Button>
+                                    <Button onClick={handleCollectPayment} className="font-bold px-6" disabled={isProcessing}>
+                                        {isProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />} Confirm
                                     </Button>
                                 </div>
                             </div>

@@ -42,17 +42,18 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
     title: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
-    requiredPermissions: ["DASHBOARD_VIEW"],
   },
   {
     title: "Notice Board",
     href: "/admin/notices",
     icon: Megaphone,
+    requiredPermissions: ["NOTICE_VIEW"],
   },
   {
     title: "Inquiries",
     href: "/admin/inquiries",
     icon: Mailbox,
+    requiredPermissions: ["INQUIRY_VIEW"],
   },
   {
     title: "Admissions",

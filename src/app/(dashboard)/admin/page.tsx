@@ -8,8 +8,8 @@ import api from "@/lib/axios";
 import {
     Users, TrendingUp, GraduationCap, Wallet, Bell,
     Clock, Lock, UserCheck,
-    BookOpen, CalendarDays, Activity, ShieldCheck,
-    ArrowUpRight
+    BookOpen, CalendarDays, Activity,
+    ArrowUpRight, Fingerprint, ShieldAlert, Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Chart } from "react-google-charts";
@@ -20,13 +20,16 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { useThemeColor } from "@/providers/theme-color-provider";
 
 export default function AdminDashboard() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isDark, setIsDark] = useState(false);
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const { currentThemeId } = useThemeColor();
+
+    const isEnhanced = currentThemeId !== "standard";
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -51,7 +54,7 @@ export default function AdminDashboard() {
     const textColor = isDark ? "#a1a1aa" : "#71717a";
     const gridColor = isDark ? "#27272a" : "#f1f5f9";
 
-    const { data: response, isLoading, isError } = useQuery({
+    const { data: response, isLoading, isError, error } = useQuery({
         queryKey: ["adminStats"],
         queryFn: async () => {
             const res = await api.get("/dashboard/school-admin");
@@ -85,14 +88,19 @@ export default function AdminDashboard() {
     }
 
     if (isError) {
-        return (
-            <div className="flex-1 p-8 pt-6 flex flex-col items-center justify-center h-[80vh]">
-                <ShieldCheck className="h-12 w-12 text-destructive opacity-50 mb-4" />
-                <h3 className="text-lg font-bold">Campus Hub Offline</h3>
-                <p className="text-sm text-muted-foreground mt-1">Unable to stream administrative metrics from the core server.</p>
-                <Button variant="outline" className="mt-6 font-bold" onClick={() => queryClient.invalidateQueries({ queryKey: ["adminStats"] })}>Reconnect</Button>
-            </div>
-        );
+        // If it's a 403 Forbidden (no permission), we want to proceed to render the PermissionGate fallback instead of showing an error screen
+        const isForbidden = (error as any)?.response?.status === 403;
+
+        if (!isForbidden) {
+            return (
+                <div className="flex-1 p-8 pt-6 flex flex-col items-center justify-center h-[80vh]">
+                    <ShieldAlert className="h-12 w-12 text-destructive opacity-50 mb-4" />
+                    <h3 className="text-lg font-bold">Campus Hub Offline</h3>
+                    <p className="text-sm text-muted-foreground mt-1">Unable to stream administrative metrics from the core server.</p>
+                    <Button variant="outline" className="mt-6 font-bold" onClick={() => queryClient.invalidateQueries({ queryKey: ["adminStats"] })}>Reconnect</Button>
+                </div>
+            );
+        }
     }
 
     const { overview, todaysAttendance, classDistribution, recentNotices } = response || {};
@@ -151,15 +159,38 @@ export default function AdminDashboard() {
 
     const StatCard = ({ title, value, icon: Icon, color, isProtected = false, permission = "" }: any) => {
         const card = (
-            <div className="bg-card border border-border rounded-xl shadow-sm p-6 space-y-3 transition-all hover:shadow-md h-full flex flex-col justify-center">
-                <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
-                    <div className={cn("p-2 rounded-lg bg-muted/30 border border-border", color)}>
+            <div className={cn(
+                "rounded-xl p-6 space-y-3 transition-all h-full flex flex-col justify-center relative overflow-hidden group",
+                isEnhanced 
+                    ? "bg-card border border-border/60 shadow-sm hover:shadow-md hover:border-primary/20" 
+                    : "bg-card border border-border shadow-sm hover:shadow-md"
+            )}>
+                {/* Decorative Metallic Shine - Only for enhanced themes */}
+                {isEnhanced && (
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8 blur-2xl group-hover:bg-primary/10 transition-colors" />
+                )}
+                
+                <div className="flex items-center justify-between relative z-10">
+                    <p className={cn(
+                        "font-bold text-muted-foreground uppercase tracking-wider",
+                        isEnhanced ? "text-[10px] tracking-[0.2em]" : "text-[11px]"
+                    )}>{title}</p>
+                    <div className={cn(
+                        "p-2 rounded-lg border border-border transition-all",
+                        isEnhanced ? "p-2 rounded-lg bg-muted/40 group-hover:bg-primary/5 group-hover:border-primary/20" : "bg-muted/30",
+                        color
+                    )}>
                         <Icon className="h-4 w-4" />
                     </div>
                 </div>
-                <div>
-                    <h3 className="text-3xl font-bold tracking-tight tabular-nums text-foreground">{value}</h3>
+                <div className="relative z-10">
+                    <h3 className={cn(
+                        "font-bold tracking-tight tabular-nums text-foreground",
+                        isEnhanced ? "text-2xl font-black tracking-tight" : "text-3xl"
+                    )}>{value}</h3>
+                    {isEnhanced && (
+                        <div className="h-1 w-12 bg-primary/20 rounded-full mt-2 group-hover:w-20 transition-all duration-500" />
+                    )}
                 </div>
             </div>
         );
@@ -181,10 +212,22 @@ export default function AdminDashboard() {
 
     function DashboardCard({ title, icon: Icon, children, className, action }: any) {
         return (
-            <div className={cn("bg-card border border-border rounded-xl shadow-sm flex flex-col overflow-hidden", className)}>
-                <div className="px-6 py-4 border-b border-border bg-muted/30 flex items-center justify-between">
-                    <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                        {Icon && <Icon className="h-3.5 w-3.5 font-bold" />} {title}
+            <div className={cn(
+                "flex flex-col overflow-hidden transition-all duration-300",
+                isEnhanced 
+                    ? "bg-card border border-border/60 shadow-sm rounded-xl" 
+                    : "bg-card border border-border rounded-xl shadow-sm",
+                className
+            )}>
+                <div className={cn(
+                    "px-6 border-b border-border/40 flex items-center justify-between",
+                    isEnhanced ? "py-4 bg-muted/20" : "py-4 bg-muted/30"
+                )}>
+                    <h2 className={cn(
+                        "font-bold uppercase flex items-center gap-2",
+                        isEnhanced ? "text-[10px] font-black tracking-[0.2em] text-muted-foreground" : "text-[11px] tracking-widest text-muted-foreground"
+                    )}>
+                        {Icon && <Icon className={cn("h-3.5 w-3.5", isEnhanced ? "h-4 w-4 text-primary" : "font-bold")} />} {title}
                     </h2>
                     {action}
                 </div>
@@ -199,50 +242,86 @@ export default function AdminDashboard() {
         <PermissionGate
             required={PERMISSIONS.DASHBOARD_VIEW}
             fallback={
-                <div className="flex-1 p-8 pt-6 flex flex-col items-center justify-center min-h-[80vh]">
-                    <div className="max-w-md text-center space-y-6">
-                        <div className="mx-auto h-20 w-20 bg-muted rounded-2xl flex items-center justify-center border border-border">
-                            <Activity className="h-10 w-10 text-muted-foreground" />
+                <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500">
+                    <div className="flex flex-col gap-2">
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                            {greeting}, {displayName}
+                        </h2>
+                        <p className="text-muted-foreground text-sm font-medium">
+                            Welcome to your administrative workspace. Access your assigned modules via the portal menu.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                         <div className="bg-card border border-border rounded-xl p-6 space-y-2 hover:border-primary/20 transition-all">
+                            <div className="flex items-center gap-3 text-muted-foreground mb-4">
+                                <Fingerprint className="h-5 w-5" />
+                                <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Institutional ID</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-foreground tabular-nums">{(user as any)?.details?.employeeId || "UN-0000"}</h3>
+                            <p className="text-xs text-muted-foreground font-medium">Your unique employee identifier.</p>
                         </div>
-                        <div className="space-y-2">
-                            <h1 className="text-3xl font-bold tracking-tight">{greeting}, {displayName}!</h1>
-                            <p className="text-sm text-muted-foreground leading-relaxed font-medium">
-                                Welcome to the Unifynt Platform. Your workspace is ready. Use the sidebar to navigate to your assigned administrative modules.
+
+                        <div className="bg-card border border-border rounded-xl p-6 space-y-2 hover:border-indigo-500/20 transition-all">
+                            <div className="flex items-center gap-3 text-muted-foreground mb-4">
+                                <Briefcase className="h-5 w-5" />
+                                <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Assigned Dept</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-foreground">{(user as any)?.details?.department || "General Administration"}</h3>
+                            <p className="text-xs text-muted-foreground font-medium">Module access based on department.</p>
+                        </div>
+
+                        <div className="bg-card border border-border rounded-xl p-6 space-y-2 hover:border-emerald-500/20 transition-all">
+                            <div className="flex items-center gap-3 text-muted-foreground mb-4">
+                                <Activity className="h-5 w-5" />
+                                <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Security Lock</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                <h3 className="text-xl font-bold text-foreground uppercase tracking-tight">Active</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-medium">Account protected by verification.</p>
+                        </div>
+
+                        <div className="bg-card border border-border rounded-xl p-6 space-y-2 hover:border-primary/20 transition-all">
+                            <div className="flex items-center gap-3 text-muted-foreground mb-4">
+                                <CalendarDays className="h-5 w-5" />
+                                <span className="text-[11px] font-bold uppercase tracking-widest leading-none">Session Date</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-foreground tabular-nums">{format(currentTime, 'MMM dd, yyyy')}</h3>
+                            <p className="text-xs text-muted-foreground font-medium">{format(currentTime, 'EEEE')}</p>
+                        </div>
+                    </div>
+
+                    <div className="p-8 rounded-2xl border border-dashed border-border bg-muted/5 flex flex-col items-center justify-center text-center space-y-3">
+                        <Lock className="h-8 w-8 text-muted-foreground opacity-20" />
+                        <div className="space-y-1">
+                            <h4 className="font-bold text-sm text-foreground">Restricted Dashboard View</h4>
+                            <p className="text-xs text-muted-foreground max-w-sm font-medium">
+                                Technical performance metrics and financial streams are restricted based on your role privileges. 
+                                Please use the sidebar to access your operational tools.
                             </p>
-                        </div>
-                        <div className="p-4 bg-muted/30 border border-border rounded-xl inline-flex items-center gap-3">
-                            <CalendarDays className="h-4 w-4 text-primary" />
-                            <span className="text-xs font-bold tabular-nums text-muted-foreground">
-                                {format(currentTime, 'EEEE, MMM dd, yyyy')}
-                            </span>
                         </div>
                     </div>
                 </div>
             }
         >
-            <div className="flex-1 space-y-6 p-8 pt-6">
+            <div className="flex-1 space-y-8 p-8 pt-6 animate-in fade-in duration-500">
                 <AnnouncementModal />
 
                 {/* header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/50 pb-6">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider py-0.5 border-primary/20 bg-primary/5 text-primary">
-                                System Active
-                            </Badge>
-                        </div>
-                        <h2 className="text-3xl font-bold tracking-tight">
+                        <h2 className="text-3xl font-bold tracking-tight text-foreground">
                             {greeting}, {displayName}
                         </h2>
-                        <p className="text-sm text-muted-foreground font-medium">
-                            Global overview of your institution&apos;s operational and financial health.
+                        <p className="text-muted-foreground text-sm font-medium">
+                            Operational overview of institutional metrics and performance indicators.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3 bg-card border border-border p-1.5 rounded-xl shadow-sm">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg border border-border text-[11px] font-bold text-muted-foreground tabular-nums uppercase tracking-tight">
-                            <CalendarDays className="h-3.5 w-3.5 text-primary" />
-                            {format(currentTime, 'MMM dd, yyyy • hh:mm a')}
-                        </div>
+                    <div className="flex items-center gap-3 px-4 py-2 bg-card border border-border rounded-xl shadow-sm text-xs font-bold text-muted-foreground tabular-nums uppercase tracking-widest">
+                        <CalendarDays className="h-4 w-4 text-primary" />
+                        {format(currentTime, 'MMM dd, yyyy')}
                     </div>
                 </div>
 

@@ -32,6 +32,8 @@ export default function SectionsPage() {
     const { hasPermission } = usePermission();
     const canEditOrDelete = hasPermission([PERMISSIONS.CLASS_EDIT, PERMISSIONS.CLASS_DELETE]);
 
+    const [selectedClass, setSelectedClass] = useState<string>("all");
+
     // ক্লাসের ডেটা ফেচ করার সময় সেফটি চেক
     const { data: classRawData } = useQuery({
         queryKey: ["classes"],
@@ -54,10 +56,15 @@ export default function SectionsPage() {
     });
     const sections = Array.isArray(sectionRawData) ? sectionRawData : [];
 
-    const filteredSections = sections.filter((sec: any) =>
-        sec.name?.toLowerCase().includes(search.toLowerCase()) ||
-        sec.class?.name?.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredSections = sections.filter((sec: any) => {
+        const matchesSearch = 
+            sec.name?.toLowerCase().includes(search.toLowerCase()) ||
+            sec.class?.name?.toLowerCase().includes(search.toLowerCase());
+        
+        const matchesClass = selectedClass === "all" || sec.classId === selectedClass;
+
+        return matchesSearch && matchesClass;
+    });
     const totalPages = Math.ceil(filteredSections.length / itemsPerPage);
     const paginatedSections = filteredSections.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -120,14 +127,30 @@ export default function SectionsPage() {
     return (
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between gap-4 items-center">
-                <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search sections..."
-                        className="pl-9"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search sections..."
+                            className="pl-9"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="w-full sm:w-48">
+                        <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Filter by Class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Classes</SelectItem>
+                                {classes.map((cls: any) => (
+                                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                 
                 {/* 🔒 Gate for Create Button */}

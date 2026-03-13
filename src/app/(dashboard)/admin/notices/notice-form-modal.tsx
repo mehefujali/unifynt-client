@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, LayoutTemplate, Link2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface NoticeFormModalProps {
     isOpen: boolean;
@@ -83,78 +83,87 @@ export default function NoticeFormModal({ isOpen, onClose, onSuccess, noticeId }
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-0 shadow-2xl rounded-2xl">
-                <div className="bg-primary p-6 text-primary-foreground relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4">
-                        <LayoutTemplate className="w-32 h-32" />
-                    </div>
-                    <DialogHeader className="relative z-10 text-left">
-                        <DialogTitle className="text-2xl font-black tracking-tight">{isEditing ? "Edit Global Notice" : "Create Global Notice"}</DialogTitle>
-                        <DialogDescription className="text-primary-foreground/80 font-medium">
-                            {isEditing ? "Update the details of this institutional announcement." : "Publish a new announcement to your institution's dashboard or public website."}
+            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-border shadow-2xl rounded-2xl bg-card">
+                <div className="p-6 border-b border-border bg-muted/30">
+                    <DialogHeader className="text-left">
+                        <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+                            {isEditing ? "Edit Notice" : "Create New Notice"}
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground text-sm font-medium mt-1">
+                            {isEditing ? "Modify existing institutional announcement details." : "Publish an announcement to the dashboard or website."}
                         </DialogDescription>
                     </DialogHeader>
                 </div>
 
-                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="p-6 space-y-6">
-                    <div className="space-y-5">
+                <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="p-6 space-y-5">
+                    <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Notice Title <span className="text-rose-500">*</span></Label>
+                            <Label className="text-sm font-bold text-foreground">Notice Title <span className="text-destructive">*</span></Label>
                             <Input 
                                 {...form.register("title")} 
                                 placeholder="e.g. Campus Closed for Holidays" 
-                                className="h-12 font-medium bg-slate-50 border-slate-200 focus-visible:ring-primary/20 transition-all"
+                                className="h-10 bg-muted/20 border-border focus-visible:ring-primary/20 font-medium"
                             />
-                            {form.formState.errors.title && <p className="text-xs text-rose-500 font-medium">{form.formState.errors.title.message}</p>}
+                            {form.formState.errors.title && <p className="text-[11px] text-destructive font-bold mt-1">{form.formState.errors.title.message}</p>}
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">Notice Content <span className="text-rose-500">*</span></Label>
+                            <Label className="text-sm font-bold text-foreground">Content <span className="text-destructive">*</span></Label>
                             <Textarea 
                                 {...form.register("content")} 
                                 placeholder="Write the full body of your announcement here..." 
-                                className="min-h-[120px] resize-y font-medium bg-slate-50 border-slate-200 focus-visible:ring-primary/20 transition-all"
+                                className="min-h-[120px] resize-none bg-muted/20 border-border focus-visible:ring-primary/20 font-medium text-sm leading-relaxed"
                             />
-                            {form.formState.errors.content && <p className="text-xs text-rose-500 font-medium">{form.formState.errors.content.message}</p>}
+                            {form.formState.errors.content && <p className="text-[11px] text-destructive font-bold mt-1">{form.formState.errors.content.message}</p>}
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                                External Link <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-widest">(Optional)</span>
-                            </Label>
-                            <div className="relative">
-                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm font-bold text-foreground">External Link</Label>
+                                <span className="text-[9px] uppercase tracking-widest bg-muted/50 font-bold border border-border px-1.5 py-0.5 rounded text-muted-foreground">Optional</span>
+                            </div>
+                            <div className="relative group">
                                 <Input 
                                     {...form.register("link")} 
                                     placeholder="https://example.com" 
-                                    className="h-12 pl-10 font-medium bg-slate-50 border-slate-200 focus-visible:ring-primary/20 transition-all"
+                                    className="h-10 bg-muted/20 border-border focus-visible:ring-primary/20 font-medium"
                                 />
                             </div>
-                            {form.formState.errors.link && <p className="text-xs text-rose-500 font-medium">{form.formState.errors.link.message}</p>}
+                            {form.formState.errors.link && <p className="text-[11px] text-destructive font-bold mt-1">{form.formState.errors.link.message}</p>}
                         </div>
 
-                        <div className="flex flex-row items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex flex-row items-center justify-between rounded-xl border border-border bg-muted/10 p-4 transition-colors hover:bg-muted/20">
                             <div className="space-y-0.5">
-                                <Label className="text-sm font-bold text-slate-900">Visibility Status</Label>
-                                <p className="text-[11px] font-medium text-slate-500">
-                                    Should this be visible on your <span className="font-bold text-primary">Public Website</span>?
+                                <Label className="text-sm font-bold text-foreground tracking-tight">Public Visibility</Label>
+                                <p className="text-[11px] font-medium text-muted-foreground">
+                                    Show on <span className="font-bold text-primary">Public Website</span>
                                 </p>
                             </div>
                             <Switch
                                 checked={form.watch("isPublic")}
                                 onCheckedChange={(val) => form.setValue("isPublic", val)}
                                 disabled={mutation.isPending}
-                                className="data-[state=checked]:bg-emerald-500"
+                                className="data-[state=checked]:bg-primary h-5 w-9 scale-90"
                             />
                         </div>
                     </div>
 
-                    <DialogFooter className="pt-4 border-t border-slate-100 flex gap-2">
-                        <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending} className="font-bold">
+                    <DialogFooter className="pt-4 border-t border-border flex flex-row gap-3">
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            onClick={onClose} 
+                            disabled={mutation.isPending} 
+                            className="flex-1 font-bold h-10 px-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all"
+                        >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={mutation.isPending} className="bg-primary hover:bg-primary/90 font-bold px-8">
-                            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : (isEditing ? "Save Changes" : "Publish Notice")}
+                        <Button 
+                            type="submit" 
+                            disabled={mutation.isPending} 
+                            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-10 px-4 rounded-lg shadow-sm transition-all"
+                        >
+                            {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : (isEditing ? "Save Changes" : "Create Notice")}
                         </Button>
                     </DialogFooter>
                 </form>

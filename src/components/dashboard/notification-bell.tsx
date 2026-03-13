@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
 // Define the shape of our notification
 export interface INotification {
@@ -49,6 +50,7 @@ const NotificationIcon = ({ type }: { type: INotification["type"] }) => {
 export function NotificationBell() {
     const queryClient = useQueryClient();
     const router = useRouter();
+    const { user } = useAuth();
 
     const { data, isLoading } = useQuery({
         queryKey: ["notifications"],
@@ -87,7 +89,14 @@ export function NotificationBell() {
             markAsReadMutation.mutate(notification.id);
         }
         if (notification.actionUrl) {
-            router.push(notification.actionUrl);
+            let targetUrl = notification.actionUrl;
+
+            // Remap generic profile to role-based profile
+            if (targetUrl === "/profile") {
+                targetUrl = user?.role === "SUPER_ADMIN" ? "/super-admin/profile" : "/admin/profile";
+            }
+
+            router.push(targetUrl);
         }
     };
 

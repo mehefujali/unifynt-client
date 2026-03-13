@@ -16,33 +16,27 @@ import {
     Table as TableIcon,
     ShieldAlert
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
     DropdownMenuItem, 
     DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FeesService } from "@/services/fees.service";
-
-// --- Import Permissions and Gate ---
 import { PERMISSIONS } from "@/config/permissions";
 import { PermissionGate } from "@/components/common/permission-gate";
+import { FeesService } from "@/services/fees.service";
 
 export default function TransactionHistoryPage() {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [limit, setLimit] = useState(10);
 
     const { data: transactionsRes, isLoading } = useQuery({
-        queryKey: ["fee-transactions", searchTerm, currentPage, limit],
-        queryFn: () => FeesService.getTransactions({ searchTerm, page: currentPage, limit }),
+        queryKey: ["fee-transactions", searchTerm, currentPage],
+        queryFn: () => FeesService.getTransactions({ searchTerm, page: currentPage, limit: 10 }),
     });
 
     const transactions = transactionsRes?.data || [];
@@ -58,208 +52,179 @@ export default function TransactionHistoryPage() {
         <PermissionGate 
             required={PERMISSIONS.FEE_VIEW}
             fallback={
-                <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95 duration-500">
-                    <div className="h-20 w-20 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6 ring-8 ring-red-50/50 dark:ring-red-500/5">
+                <div className="flex-1 flex flex-col items-center justify-center min-h-[70vh] p-8 text-center animate-in fade-in duration-500">
+                    <div className="h-20 w-20 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mb-6">
                         <ShieldAlert className="h-10 w-10" />
                     </div>
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Audit Access Restricted</h2>
-                    <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                        You do not have the required financial authorization to view the transaction ledger. Please contact the Principal or Finance Head.
+                    <h2 className="text-2xl font-bold tracking-tight">Access Denied</h2>
+                    <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                        Your administrative role does not have authorization to view the transaction ledger.
                     </p>
-                    <Button variant="outline" className="mt-8 rounded-xl" onClick={() => router.back()}>
+                    <Button variant="outline" className="mt-8 rounded-lg" onClick={() => router.back()}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
                     </Button>
                 </div>
             }
         >
-            <div className="p-6 space-y-6 animate-in fade-in duration-500 min-h-screen bg-slate-50/40 dark:bg-transparent">
-                {/* Breadcrumbs */}
-                <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    <button onClick={() => router.push("/admin")} className="hover:text-primary transition-colors">Dashboard</button>
-                    <ChevronRight className="h-3 w-3" />
-                    <button onClick={() => router.push("/admin/fees/invoices")} className="hover:text-primary transition-colors">Fees Management</button>
-                    <ChevronRight className="h-3 w-3" />
-                    <span className="text-slate-600 dark:text-slate-300">Transaction History</span>
-                </nav>
-
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-5">
+            <div className="flex-1 space-y-4 p-8 pt-6 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between space-y-2">
+                    <div className="flex items-center gap-4">
                         <Button 
                             variant="outline" 
                             size="icon" 
                             onClick={() => router.back()}
-                            className="rounded-2xl border-slate-200 dark:border-slate-800 h-12 w-12 shadow-sm hover:scale-110 transition-all bg-white dark:bg-slate-900"
+                            className="rounded-lg h-9 w-9 border-border bg-card shadow-sm"
                         >
-                            <ArrowLeft className="h-5 w-5" />
+                            <ArrowLeft className="h-4 w-4" />
                         </Button>
                         <div>
-                            <h2 className="text-3xl font-black tracking-tight flex items-center gap-3">
-                                <div className="p-2.5 bg-primary/10 text-primary rounded-2xl border border-primary/20 shadow-inner">
-                                    <History className="h-6 w-6" />
-                                </div>
-                                Transaction Ledger
-                            </h2>
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1 ml-1 opacity-80">Full audit trail of institutional revenue</p>
+                            <h2 className="text-3xl font-bold tracking-tight">Transaction Ledger</h2>
+                            <p className="text-muted-foreground text-sm">Full audit trail of institutional revenue collection.</p>
                         </div>
                     </div>
-
                     <div className="flex items-center gap-3">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button className="font-black h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:scale-105 transition-all">
-                                    <Download className="mr-2 h-4 w-4 stroke-[3]" /> Export
+                                <Button size="sm" className="font-bold rounded-lg shadow-sm">
+                                    <Download className="mr-2 h-4 w-4" /> Export
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="rounded-2xl border-border/50 shadow-2xl p-2 min-w-[160px]">
-                                <DropdownMenuItem className="rounded-xl h-10 font-bold cursor-pointer focus:bg-emerald-50 focus:text-emerald-600 transition-colors">
-                                    <TableIcon className="mr-3 h-4 w-4" /> Download Excel (.xlsx)
+                            <DropdownMenuContent className="rounded-xl border-border/50 shadow-xl p-2 min-w-[160px]">
+                                <DropdownMenuItem className="rounded-lg cursor-pointer h-9 font-medium">
+                                    <TableIcon className="mr-3 h-4 w-4 text-muted-foreground" /> Download Excel
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="rounded-xl h-10 font-bold cursor-pointer focus:bg-blue-50 focus:text-blue-600 transition-colors">
-                                    <FileText className="mr-3 h-4 w-4" /> Download CSV (.csv)
+                                <DropdownMenuItem className="rounded-lg cursor-pointer h-9 font-medium">
+                                    <FileText className="mr-3 h-4 w-4 text-muted-foreground" /> Download CSV
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
                 </div>
 
-                {/* Main Table Card */}
-                <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-slate-900/50 backdrop-blur-xl rounded-[32px] overflow-hidden">
-                    <CardHeader className="bg-slate-50/50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-6">
-                        <div className="relative max-w-sm">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input 
-                                placeholder="Student name, roll, or ID..." 
-                                className="pl-11 h-12 font-bold border-slate-200 dark:border-slate-800 rounded-2xl shadow-none focus-visible:ring-primary/20 bg-white dark:bg-slate-950"
-                                value={searchTerm}
-                                onChange={(e) => handleSearch(e.target.value)}
-                            />
-                        </div>
-                    </CardHeader>
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm">
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input 
+                            placeholder="Student name, roll, or ID..." 
+                            className="w-full flex h-10 rounded-lg border border-border bg-muted/20 px-3 py-2 pl-9 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={searchTerm}
+                            onChange={(e) => handleSearch(e.target.value)}
+                        />
+                    </div>
+                </div>
 
-                    <CardContent className="p-0">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <Table>
-                                <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                                    <TableRow className="hover:bg-transparent">
-                                        <TableHead className="px-8 h-14 font-black text-[10px] uppercase tracking-widest text-slate-400">Date & Timeline</TableHead>
-                                        <TableHead className="px-8 h-14 font-black text-[10px] uppercase tracking-widest text-slate-400">Student Identity</TableHead>
-                                        <TableHead className="px-8 h-14 font-black text-[10px] uppercase tracking-widest text-slate-400">Billed Invoice</TableHead>
-                                        <TableHead className="px-8 h-14 font-black text-[10px] uppercase tracking-widest text-slate-400">Payment Mode</TableHead>
-                                        <TableHead className="px-8 h-14 font-black text-[10px] uppercase tracking-widest text-right text-slate-400">Amount</TableHead>
-                                        <TableHead className="px-8 h-14 font-black text-[10px] uppercase tracking-widest text-right text-slate-400">Details</TableHead>
-                                    </TableRow>
-                                </TableHeader>
+                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+                    <div className="w-full overflow-x-auto custom-scrollbar">
+                        <Table>
+                            <TableHeader className="bg-muted/30 border-b border-border">
+                                <TableRow>
+                                    <TableHead className="font-bold text-foreground">Date & Time</TableHead>
+                                    <TableHead className="font-bold text-foreground">Student Identity</TableHead>
+                                    <TableHead className="font-bold text-foreground">Billed Invoice</TableHead>
+                                    <TableHead className="font-bold text-foreground">Payment Mode</TableHead>
+                                    <TableHead className="text-right font-bold text-foreground">Amount</TableHead>
+                                    <TableHead className="text-right font-bold text-foreground px-6">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
-                                        <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 font-bold animate-pulse">Syncing Ledger Data...</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={6} className="h-64 text-center text-muted-foreground font-medium animate-pulse">Syncing ledger records...</TableCell></TableRow>
                                     ) : transactions.length > 0 ? (
                                         transactions.map((tx: any) => (
-                                            <TableRow key={tx.id} className="group hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all border-b border-slate-50 dark:border-slate-800/50">
-                                                <TableCell className="px-8 py-5">
+                                            <TableRow key={tx.id} className="hover:bg-muted/20 transition-colors border-b border-border/50 last:border-0">
+                                                <TableCell className="py-4">
                                                     <div className="flex flex-col">
-                                                        <span className="font-black text-[14px] text-slate-700 dark:text-slate-200 tracking-tight">{new Date(tx.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                                                        <span className="text-[10px] text-slate-400 font-black uppercase mt-0.5">{new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <span className="font-bold text-foreground uppercase tracking-tight text-[13px]">{new Date(tx.createdAt).toLocaleDateString('en-GB')}</span>
+                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">{new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="px-8 py-5">
+                                                <TableCell className="py-4">
                                                     <div className="flex flex-col">
-                                                        <span className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-primary transition-colors">
+                                                        <span className="font-bold text-foreground">
                                                             {tx.invoice?.student?.firstName} {tx.invoice?.student?.lastName}
                                                         </span>
-                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-0.5">Roll: {tx.invoice?.student?.rollNumber} • Class {tx.invoice?.student?.class?.name}</span>
+                                                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-tighter">Roll: {tx.invoice?.student?.rollNumber} • {tx.invoice?.student?.class?.name}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="px-8 py-5">
+                                                <TableCell className="py-4">
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="font-bold text-xs text-slate-500">{tx.invoice?.invoiceTitle}</span>
-                                                        <Badge className="w-fit bg-slate-100 dark:bg-slate-800 text-slate-500 border-none text-[8px] font-black h-4 uppercase px-1 shadow-none">
-                                                            Ref: {tx.referenceNo || "POS_COLLECT"}
+                                                        <span className="font-semibold text-sm text-foreground/80">{tx.invoice?.invoiceTitle}</span>
+                                                        <Badge variant="outline" className="w-fit text-[9px] font-bold border-0 bg-muted/60 px-2 py-0 uppercase">
+                                                            Ref: {tx.referenceNo || "POS"}
                                                         </Badge>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="px-8 py-5">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 border border-blue-100 dark:border-blue-500/20">
-                                                            <CreditCard className="h-4 w-4" />
+                                                <TableCell className="py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-7 w-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 border border-blue-500/20">
+                                                            <CreditCard className="h-3 w-3" />
                                                         </div>
-                                                        <span className="font-black text-[11px] uppercase text-slate-600 dark:text-slate-400 tracking-widest">{tx.paymentMode}</span>
+                                                        <span className="font-bold text-xs uppercase text-muted-foreground tracking-wider">{tx.paymentMode}</span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="px-8 py-5 text-right">
-                                                    <span className="font-black text-[17px] text-emerald-600 tracking-tighter tabular-nums">₹{tx.amount.toLocaleString('en-IN')}</span>
+                                                <TableCell className="py-4 text-right">
+                                                    <span className="font-bold text-base text-emerald-600 tabular-nums tracking-tighter">₹{tx.amount.toLocaleString('en-IN')}</span>
                                                 </TableCell>
-                                                <TableCell className="px-8 py-5 text-right">
+                                                <TableCell className="py-4 text-right px-6">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
                                                         onClick={() => router.push(`/admin/fees/collection?id=${tx.invoice?.id}`)}
-                                                        className="h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary hover:text-white transition-all border-none"
+                                                        className="h-8 rounded-lg font-bold text-[11px] uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
                                                     >
-                                                        View Details <ChevronRight className="ml-1 h-3 w-3 stroke-[3]" />
+                                                        Details <ChevronRight className="ml-1 h-3 w-3" />
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={6} className="h-64 text-center text-slate-300 font-black uppercase text-[11px] tracking-[0.3em] italic opacity-40">Zero Transaction Logged</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={6} className="h-64 text-center text-muted-foreground font-bold uppercase text-[11px] tracking-widest opacity-40">Zero Transaction Logged</TableCell></TableRow>
                                     )}
                                 </TableBody>
                             </Table>
                         </div>
 
-                        {/* Server-Side Pagination Footer */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-black/10 gap-4">
-                            <div className="text-[11px] font-black uppercase text-slate-400 tracking-widest">
-                                Showing <span className="text-slate-900 dark:text-white">{transactions.length}</span> of <span className="text-slate-900 dark:text-white">{meta?.total || 0}</span> logs
-                            </div>
+                </div>
 
-                            <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Rows</span>
-                                    <Select value={`${limit}`} onValueChange={(val) => { setLimit(Number(val)); setCurrentPage(1); }}>
-                                        <SelectTrigger className="h-9 w-[75px] rounded-xl font-black bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-xs shadow-sm"><SelectValue /></SelectTrigger>
-                                        <SelectContent className="rounded-xl font-bold">
-                                            {[10, 20, 50, 100].map(v => <SelectItem key={v} value={`${v}`} className="text-xs">{v}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                <div className="bg-muted/20 border-t border-border p-4 flex items-center justify-between rounded-b-xl border border-t-0 bg-card">
+                    <span className="text-sm text-muted-foreground font-bold">
+                        Showing <span className="text-foreground">{transactions.length}</span> of <span className="text-foreground">{meta?.total || 0}</span> logs
+                    </span>
 
-                                <div className="flex items-center gap-2">
-                                    <Button 
-                                        variant="outline" 
-                                        className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-30" 
-                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                                        disabled={currentPage === 1}
-                                    >
-                                        <ChevronLeft className="h-4 w-4 stroke-[3]" />
-                                    </Button>
-                                    <div className="px-4 h-9 flex items-center justify-center bg-primary text-primary-foreground rounded-xl font-black text-xs shadow-lg shadow-primary/20">
-                                        {currentPage} / {meta?.totalPage || 1}
-                                    </div>
-                                    <Button 
-                                        variant="outline" 
-                                        className="h-9 w-9 p-0 rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-30" 
-                                        onClick={() => setCurrentPage(p => Math.min(meta?.totalPage || 1, p + 1))} 
-                                        disabled={currentPage === (meta?.totalPage || 1) || (meta?.totalPage || 0) === 0}
-                                    >
-                                        <ChevronRight className="h-4 w-4 stroke-[3]" />
-                                    </Button>
-                                </div>
-                            </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1 || isLoading}
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="px-3 text-xs font-bold text-foreground/70 bg-background/50 py-1 rounded-md border border-border/50">
+                            Page {currentPage} of {meta?.totalPage || 1}
                         </div>
-                    </CardContent>
-                </Card>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(meta?.totalPage || 1, p + 1))}
+                            disabled={currentPage === (meta?.totalPage || 1) || (meta?.totalPage || 0) === 0 || isLoading}
+                            className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
 
-                {/* Totals Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="p-7 bg-white dark:bg-slate-900/50 rounded-[32px] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-5">
-                        <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
-                             <History className="h-7 w-7" />
+                {/* Revenue Summary Card */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-6 bg-card rounded-xl border border-border shadow-sm flex items-center gap-5">
+                        <div className="h-12 w-12 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
+                             <History className="h-6 w-6" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-1">Total Revenue Collected</p>
-                            <h4 className="text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tighter">₹{transactions.reduce((acc: number, curr: any) => acc + curr.amount, 0).toLocaleString('en-IN')}</h4>
+                            <p className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider">Total Revenue</p>
+                            <h4 className="text-2xl font-bold text-foreground tabular-nums tracking-tighter">₹{transactions.reduce((acc: number, curr: any) => acc + curr.amount, 0).toLocaleString('en-IN')}</h4>
                         </div>
                     </div>
                 </div>

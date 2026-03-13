@@ -32,6 +32,7 @@ export interface StudentInvoice {
     lastName: string;
     rollNumber: string;
     phone: string;
+    email?: string;
     class: { name: string };
   };
   items: { amount: number; feeHead: { name: string } }[];
@@ -100,6 +101,10 @@ export const FeesService = {
 
   sendFeeReminders: async (payload: { invoiceIds: string[]; templateId: string }) => {
     const res = await api.post("/fees/invoices/send-reminders", payload);
+    return res.data;
+  },
+  sendFeeEmailReminders: async (payload: { invoiceIds: string[] }) => {
+    const res = await api.post("/fees/invoices/send-email-reminders", payload);
     return res.data;
   },
   getTransactions: async (params?: Record<string, any>) => {

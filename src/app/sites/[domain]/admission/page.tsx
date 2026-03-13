@@ -91,10 +91,8 @@ export default function AdmissionPage() {
                     </p>
                 </div>
 
-                <div className="max-w-4xl mx-auto">
-                    <div className="bg-white/50 backdrop-blur-sm rounded-[2.5rem] p-1 border border-white/20 shadow-2xl">
-                        <DynamicAdmissionForm schoolId={school.id} />
-                    </div>
+                <div className="max-w-4xl mx-auto relative z-10">
+                    <DynamicAdmissionForm schoolId={school.id} />
                 </div>
             </main>
 

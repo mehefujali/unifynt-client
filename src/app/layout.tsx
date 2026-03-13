@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Inter, Bricolage_Grotesque, Outfit } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/providers/query-provider";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeColorProvider } from "@/providers/theme-color-provider";
+import { ThemeWrapper } from "@/components/theme-wrapper";
 import { Toaster } from "@/components/ui/sonner";
-import { FloatingContact } from "@/components/floating-contact";
 import { SmoothScroll } from "@/components/providers/smooth-scroll";
 
 const inter = Inter({
@@ -135,69 +135,65 @@ export default function RootLayout({
         suppressHydrationWarning 
       >
         <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <SmoothScroll>
-              {children}
-              <FloatingContact />
-            </SmoothScroll>
-            <script
-              type="application/ld+json"
-              dangerouslySetInnerHTML={{
-                __html: JSON.stringify([
-                  {
-                    "@context": "https://schema.org",
-                    "@type": "SoftwareApplication",
-                    "name": "Unifynt",
-                    "applicationCategory": "EducationalApplication, BusinessApplication",
-                    "operatingSystem": "Web, Android, iOS",
-                    "description": "Unifynt is the most advanced school management service and ERP software. It streamlines admissions, fee collection, attendance, and all academic operations for schools.",
-                    "url": "https://unifynt.com",
-                    "author": {
+          <ThemeWrapper>
+            <ThemeColorProvider>
+              <SmoothScroll>
+                {children}
+              </SmoothScroll>
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                  __html: JSON.stringify([
+                    {
+                      "@context": "https://schema.org",
+                      "@type": "SoftwareApplication",
+                      "name": "Unifynt",
+                      "applicationCategory": "EducationalApplication, BusinessApplication",
+                      "operatingSystem": "Web, Android, iOS",
+                      "description": "Unifynt is the most advanced school management service and ERP software. It streamlines admissions, fee collection, attendance, and all academic operations for schools.",
+                      "url": "https://unifynt.com",
+                      "author": {
+                        "@type": "Organization",
+                        "name": "Unifynt",
+                        "url": "https://unifynt.com",
+                        "logo": "https://unifynt.com/unifynt-logo.png"
+                      },
+                      "offers": {
+                        "@type": "Offer",
+                        "price": "0",
+                        "priceCurrency": "INR",
+                        "availability": "https://schema.org/InStock"
+                      },
+                      "aggregateRating": {
+                        "@type": "AggregateRating",
+                        "ratingValue": "4.9",
+                        "reviewCount": "150"
+                      }
+                    },
+                    {
+                      "@context": "https://schema.org",
                       "@type": "Organization",
                       "name": "Unifynt",
                       "url": "https://unifynt.com",
-                      "logo": "https://unifynt.com/unifynt-logo.png"
-                    },
-                    "offers": {
-                      "@type": "Offer",
-                      "price": "0",
-                      "priceCurrency": "INR",
-                      "availability": "https://schema.org/InStock"
-                    },
-                    "aggregateRating": {
-                      "@type": "AggregateRating",
-                      "ratingValue": "4.9",
-                      "reviewCount": "150"
+                      "logo": "https://unifynt.com/unifynt-logo.png",
+                      "sameAs": [
+                        "https://twitter.com/unifynt",
+                        "https://linkedin.com/company/unifynt"
+                      ],
+                      "contactPoint": {
+                        "@type": "ContactPoint",
+                        "telephone": "+91-XXXXXXXXXX",
+                        "contactType": "customer service",
+                        "areaServed": "IN",
+                        "availableLanguage": ["en", "bn", "hi"]
+                      }
                     }
-                  },
-                  {
-                    "@context": "https://schema.org",
-                    "@type": "Organization",
-                    "name": "Unifynt",
-                    "url": "https://unifynt.com",
-                    "logo": "https://unifynt.com/unifynt-logo.png",
-                    "sameAs": [
-                      "https://twitter.com/unifynt",
-                      "https://linkedin.com/company/unifynt"
-                    ],
-                    "contactPoint": {
-                      "@type": "ContactPoint",
-                      "telephone": "+91-XXXXXXXXXX",
-                      "contactType": "customer service",
-                      "areaServed": "IN",
-                      "availableLanguage": ["en", "bn", "hi"]
-                    }
-                  }
-                ])
-              }}
-            />
-            <Toaster position="top-center" richColors />
-          </ThemeProvider>
+                  ])
+                }}
+              />
+              <Toaster position="top-center" richColors />
+            </ThemeColorProvider>
+          </ThemeWrapper>
         </QueryProvider>
       </body>
     </html>

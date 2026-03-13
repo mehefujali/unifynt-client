@@ -5,9 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { NoticeService } from "@/services/notice.service";
 import { DataTable } from "./data-table";
 import { format } from "date-fns";
-import { Plus, Link2, FileText, MoreHorizontal } from "lucide-react";
+import { Plus, Link2, FileText, MoreHorizontal, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
 import NoticeFormModal from "./notice-form-modal";
@@ -18,13 +17,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useThemeColor } from "@/providers/theme-color-provider";
+import { cn } from "@/lib/utils";
+import { PermissionGate } from "@/components/common/permission-gate";
+import { PERMISSIONS } from "@/config/permissions";
 
 export default function NoticesPage() {
   const [page, setPage] = useState(1);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedNoticeId, setSelectedNoticeId] = useState<string | null>(null);
+  const { currentThemeId } = useThemeColor();
 
+  const isEnhanced = currentThemeId !== "standard";
   const limit = 10;
 
   const { data, isLoading, refetch } = useQuery({
@@ -38,8 +43,11 @@ export default function NoticesPage() {
       accessorKey: "title",
       header: "Title",
       cell: ({ row }) => (
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 flex flex-shrink-0 items-center justify-center border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-lg text-slate-400">
+        <div className="flex items-center gap-4 py-1">
+          <div className={cn(
+            "h-10 w-10 flex flex-shrink-0 items-center justify-center rounded-xl transition-all border border-border shadow-sm",
+            isEnhanced ? "bg-primary/5 text-primary" : "bg-muted/30 text-muted-foreground"
+          )}>
             {row.original.link ? (
               <a href={row.original.link} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
                 <Link2 className="h-5 w-5" />
@@ -49,8 +57,8 @@ export default function NoticesPage() {
             )}
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-slate-900 dark:text-slate-100">{row.original.title}</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[200px]">{row.original.content}</span>
+            <span className="font-bold text-sm text-foreground leading-tight">{row.original.title}</span>
+            <span className="text-[11px] text-muted-foreground line-clamp-1 max-w-[250px] font-medium">{row.original.content}</span>
           </div>
         </div>
       )
@@ -59,7 +67,12 @@ export default function NoticesPage() {
       accessorKey: "isPublic",
       header: "Visibility",
       cell: ({ row }) => (
-        <Badge variant={row.original.isPublic ? "default" : "secondary"} className={row.original.isPublic ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none px-2 py-0.5" : "bg-slate-100 text-slate-600 hover:bg-slate-100 border-none px-2 py-0.5"}>
+        <Badge variant="outline" className={cn(
+            "uppercase tracking-widest text-[9px] font-bold px-2.5 py-0.5 rounded-md",
+            row.original.isPublic 
+                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                : "bg-muted text-muted-foreground border-border"
+        )}>
           {row.original.isPublic ? "Public" : "Internal"}
         </Badge>
       )
@@ -84,18 +97,23 @@ export default function NoticesPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[180px] rounded-xl font-medium shadow-xl border-slate-100 dark:border-slate-800">
-            <DropdownMenuItem onClick={() => {
-              setSelectedNoticeId(row.original.id);
-              setIsFormModalOpen(true);
-            }} className="py-2.5 cursor-pointer text-[13px] tracking-tight hover:bg-slate-50 dark:hover:bg-slate-900">
-              Edit Notice
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              setSelectedNoticeId(row.original.id);
-              setIsDeleteModalOpen(true);
-            }} className="py-2.5 cursor-pointer text-[13px] tracking-tight text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
-              Delete Notice
-            </DropdownMenuItem>
+            <PermissionGate required={PERMISSIONS.NOTICE_EDIT}>
+              <DropdownMenuItem onClick={() => {
+                setSelectedNoticeId(row.original.id);
+                setIsFormModalOpen(true);
+              }} className="py-2.5 cursor-pointer text-[13px] tracking-tight hover:bg-slate-50 dark:hover:bg-slate-900">
+                Edit Notice
+              </DropdownMenuItem>
+            </PermissionGate>
+            
+            <PermissionGate required={PERMISSIONS.NOTICE_DELETE}>
+              <DropdownMenuItem onClick={() => {
+                setSelectedNoticeId(row.original.id);
+                setIsDeleteModalOpen(true);
+              }} className="py-2.5 cursor-pointer text-[13px] tracking-tight text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950">
+                Delete Notice
+              </DropdownMenuItem>
+            </PermissionGate>
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -103,35 +121,52 @@ export default function NoticesPage() {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white uppercase">Notice Board</h1>
-          <p className="text-sm font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 mt-1">Manage institutional announcements</p>
+    <PermissionGate 
+      required={PERMISSIONS.NOTICE_VIEW}
+      fallback={
+        <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95 duration-500">
+          <div className="h-20 w-20 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mb-6 ring-8 ring-red-50/50 dark:ring-red-500/5">
+            <ShieldAlert className="h-10 w-10" />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">Unauthorized Access</h2>
+          <p className="text-muted-foreground mt-2 max-w-md mx-auto font-medium">
+            You do not have the required permissions to access the institutional notice board. Please contact your administrator for assistance.
+          </p>
         </div>
-        <Button
-          onClick={() => {
-            setSelectedNoticeId(null);
-            setIsFormModalOpen(true);
-          }}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md h-11 px-6 rounded-xl hover:-translate-y-0.5 transition-all"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Create Notice
-        </Button>
+      }
+    >
+      <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="space-y-1">
+            <h1 className="text-2xl font-black tracking-tight text-foreground uppercase">Notice Board</h1>
+            <p className="text-[13px] font-medium text-muted-foreground">Manage and broadcast institutional announcements across departments.</p>
+        </div>
+        <PermissionGate required={PERMISSIONS.NOTICE_CREATE}>
+          <Button
+            onClick={() => {
+              setSelectedNoticeId(null);
+              setIsFormModalOpen(true);
+            }}
+            className="font-bold text-xs uppercase tracking-widest h-10 px-6 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-sm"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Create Notice
+          </Button>
+        </PermissionGate>
       </div>
 
-      <Card className="border-0 shadow-lg shadow-slate-200/40 dark:shadow-none bg-white dark:bg-slate-900 rounded-2xl overflow-hidden">
-        <CardContent className="p-0">
-          <DataTable
-            columns={columns}
-            data={data?.data || []}
-            pageCount={data?.meta?.totalPage || 1}
-            currentPage={page}
-            isLoading={isLoading}
-            onPageChange={setPage}
-          />
-        </CardContent>
-      </Card>
+      <div className={cn(
+        "rounded-2xl border border-border shadow-sm overflow-hidden bg-card transition-all duration-300",
+        isEnhanced && "shadow-xl shadow-primary/5"
+      )}>
+        <DataTable
+          columns={columns}
+          data={data?.data || []}
+          pageCount={data?.meta?.totalPage || 1}
+          currentPage={page}
+          isLoading={isLoading}
+          onPageChange={setPage}
+        />
+      </div>
 
       {/* Modals */}
       <NoticeFormModal
@@ -153,6 +188,7 @@ export default function NoticesPage() {
         noticeId={selectedNoticeId}
         onSuccess={() => refetch()}
       />
-    </div>
+      </div>
+    </PermissionGate>
   );
 }
