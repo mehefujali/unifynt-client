@@ -204,7 +204,7 @@ export default function AdminWorkspaceProfilePage() {
         onSuccess: (data) => {
             if (!data) return;
             setDnsStatus(data);
-            if (data.aRecord && data.cnameRecord) {
+            if (data?.data?.aRecord && data?.data?.cnameRecord) {
                 toast.success("Domain successfully verified!");
             } else {
                 toast.warning("Verification pending. Records not detected yet.");
@@ -496,8 +496,8 @@ export default function AdminWorkspaceProfilePage() {
                                     <div className="col-span-8 space-y-1">
                                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Value</p>
                                         <div className="flex items-center justify-between gap-2 bg-muted/40 p-2 rounded border border-border/10">
-                                            <code className="text-xs font-mono font-bold">103.118.0.3</code>
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText("103.118.0.3"); toast.success("Copied"); }}>
+                                            <code className="text-xs font-mono font-bold">{(dnsStatus as any)?.serverIp || "100.53.33.113"}</code>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText((dnsStatus as any)?.serverIp || "100.53.33.113"); toast.success("Copied"); }}>
                                                 <Copy className="h-3 w-3" />
                                             </Button>
                                         </div>
