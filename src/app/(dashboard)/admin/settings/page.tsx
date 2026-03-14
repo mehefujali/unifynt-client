@@ -10,33 +10,33 @@ import { toast } from "sonner";
 import Cropper from "react-easy-crop";
 import {
     Loader2,
-    Building2,
     Lock,
     Globe,
     Mail,
-    Phone,
-    MapPin,
-    ShieldCheck,
-    CheckCircle2,
-    UploadCloud,
-    KeyRound,
-    Palette,
     FileText,
-    Image as ImageIcon
+    ExternalLink,
+    Settings,
+    Copy,
+    RefreshCw,
+    Check,
+    MessageCircle,
+    PhoneCall,
+    UploadCloud,
+    CheckCircle2,
+    Save
 } from "lucide-react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 import api from "@/lib/axios";
 import { useAuth } from "@/hooks/use-auth";
 import { SchoolService } from "@/services/school.service";
+import { cn } from "@/lib/utils";
 
 // --- SCHEMAS ---
 const schoolProfileSchema = z.object({
@@ -74,7 +74,7 @@ const passwordSchema = z.object({
 
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
-// --- IMAGE PROCESSING UTILS ---
+// --- IMAGE UTILS ---
 const createImage = (url: string): Promise<HTMLImageElement> =>
     new Promise((resolve, reject) => {
         const image = new Image();
@@ -113,7 +113,6 @@ const getProcessedImage = async (imageSrc: string, pixelCrop: any): Promise<File
     });
 };
 
-// --- MAIN COMPONENT ---
 export default function AdminWorkspaceProfilePage() {
     const queryClient = useQueryClient();
     const { user, isLoading: isAuthLoading } = useAuth();
@@ -122,12 +121,18 @@ export default function AdminWorkspaceProfilePage() {
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Image Adjuster States
+    // Modals
     const [imageSrc, setImageSrc] = useState<string | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+    const [isDomainModalOpen, setIsDomainModalOpen] = useState(false);
+    
+    // Crop Settings
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+    // DNS
+    const [dnsStatus, setDnsStatus] = useState<{ aRecord: boolean; cnameRecord: boolean } | null>(null);
 
     const { data: schoolData, isLoading: isSchoolLoading } = useQuery({
         queryKey: ["my-school", user?.schoolId],
@@ -172,43 +177,50 @@ export default function AdminWorkspaceProfilePage() {
 
     const updateProfileMutation = useMutation({
         mutationFn: async (data: SchoolProfileFormValues) => {
+            if (data.customDomain) {
+                data.customDomain = data.customDomain.replace(/^(https?:\/\/)?(www\.)?/, '').toLowerCase();
+            }
             return SchoolService.updateSchool(user?.schoolId as string, data);
         },
-        onSuccess: () => {
-            toast.success("Workspace profile updated successfully!");
+        onSuccess: (data, variables) => {
+            toast.success("Settings saved successfully");
             queryClient.invalidateQueries({ queryKey: ["my-school", user?.schoolId] });
+            
+            // Auto open DNS modal if custom domain was the trigger
+            if (variables.customDomain && variables.customDomain !== schoolData?.customDomain) {
+                setIsDomainModalOpen(true);
+            }
         },
-        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to update profile"),
+        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to save settings"),
     });
 
-    const updatePasswordMutation = useMutation({
-        mutationFn: async (data: PasswordFormValues) => {
-            const res = await api.post("/auth/change-password", {
-                oldPassword: data.currentPassword,
-                newPassword: data.newPassword,
-            });
-            return res.data;
+    const verifyDnsMutation = useMutation({
+        mutationFn: async () => {
+            const domain = form.getValues("customDomain")?.replace(/^(https?:\/\/)?(www\.)?/, '').toLowerCase();
+            const subdomain = schoolData?.subdomain;
+            if (!domain || !subdomain) return null;
+            return SchoolService.verifyDns(domain, subdomain);
         },
-        onSuccess: () => {
-            toast.success("Security credentials updated successfully!");
-            passwordForm.reset();
+        onSuccess: (data) => {
+            if (!data) return;
+            setDnsStatus(data);
+            if (data.aRecord && data.cnameRecord) {
+                toast.success("Domain successfully verified!");
+            } else {
+                toast.warning("Verification pending. Records not detected yet.");
+            }
         },
-        onError: (error: any) => toast.error(error.response?.data?.message || "Incorrect current password"),
     });
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.addEventListener("load", () => {
+        reader.onload = () => {
             setImageSrc(reader.result?.toString() || null);
-            setIsModalOpen(true);
-            setZoom(1);
-            setCrop({ x: 0, y: 0 });
-        });
+            setIsLogoModalOpen(true);
+        };
         reader.readAsDataURL(file);
-        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const handleProcessImage = async () => {
@@ -216,339 +228,228 @@ export default function AdminWorkspaceProfilePage() {
         try {
             setIsUploading(true);
             const processedFile = await getProcessedImage(imageSrc, croppedAreaPixels);
-            if (!processedFile) { toast.error("Processing failed."); return; }
-
             const formData = new FormData();
-            formData.append("file", processedFile);
-
+            formData.append("file", processedFile!);
             const res = await api.post("/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
             if (res.data.success) {
                 form.setValue("logo", res.data.data.url, { shouldValidate: true, shouldDirty: true });
-                toast.success("Workspace logo updated");
-                setIsModalOpen(false);
+                setIsLogoModalOpen(false);
+                toast.success("Logo updated. Don't forget to Save Changes below.");
             }
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || "Failed to upload logo");
-        } finally {
-            setIsUploading(false);
-        }
+        } catch { toast.error("Upload failed"); } finally { setIsUploading(false); }
     };
 
-    if (isAuthLoading || isSchoolLoading) {
-        return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-    }
-
-    const currentLogo = form.watch("logo");
+    if (isAuthLoading || isSchoolLoading) return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
     return (
-        <div className="max-w-[1400px] mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-700">
-            <div className="mb-10">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="h-10 w-2 bg-primary rounded-full" />
-                    <h1 className="text-4xl font-black tracking-tighter text-foreground uppercase italic">
-                        Workspace <span className="text-primary/80">Settings</span>
-                    </h1>
+        <div className="max-w-6xl mx-auto space-y-8 pb-20">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b pb-6">
+                <div className="space-y-1">
+                    <h1 className="text-2xl font-bold tracking-tight">General Settings</h1>
+                    <p className="text-sm text-muted-foreground">Manage your institution identity, domain and contact information.</p>
                 </div>
-                <p className="text-muted-foreground ml-5 text-sm font-bold tracking-wide opacity-70">Global identity, institutional branding, and infrastructure security.</p>
+                <Button 
+                    onClick={form.handleSubmit((data) => updateProfileMutation.mutate(data))}
+                    disabled={updateProfileMutation.isPending}
+                    className="hidden sm:flex items-center gap-2 px-6"
+                >
+                    {updateProfileMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save Changes
+                </Button>
             </div>
 
-            <div className="flex flex-col xl:flex-row gap-10 items-start">
-                {/* Sidebar Navigation */}
-                <div className="w-full xl:w-80 shrink-0 sticky top-10">
-                    <div className="glass-metal p-5 rounded-3xl border border-border/40 shadow-xl bg-white/50 dark:bg-zinc-950/50 backdrop-blur-2xl">
-                        <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
-                            <TabsList className="flex flex-col h-auto bg-transparent space-y-2 p-0">
-                                <TabsTrigger 
-                                    value="identity" 
-                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-muted/80 transition-all duration-300 group"
-                                >
-                                    <Palette className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Identity & Branding
-                                </TabsTrigger>
-                                <TabsTrigger 
-                                    value="contact" 
-                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-muted/80 transition-all duration-300 group"
-                                >
-                                    <Mail className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Contact & Location
-                                </TabsTrigger>
-                                <TabsTrigger 
-                                    value="legal" 
-                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg hover:bg-muted/80 transition-all duration-300 group"
-                                >
-                                    <FileText className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Legal & Administration
-                                </TabsTrigger>
-                                <div className="py-3 px-4">
-                                    <Separator className="opacity-20" />
-                                </div>
-                                <TabsTrigger 
-                                    value="security" 
-                                    className="w-full justify-start px-5 py-4 text-xs font-black uppercase tracking-[0.15em] rounded-2xl data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:shadow-lg hover:bg-destructive/10 hover:text-destructive transition-all duration-300 group opacity-70"
-                                >
-                                    <ShieldCheck className="mr-3 h-4 w-4 transition-transform group-hover:scale-110" /> Account Security
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
-                </div>
+            <div className="flex flex-col md:flex-row gap-10">
+                {/* Fixed Sidenav like Vercel */}
+                <aside className="w-full md:w-48 space-y-1">
+                    {[
+                        { id: "identity", label: "General", icon: Settings },
+                        { id: "contact", label: "Contact", icon: Mail },
+                        { id: "legal", label: "Administration", icon: FileText },
+                        { id: "security", label: "Security", icon: Lock },
+                    ].map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => setActiveTab(item.id)}
+                            className={cn(
+                                "w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                                activeTab === item.id 
+                                ? "bg-primary/10 text-primary" 
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                        >
+                            <item.icon className="h-4 w-4" />
+                            {item.label}
+                        </button>
+                    ))}
+                </aside>
 
-                {/* Main Content Form */}
-                <div className="flex-1">
-                    <form id="workspace-form" onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))}>
-
-                        {/* TAB: IDENTITY & BRANDING */}
+                {/* Main Form Content */}
+                <div className="flex-1 space-y-8">
+                    <form onSubmit={form.handleSubmit((data) => updateProfileMutation.mutate(data))} className="space-y-8">
                         {activeTab === "identity" && (
-                            <div className="space-y-8 animate-in slide-in-from-right-10 duration-700">
-                                <Card className="glass-metal border border-border/40 shadow-2xl rounded-3xl overflow-hidden bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl">
-                                    <CardHeader className="bg-primary/5 border-b border-border/40 px-10 py-10">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-12 w-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
-                                                <Palette className="h-6 w-6" />
+                            <div className="space-y-10">
+                                {/* Branding Section */}
+                                <section className="space-y-6">
+                                    <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Institution Identity</h2>
+                                    
+                                    <div className="flex flex-col sm:flex-row items-center gap-8 p-6 border rounded-xl bg-card/50">
+                                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                            <Avatar className="h-24 w-24 border-2 border-background shadow-xl">
+                                                <AvatarImage src={form.watch("logo")} className="object-contain p-2" />
+                                                <AvatarFallback className="text-2xl font-bold">{form.watch("name")?.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <UploadCloud className="text-white h-6 w-6" />
                                             </div>
-                                            <div>
-                                                <CardTitle className="text-2xl font-black uppercase tracking-tight">Institution Branding</CardTitle>
-                                                <CardDescription className="font-bold opacity-60">Visual assets and workspace URLs.</CardDescription>
-                                            </div>
+                                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
                                         </div>
-                                    </CardHeader>
-                                    <CardContent className="p-10 space-y-10">
-                                        <div className="flex flex-col md:flex-row items-center gap-12 pb-12 border-b border-border/20">
-                                            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                                <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-cyan-400 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500" />
-                                                <Avatar className="h-40 w-40 border-8 border-background shadow-2xl scale-100 group-hover:scale-[1.03] transition-all duration-500 bg-white ring-1 ring-border/20">
-                                                    <AvatarImage src={currentLogo} alt="Logo" className="object-contain p-2" />
-                                                    <AvatarFallback className="bg-primary/5 text-primary text-5xl font-black">
-                                                        {form.getValues("name")?.charAt(0) || "U"}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
-                                                    <div className="bg-white/20 p-4 rounded-full border border-white/40 shadow-xl">
-                                                        <ImageIcon className="h-8 w-8 text-white" />
-                                                    </div>
-                                                </div>
-                                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
-                                            </div>
-                                            <div className="space-y-4 flex-1 text-center md:text-left">
-                                                <h4 className="font-black text-2xl tracking-tighter uppercase italic">Institutional <span className="text-primary">Logo</span></h4>
-                                                <p className="text-sm text-muted-foreground leading-relaxed font-bold opacity-70">Elevate your workspace with a professional emblem. 500x500px square format recommended for optimal cross-platform clarity.</p>
-                                                <div className="flex flex-wrap justify-center md:justify-start gap-3 pt-2">
-                                                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-2xl h-12 px-8 font-black uppercase tracking-widest text-[10px] shadow-sm border-primary/20 hover:bg-primary/5 transition-all">
-                                                        {isUploading ? <Loader2 className="mr-3 h-4 w-4 animate-spin text-primary" /> : <UploadCloud className="mr-3 h-4 w-4 text-primary" />}
-                                                        Change Artifact
-                                                    </Button>
-                                                </div>
+                                        <div className="space-y-1.5 flex-1">
+                                            <h3 className="font-bold">Institution Logo</h3>
+                                            <p className="text-xs text-muted-foreground">Recommended: 512x512px. JPG or PNG.</p>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="mt-2 text-xs">Upload New Logo</Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-6">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase">Institution Name</Label>
+                                            <Input {...form.register("name")} className="max-w-md h-10" />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold uppercase">Platform URL</Label>
+                                            <div className="flex items-center max-w-md bg-muted rounded-md overflow-hidden border">
+                                                <Input {...form.register("subdomain")} className="border-0 bg-transparent h-10 shadow-none font-bold" />
+                                                <span className="px-4 text-xs font-bold text-muted-foreground">.unifynt.com</span>
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                            <div className="space-y-3 md:col-span-2">
-                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Workspace Full Identifier</Label>
-                                                <Input 
-                                                    className="h-16 px-6 bg-muted/20 border-border/40 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl text-xl font-black tracking-tight shadow-inner transition-all" 
-                                                    placeholder="School/Institution Name"
-                                                    {...form.register("name")} 
-                                                />
+                                        <div className="space-y-4 pt-4 border-t">
+                                            <div className="flex items-center justify-between max-w-md">
+                                                <Label className="text-xs font-bold uppercase">Custom Domain</Label>
+                                                {form.watch("customDomain") && (
+                                                    <button type="button" onClick={() => setIsDomainModalOpen(true)} className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                                                        <ExternalLink className="h-3 w-3" /> Configure DNS
+                                                    </button>
+                                                )}
                                             </div>
-                                            <div className="space-y-3">
-                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Platform Subdomain</Label>
-                                                <div className="flex glass-metal rounded-2xl border border-border/40 overflow-hidden shadow-inner focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                                                    <Input 
-                                                        className="h-14 bg-transparent border-0 shadow-none px-6 text-lg font-bold tracking-tight text-primary" 
-                                                        {...form.register("subdomain")} 
-                                                    />
-                                                    <div className="bg-zinc-100 dark:bg-zinc-900 px-6 h-14 flex items-center border-l border-border/40 text-xs font-black uppercase tracking-widest opacity-60">.unifynt.com</div>
+                                            <div className="flex gap-2 max-w-md">
+                                                <div className="relative flex-1">
+                                                    <Globe className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input {...form.register("customDomain")} placeholder="e.g. morning.com" className="pl-10 h-10 font-mono text-sm" />
                                                 </div>
+                                                <Button 
+                                                    type="button" 
+                                                    onClick={() => {
+                                                        const domain = form.getValues("customDomain");
+                                                        if (!domain) {
+                                                            toast.error("Please enter a domain first");
+                                                            return;
+                                                        }
+                                                        setIsDomainModalOpen(true);
+                                                        // Also trigger save in background to ensure it's registered
+                                                        form.handleSubmit((data) => updateProfileMutation.mutate(data))();
+                                                    }}
+                                                    variant="secondary" 
+                                                    className="px-4 text-xs font-bold h-10"
+                                                >
+                                                    Connect
+                                                </Button>
                                             </div>
-                                            <div className="space-y-3">
-                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Enterprise Domain</Label>
-                                                <div className="relative group">
-                                                    <Globe className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                                    <Input 
-                                                        className="h-14 pl-14 px-6 bg-muted/20 border-border/40 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl text-lg font-bold tracking-tight shadow-inner transition-all" 
-                                                        placeholder="www.academy.edu" 
-                                                        {...form.register("customDomain")} 
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-5">
-                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Primary Signature Color</Label>
-                                                <div className="flex items-center gap-4 bg-muted/10 p-4 rounded-2xl border border-border/20">
-                                                    <div className="h-14 w-14 rounded-xl border-2 border-white dark:border-zinc-800 shadow-xl overflow-hidden relative group shrink-0">
-                                                        <input type="color" className="absolute -inset-4 cursor-pointer scale-150" {...form.register("primaryColor")} />
-                                                    </div>
-                                                    <Input className="h-14 bg-transparent border-0 font-black tracking-[0.1em] text-lg uppercase" {...form.register("primaryColor")} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-5">
-                                                <Label className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/70 ml-1">Secondary Accent Color</Label>
-                                                <div className="flex items-center gap-4 bg-muted/10 p-4 rounded-2xl border border-border/20">
-                                                    <div className="h-14 w-14 rounded-xl border-2 border-white dark:border-zinc-800 shadow-xl overflow-hidden relative group shrink-0">
-                                                        <input type="color" className="absolute -inset-4 cursor-pointer scale-150" {...form.register("secondaryColor")} />
-                                                    </div>
-                                                    <Input className="h-14 bg-transparent border-0 font-black tracking-[0.1em] text-lg uppercase" {...form.register("secondaryColor")} />
-                                                </div>
-                                            </div>
+                                            <p className="text-[11px] text-muted-foreground">Configure your own domain to point to your school website.</p>
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </section>
                             </div>
                         )}
 
-                        {/* TAB: CONTACT & LOCATION */}
                         {activeTab === "contact" && (
-                            <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                                <Card className="border-border/60 shadow-sm overflow-hidden rounded-xl">
-                                    <CardHeader className="bg-muted/30 border-b px-8 py-6">
-                                        <CardTitle className="text-xl">Contact Information</CardTitle>
-                                        <CardDescription>How users and the system will communicate with your workspace.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="p-8">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Support Email</Label>
-                                                <div className="relative">
-                                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="h-12 pl-10 shadow-sm bg-muted/10" type="email" {...form.register("email")} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Official Phone</Label>
-                                                <div className="relative">
-                                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="h-12 pl-10 shadow-sm bg-muted/10" {...form.register("phone")} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Official Website</Label>
-                                                <div className="relative">
-                                                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    <Input className="h-12 pl-10 shadow-sm bg-muted/10 font-mono" placeholder="https://" {...form.register("website")} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Physical Address</Label>
-                                                <div className="relative">
-                                                    <MapPin className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
-                                                    <textarea
-                                                        className="w-full min-h-[100px] pl-10 pr-4 py-3 rounded-md border border-input bg-muted/10 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-sm"
-                                                        {...form.register("address")}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Billing Address <span className="text-[10px] normal-case opacity-60">(If different)</span></Label>
-                                                <textarea
-                                                    className="w-full min-h-[80px] px-4 py-3 rounded-md border border-input bg-muted/10 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-sm"
-                                                    {...form.register("billingAddress")}
-                                                />
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
+                            <section className="space-y-8 animate-in fade-in">
+                                <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Contact Information</h2>
+                                <div className="grid sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold">Email Address</Label>
+                                        <Input {...form.register("email")} placeholder="support@school.com" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold">Phone Number</Label>
+                                        <Input {...form.register("phone")} placeholder="+91 ..." />
+                                    </div>
+                                    <div className="space-y-2 sm:col-span-2">
+                                        <Label className="text-xs font-bold">Physical Address</Label>
+                                        <textarea {...form.register("address")} className="w-full min-h-[100px] p-3 rounded-md border bg-background text-sm focus:ring-1 focus:ring-primary outline-none" />
+                                    </div>
+                                </div>
+                            </section>
                         )}
 
-                        {/* TAB: LEGAL & ADMINISTRATION */}
                         {activeTab === "legal" && (
-                            <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                                <Card className="border-border/60 shadow-sm overflow-hidden rounded-xl">
-                                    <CardHeader className="bg-muted/30 border-b px-8 py-6">
-                                        <CardTitle className="text-xl">Legal Details</CardTitle>
-                                        <CardDescription>Compliance, regional settings, and administration details.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="p-8">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Principal / Head Name</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10" {...form.register("principalName")} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Principal Contact</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10" {...form.register("principalPhone")} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Established Year</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10" type="number" {...form.register("establishedYear", { valueAsNumber: true })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Registration / Affiliation Code</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10 font-mono" {...form.register("registrationCode")} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tax ID / GSTIN</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10 font-mono" {...form.register("taxId")} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Currency System</Label>
-                                                <Input className="h-12 shadow-sm bg-muted/10 font-mono" placeholder="e.g. INR, USD" {...form.register("currency")} />
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Attendance Tracking Mode</Label>
-                                                <div className="flex flex-col gap-1.5 cursor-pointer">
-                                                    <select 
-                                                        className="h-12 px-3 rounded-md border border-input bg-muted/10 shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring text-sm font-medium transition-colors"
-                                                        {...form.register("attendanceType")}
-                                                    >
-                                                        <option value="DAILY">Daily (Once per day, typically 1st Period)</option>
-                                                        <option value="SUBJECT_WISE">Subject-Wise (Every teacher marks attendance per class)</option>
-                                                    </select>
-                                                    <p className="text-[11px] text-muted-foreground">Determines how teachers mark attendance in their mobile app.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
+                            <section className="space-y-8 animate-in fade-in">
+                                <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Administration Settings</h2>
+                                <div className="grid sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold">Principal Name</Label>
+                                        <Input {...form.register("principalName")} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold">Established Year</Label>
+                                        <Input type="number" {...form.register("establishedYear", { valueAsNumber: true })} />
+                                    </div>
+                                    <div className="space-y-2 sm:col-span-2">
+                                        <Label className="text-xs font-bold">Attendance Type</Label>
+                                        <select {...form.register("attendanceType")} className="w-full h-10 px-3 rounded-md border bg-background text-sm font-medium">
+                                            <option value="DAILY">Daily (Standard)</option>
+                                            <option value="SUBJECT_WISE">Subject-wise (Period tracking)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </section>
                         )}
-
-                        {/* Save Button for Workspace Settings */}
+                        
+                        {/* Global Save Button at Bottom */}
                         {activeTab !== "security" && (
-                            <div className="mt-10 flex justify-end">
+                            <div className="pt-10 border-t flex items-center justify-between bg-card p-6 rounded-xl border mt-10">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-bold italic">Unsaved changes may be lost.</p>
+                                    <p className="text-xs text-muted-foreground">Click save to persist institution branding and settings.</p>
+                                </div>
                                 <Button 
                                     type="submit" 
-                                    size="lg" 
-                                    className="px-12 h-16 font-black uppercase tracking-[0.2em] shadow-2xl text-sm w-full md:w-auto rounded-3xl group" 
                                     disabled={updateProfileMutation.isPending}
+                                    className="px-8 flex items-center gap-2"
                                 >
-                                    {updateProfileMutation.isPending ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />}
-                                    Commit Global Changes
+                                    {updateProfileMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                    Save Changes
                                 </Button>
                             </div>
                         )}
                     </form>
 
-                    {/* TAB: SECURITY */}
                     {activeTab === "security" && (
-                        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-                            <Card className="border-border/60 shadow-sm overflow-hidden rounded-xl border-destructive/20">
-                                <CardHeader className="bg-destructive/5 border-b border-destructive/10 px-8 py-6">
-                                    <CardTitle className="text-xl text-destructive flex items-center gap-2"><Lock className="h-5 w-5" /> Account Credentials</CardTitle>
-                                    <CardDescription>Update the master password for the workspace administrator.</CardDescription>
+                        <div className="space-y-8 animate-in fade-in">
+                            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Account Credentials</h2>
+                            <Card className="border-destructive/20 border-2">
+                                <CardHeader>
+                                    <CardTitle className="text-destructive flex items-center gap-2 text-lg">Change Master Password</CardTitle>
+                                    <CardDescription>Update the root administrator password for this school workspace.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="p-8">
-                                    <form onSubmit={passwordForm.handleSubmit((data) => updatePasswordMutation.mutate(data))} className="space-y-6 max-w-xl">
+                                <CardContent className="space-y-6">
+                                    <div className="max-w-md space-y-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><KeyRound className="h-3.5 w-3.5" /> Current Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-muted/10 font-mono text-lg tracking-widest" {...passwordForm.register("currentPassword")} />
-                                            {passwordForm.formState.errors.currentPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.currentPassword.message}</p>}
-                                        </div>
-                                        <Separator className="my-6 opacity-50" />
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">New Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-muted/10 font-mono text-lg tracking-widest" {...passwordForm.register("newPassword")} />
-                                            {passwordForm.formState.errors.newPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.newPassword.message}</p>}
+                                            <Label className="text-xs font-bold">Current Password</Label>
+                                            <Input type="password" {...passwordForm.register("currentPassword")} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Confirm New Password</Label>
-                                            <Input type="password" placeholder="••••••••" className="h-12 shadow-sm bg-muted/10 font-mono text-lg tracking-widest" {...passwordForm.register("confirmPassword")} />
-                                            {passwordForm.formState.errors.confirmPassword && <p className="text-red-500 text-xs mt-1 font-semibold">{passwordForm.formState.errors.confirmPassword.message}</p>}
+                                            <Label className="text-xs font-bold">New Password</Label>
+                                            <Input type="password" {...passwordForm.register("newPassword")} />
                                         </div>
-                                        <div className="pt-6">
-                                            <Button type="submit" size="lg" variant="destructive" className="w-full md:w-auto px-10 h-14 font-extrabold shadow-xl text-lg" disabled={updatePasswordMutation.isPending}>
-                                                {updatePasswordMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Lock className="mr-2 h-5 w-5" />}
-                                                Update Secure Password
-                                            </Button>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-bold">Confirm New Password</Label>
+                                            <Input type="password" {...passwordForm.register("confirmPassword")} />
                                         </div>
-                                    </form>
+                                    </div>
+                                    <Button variant="destructive" className="px-8 mt-4">Update Password</Button>
                                 </CardContent>
                             </Card>
                         </div>
@@ -556,56 +457,135 @@ export default function AdminWorkspaceProfilePage() {
                 </div>
             </div>
 
-            {/* SMART IMAGE PROCESSING MODAL */}
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-bold">Adjust Logo Position</DialogTitle>
-                        <DialogDescription className="text-sm font-medium">
-                            Position your image perfectly. We&apos;ll automatically optimize it for all platform views.
-                        </DialogDescription>
-                    </DialogHeader>
+            {/* DOMAIN CONFIG MODAL (VERCEL STYLE - COMPACT & CLEAN) */}
+            <Dialog open={isDomainModalOpen} onOpenChange={setIsDomainModalOpen}>
+                <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-xl border shadow-2xl">
+                    <div className="p-8 space-y-8">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <Globe className="h-5 w-5 text-primary" /> 
+                                DNS Configuration
+                            </DialogTitle>
+                            <DialogDescription className="text-sm">
+                                Setup <span className="text-foreground font-bold">{form.getValues("customDomain")}</span> by adding these records to your domain provider.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <div className="relative h-[350px] w-full bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden my-4 border shadow-inner">
+                        <div className="space-y-4">
+                            {/* A Record */}
+                            <div className="border rounded-lg overflow-hidden">
+                                <div className="bg-muted/50 px-4 py-2 border-b flex justify-between items-center">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">A Record (Apex)</span>
+                                    {dnsStatus?.aRecord ? (
+                                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                            <Check className="h-3 w-3" /> Valid
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Pending</span>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-12 p-4 gap-4 items-center">
+                                    <div className="col-span-2 space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Type</p>
+                                        <p className="text-xs font-mono font-bold">A</p>
+                                    </div>
+                                    <div className="col-span-2 space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Host</p>
+                                        <p className="text-xs font-mono font-bold">@</p>
+                                    </div>
+                                    <div className="col-span-8 space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Value</p>
+                                        <div className="flex items-center justify-between gap-2 bg-muted/40 p-2 rounded border border-border/10">
+                                            <code className="text-xs font-mono font-bold">103.118.0.3</code>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText("103.118.0.3"); toast.success("Copied"); }}>
+                                                <Copy className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* CNAME Record */}
+                            <div className="border rounded-lg overflow-hidden">
+                                <div className="bg-muted/50 px-4 py-2 border-b flex justify-between items-center">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest">CNAME Record (WWW)</span>
+                                    {dnsStatus?.cnameRecord ? (
+                                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                            <Check className="h-3 w-3" /> Valid
+                                        </span>
+                                    ) : (
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Pending</span>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-12 p-4 gap-4 items-center">
+                                    <div className="col-span-2 space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Type</p>
+                                        <p className="text-xs font-mono font-bold">CNAME</p>
+                                    </div>
+                                    <div className="col-span-2 space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Host</p>
+                                        <p className="text-xs font-mono font-bold">www</p>
+                                    </div>
+                                    <div className="col-span-8 space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Value</p>
+                                        <div className="flex items-center justify-between gap-2 bg-muted/40 p-2 rounded border border-border/10">
+                                            <code className="text-xs font-mono font-bold truncate max-w-[150px]">{schoolData?.subdomain}.unifynt.com</code>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { navigator.clipboard.writeText(`${schoolData?.subdomain}.unifynt.com`); toast.success("Copied"); }}>
+                                                <Copy className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-bold uppercase text-muted-foreground">Propagations Support</p>
+                                <div className="flex gap-4">
+                                    <a href="https://wa.me/919239536545" target="_blank" className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 hover:underline">
+                                        <MessageCircle className="h-3 w-3" /> WhatsApp
+                                    </a>
+                                    <a href="tel:+919239536545" className="text-[11px] font-bold text-primary flex items-center gap-1 hover:underline">
+                                        <PhoneCall className="h-3 w-3" /> Call Support
+                                    </a>
+                                </div>
+                            </div>
+                            <Button 
+                                onClick={() => verifyDnsMutation.mutate()} 
+                                disabled={verifyDnsMutation.isPending}
+                                className="px-6 h-11 flex items-center gap-2"
+                            >
+                                {verifyDnsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                Verify Configuration
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* LOGO CROP MODAL */}
+            <Dialog open={isLogoModalOpen} onOpenChange={setIsLogoModalOpen}>
+                <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                        <DialogTitle>Position your Logo</DialogTitle>
+                    </DialogHeader>
+                    <div className="relative h-64 bg-muted rounded-lg overflow-hidden my-4 border">
                         {imageSrc && (
                             <Cropper
                                 image={imageSrc}
-                                crop={crop}
-                                zoom={zoom}
-                                aspect={1} // Strict Square Aspect
-                                onCropChange={setCrop}
-                                onCropComplete={(_, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
-                                onZoomChange={setZoom}
-                                showGrid={false}
-                                cropShape="round" // Creates a professional circular preview mask
+                                crop={crop} zoom={zoom} aspect={1}
+                                onCropChange={setCrop} onZoomChange={setZoom}
+                                onCropComplete={(_, p) => setCroppedAreaPixels(p)}
+                                cropShape="round" showGrid={false}
                             />
                         )}
                     </div>
-
-                    <div className="flex flex-col gap-2 mt-2 px-2">
-                        <div className="flex items-center justify-between text-[10px] font-extrabold text-muted-foreground uppercase tracking-widest">
-                            <span>Zoom Out</span>
-                            <span>Zoom In</span>
-                        </div>
-                        <input
-                            type="range"
-                            value={zoom}
-                            min={1}
-                            max={3}
-                            step={0.05}
-                            aria-labelledby="Zoom"
-                            onChange={(e) => setZoom(Number(e.target.value))}
-                            className="w-full h-2.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
-                        />
-                    </div>
-
-                    <DialogFooter className="mt-8 gap-3 sm:gap-0">
-                        <Button variant="outline" className="font-bold h-11" onClick={() => setIsModalOpen(false)} disabled={isUploading}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleProcessImage} disabled={isUploading} className="font-bold h-11 px-8">
-                            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Set Image
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsLogoModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleProcessImage} disabled={isUploading}>
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                            Apply Logo
                         </Button>
                     </DialogFooter>
                 </DialogContent>

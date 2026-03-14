@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import PasskeyReminder from "@/components/dashboard/passkey-reminder";
 
 export default function SuperAdminDashboard() {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -237,6 +238,7 @@ export default function SuperAdminDashboard() {
                     </div>
                 </div>
             </Card>
+            <PasskeyReminder />
         </div>
     );
 }

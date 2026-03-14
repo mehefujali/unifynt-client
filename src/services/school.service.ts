@@ -40,4 +40,10 @@ export const SchoolService = {
     const response = await api.delete(`/schools/${id}`);
     return response.data;
   },
+  verifyDns: async (domain: string, subdomain: string) => {
+    const response = await api.get(`/schools/verify-dns`, {
+      params: { domain, subdomain }
+    });
+    return response.data.data;
+  }
 };
