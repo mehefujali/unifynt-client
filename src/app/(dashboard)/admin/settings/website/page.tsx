@@ -21,6 +21,7 @@ export default function WebsiteSettingsPage() {
 
   const [localTheme, setLocalTheme] = useState<any>(DEFAULT_SITE_DATA.theme);
   const [localContent, setLocalContent] = useState<any>(DEFAULT_SITE_DATA.content);
+  const [localTemplateId, setLocalTemplateId] = useState<string>("enterprise");
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["site-config"],
@@ -43,6 +44,8 @@ export default function WebsiteSettingsPage() {
       setLocalTheme(mergedTheme);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalContent(mergedContent);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalTemplateId(config.templateId || config.activeTemplateId || "enterprise");
     }
   }, [config]);
 
@@ -59,10 +62,14 @@ export default function WebsiteSettingsPage() {
     if (iframe?.contentWindow) {
       iframe.contentWindow.postMessage({
         type: 'UPDATE_PREVIEW',
-        payload: { themeSettings: localTheme, content: localContent }
+        payload: { 
+          themeSettings: localTheme, 
+          content: localContent,
+          templateId: localTemplateId 
+        }
       }, '*');
     }
-  }, [localTheme, localContent]);
+  }, [localTheme, localContent, localTemplateId]);
 
   if (isLoading) {
     return (
@@ -107,7 +114,11 @@ export default function WebsiteSettingsPage() {
           <Button
             size="sm"
             className="h-8 px-6 font-black text-[10px] uppercase tracking-widest shadow-sm"
-            onClick={() => mutation.mutate({ themeSettings: localTheme, content: localContent })}
+            onClick={() => mutation.mutate({ 
+              themeSettings: localTheme, 
+              content: localContent,
+              templateId: localTemplateId
+            })}
             disabled={mutation.isPending}
           >
             {mutation.isPending
@@ -156,7 +167,16 @@ export default function WebsiteSettingsPage() {
             {/* Tab Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar bg-background">
               <TabsContent value="template" className="m-0 p-0">
-                <TemplateSelection currentConfig={config} />
+                <TemplateSelection 
+                    currentConfig={{ 
+                      templateId: localTemplateId,
+                      activeTemplateId: localTemplateId
+                    }} 
+                    onSelect={(id) => {
+                        setLocalTemplateId(id);
+                        setActiveTab("content");
+                    }}
+                />
               </TabsContent>
               <TabsContent value="content" className="m-0 p-0">
                 <ContentEditor content={localContent} onChange={setLocalContent} />

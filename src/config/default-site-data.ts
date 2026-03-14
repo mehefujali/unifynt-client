@@ -1,4 +1,5 @@
 export const DEFAULT_SITE_DATA = {
+  templateId: "enterprise",
   theme: {
     primary: "#2563EB",
     secondary: "#0F172A",
@@ -23,102 +24,118 @@ export const DEFAULT_SITE_DATA = {
     },
     hero: {
       layout: "type1",
-      title: "Redefining Excellence in Modern Education",
-      subtitle:
-        "Nurturing young minds with a perfect blend of tradition and innovation to shape the leaders of tomorrow. Our curriculum is designed to foster critical thinking, creativity, and a global perspective in every student.",
-      ctaText: "Begin Journey",
-      ctaLink: "/admission",
-      heroImage:
-        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1500",
+      badgeText: "Defining the future of education",
+      title: "Shape Your",
+      subtitle: "Legacy.",
+      description: "A premier institution dedicated to academic mastery, character development, and global leadership for the next generation.",
+      ctaText: "Enroll Today",
+      ctaLink: "#contact",
+      secondaryCtaText: "View Curriculum",
+      secondaryCtaLink: "#",
+      heroImage: "https://images.unsplash.com/photo-1541339907198-e08759df9a13?q=80&w=2070",
+      ratingValue: "4.9/5",
+      ratingLabel: "Parent Rating",
+      ratingAvatars: [
+        { url: "https://i.pravatar.cc/150?u=11" },
+        { url: "https://i.pravatar.cc/150?u=12" },
+        { url: "https://i.pravatar.cc/150?u=13" },
+        { url: "https://i.pravatar.cc/150?u=14" },
+      ],
+      successValue: "100%",
+      successLabel: "Success Rate",
+      awardText: "National Excellence Award Winner 2025",
+      show: true,
+    },
+    noticeBoard: {
+      title: "Institutional Directives",
+      show: true,
+      items: []
+    },
+    about: {
+      badge: "Our Paradigm",
+      titleLine1: "A commitment to",
+      titleLine2: "intellectual rigor",
+      titleLine3: "and moral clarity.",
+      philosophy: "We believe that true education transcends the classroom. It is about fostering a lifelong curiosity and the courage to lead with integrity in an ever-evolving global landscape.",
+      aboutImage: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070",
+      legacyValue: "50+",
+      legacyLabel: "Years of Legacy",
+      alumniLabel: "Elite Alumni Network",
+      councilLabel: "Global Leadership Council",
       show: true,
     },
     stats: {
-      students: "3500+",
-      teachers: "120+",
-      campus: "15 Acres",
-      awards: "85+",
-      show: true,
-    },
-    about: {
-      title: "Our 30-Year Legacy of Academic Brilliance",
-      description:
-        "Since 1995, we have been dedicated to providing a world-class learning experience that prepares students for global challenges through holistic development. Our commitment to academic excellence is matched only by our dedication to character building, ensuring that our graduates are not only scholars but responsible global citizens equipped to navigate an ever-changing world.",
-      aboutImage:
-        "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=1500",
+      items: [
+        { label: "Graduation Rate", value: "98%", sub: "Top 1% Nationwide" },
+        { label: "Faculty Scholars", value: "120+", sub: "PhD Holders" },
+        { label: "Campus Size", value: "15", sub: "Acres of Greenery" },
+        { label: "Awards Won", value: "85+", sub: "National Recognition" },
+      ],
       show: true,
     },
     features: {
-      title: "Why Choose Our Institution?",
-      item1: "AI Integrated Smart Classrooms",
-      item2: "Olympic Standard Sports Hub",
-      item3: "Global Exchange Programs",
+      badge: "Operational Excellence",
+      titleLine1: "Why Choose",
+      titleLine2: "The Academy.",
+      sideImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071",
+      rankValue: "#1",
+      rankLabel: "QS Ranked School",
+      items: [
+        { title: "Global Curriculum", desc: "Internationally recognized standards ensuring global competitiveness." },
+        { title: "Holistic Growth", desc: "Focus on character, leadership, and emotional intelligence." },
+        { title: "Smart Campus", desc: "State-of-the-art technology integrated into every classroom." },
+        { title: "Elite Faculty", desc: "Mentorship from world-class educators and industry experts." },
+      ],
       show: true,
     },
     academics: {
-      title: "Curated Academic Pathways",
-      description:
-        "We offer integrated learning programs designed to foster creativity, critical thinking, and global awareness. Our pathways are meticulously crafted by industry experts and academic luminaries to provide a seamless transition from foundational knowledge to advanced theoretical frameworks, ensuring unparalleled cognitive development.",
+      badge: "Educational Framework",
+      titleLine1: "Academic",
+      titleLine2: "Progression.",
+      ratingLabel: "Excellence Rating",
+      ratingValue: "Tier 1",
+      levels: [
+        { name: "Primary School", years: "Year 1 - Year 6", desc: "Foundational mastery in core subjects with a focus on cognitive development and creative exploration." },
+        { name: "Middle School", years: "Year 7 - Year 9", desc: "Advanced analytical skills and the introduction of specialized fields of study." },
+        { name: "High School", years: "Year 10 - Year 12", desc: "Rigorous academic preparation for premier global universities and career paths." },
+      ],
       show: true,
     },
     gallery: {
-      title: "Campus & Infrastructure",
-      description:
-        "Explore our state-of-the-art facilities and vibrant campus life.",
-      image1:
-        "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800",
-      image2:
-        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800",
-      image3:
-        "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800",
-      image4:
-        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800",
-      show: true,
-    },
-    faculty: {
-      title: "Meet Our Expert Mentors",
-      description:
-        "Our educators are industry leaders and dedicated mentors committed to student success.",
+      badge: "Visual Artifacts",
+      title: "Campus Environment.",
+      description: "Exploring Excellence",
+      items: [
+        { url: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800", colSpan: "col-span-1", rowSpan: "row-span-2" },
+        { url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800", colSpan: "col-span-2", rowSpan: "row-span-1" },
+        { url: "https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=800", colSpan: "col-span-1", rowSpan: "row-span-1" },
+        { url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800", colSpan: "col-span-1", rowSpan: "row-span-1" },
+      ],
       show: true,
     },
     testimonials: {
-      title: "Voices of Our Community",
-      quote:
-        "The academic rigor combined with character development makes this school unique. My child has transformed into a leader. The faculty's personalized approach and the incredibly supportive administrative staff have crafted an environment where my children don't just learn—they thrive.",
-      author: "Mrs. Sarah Ahmed, Parent",
-      show: true,
-    },
-    faq: {
-      title: "Frequently Asked Questions",
-      description:
-        "Find answers to common queries regarding admissions, curriculum, and policies.",
+      badge: "Community Voices",
+      titleLine1: "Verified",
+      titleLine2: "Excellence.",
+      items: [
+        { name: "Sarah Jenkins", role: "Alumni Parent", quote: "The level of academic rigor and personal attention my son received was transformative." },
+        { name: "Dr. Robert Chen", role: "University Professor", quote: "Unifynt graduates enter our university with a maturity and hunger for learning that is rare." },
+        { name: "Elena Rodriguez", role: "Head of Student Council", quote: "It's not just a school; it's a community that pushes you to be your best self every day." },
+      ],
       show: true,
     },
     contact: {
-      title: "Get In Touch With Us",
-      phone: "+91 0000000000",
-      email: "office@unifyntacademy.edu",
+      title: "Initiate Contact",
+      subtitle: "Begin your journey with us today. Our admissions team is ready to guide you.",
+      email: "admissions@academy.edu",
+      phone: "+1 (555) 000-1234",
+      address: "123 Education Lane, Academic City",
       show: true,
     },
     footer: {
-      footerDesc:
-        "Crafting a future where every student becomes a leader through value-based education and modern technology.",
-      copyrightText: "© 2026 Unifynt Academy. All Rights Reserved.",
-      exploreTitle: "Explore",
-      exploreLinks: [
-        { label: "Academics", url: "#academics" },
-        { label: "Admissions", url: "/admissions" },
-        { label: "Campus Life", url: "#campus" },
-      ],
-      legalTitle: "Legal",
-      legalLinks: [
-        { label: "Privacy Policy", url: "/privacy" },
-        { label: "Terms of Service", url: "/terms" },
-        { label: "Compliance", url: "/compliance" },
-      ],
-      socialTitle: "Social",
-      facebook: "https://facebook.com",
-      twitter: "https://twitter.com",
-      instagram: "https://instagram.com",
+      description: "Nurturing intellectual mastery and global leadership for the next generation of pioneers.",
+      ctaTitle: "Reach the Summit of Knowledge.",
+      show: true,
     },
   },
 };

@@ -6,7 +6,7 @@ import { useParams, notFound } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SiteConfigService } from "@/services/site-config.service";
 import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
-import { Header, Footer } from "@/components/templates/enterprise-sections";
+import { Header, Footer } from "@/components/templates/enterprise";
 import DynamicAdmissionForm from "@/components/admission/DynamicAdmissionForm";
 import { Loader2 } from "lucide-react";
 
