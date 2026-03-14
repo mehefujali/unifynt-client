@@ -44,6 +44,6 @@ export const SchoolService = {
     const response = await api.get(`/schools/verify-dns`, {
       params: { domain, subdomain }
     });
-    return response.data.data;
+    return response.data; // This will now contain { data: { aRecord, cnameRecord }, serverIp: '...' }
   }
 };
