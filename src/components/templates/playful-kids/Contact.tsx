@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-import React from "react";
+import React, { useState } from "react";
 import { SectionProps } from "./types";
 import { motion } from "framer-motion";
 import { bounceUp, staggerContainer } from "./shared";
@@ -8,8 +7,41 @@ import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import api from "@/lib/axios";
+import { toast } from "sonner";
 
-export const Contact = ({ data, theme }: SectionProps) => {
+export const Contact = ({ data, theme, school }: SectionProps) => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    contact: "",
+    message: "",
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!school?.id) {
+      toast.error("School information missing");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post(`/inquiries/public/${school.id}`, formData);
+      toast.success("Message sent! We'll get back to you soon!");
+      setFormData({ name: "", contact: "", message: "" });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Oops! Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-32 bg-[#F8FAFF] relative overflow-hidden">
       {/* Floating background elements */}
@@ -62,11 +94,15 @@ export const Contact = ({ data, theme }: SectionProps) => {
             viewport={{ once: true }}
             className="bg-white p-12 rounded-[4rem] shadow-3xl border-[12px] border-zinc-50"
           >
-            <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-8" onSubmit={handleSubmit}>
               <div className="grid gap-6">
                 <div className="space-y-3">
                   <label className="text-[11px] font-black uppercase tracking-widest text-zinc-400 ml-4">Full Name</label>
                   <Input
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleInputChange}
                     placeholder="Enter parent's name..."
                     className="h-16 rounded-[2rem] bg-zinc-50 border-0 focus-visible:ring-4 transition-all px-8 font-bold text-lg"
                     style={{ '--tw-ring-color': theme?.primary + '30' } as any}
@@ -75,6 +111,10 @@ export const Contact = ({ data, theme }: SectionProps) => {
                 <div className="space-y-3">
                   <label className="text-[11px] font-black uppercase tracking-widest text-zinc-400 ml-4">Email Address</label>
                   <Input
+                    name="contact"
+                    required
+                    value={formData.contact}
+                    onChange={handleInputChange}
                     placeholder="hello@example.com"
                     className="h-16 rounded-[2rem] bg-zinc-50 border-0 focus-visible:ring-4 transition-all px-8 font-bold text-lg"
                     style={{ '--tw-ring-color': theme?.primary + '30' } as any}
@@ -83,6 +123,10 @@ export const Contact = ({ data, theme }: SectionProps) => {
                 <div className="space-y-3">
                   <label className="text-[11px] font-black uppercase tracking-widest text-zinc-400 ml-4">Your Message</label>
                   <Textarea
+                    name="message"
+                    required
+                    value={formData.message}
+                    onChange={handleInputChange}
                     placeholder="How can we help your little explorer?"
                     className="min-h-[160px] rounded-[2.5rem] bg-zinc-50 border-0 focus-visible:ring-4 transition-all p-8 font-bold text-lg resize-none"
                     style={{ '--tw-ring-color': theme?.primary + '30' } as any}
@@ -90,10 +134,12 @@ export const Contact = ({ data, theme }: SectionProps) => {
                 </div>
               </div>
               <Button
-                className="w-full h-20 rounded-[2.5rem] text-lg font-black uppercase tracking-[0.2em] shadow-xl hover:-translate-y-2 transition-all border-b-8 active:border-b-0 active:translate-y-2"
+                type="submit"
+                disabled={loading}
+                className="w-full h-20 rounded-[2.5rem] text-lg font-black uppercase tracking-[0.2em] shadow-xl hover:-translate-y-2 transition-all border-b-8 active:border-b-0 active:translate-y-2 disabled:opacity-50"
                 style={{ backgroundColor: theme?.primary || '#FF6B6B', borderBottomColor: `rgba(0,0,0,0.2)` }}
               >
-                Send Message <Send className="ml-3 h-5 w-5" />
+                {loading ? "Sending..." : "Send Message"} <Send className="ml-3 h-5 w-5" />
               </Button>
             </form>
           </motion.div>

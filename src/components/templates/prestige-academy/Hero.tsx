@@ -64,6 +64,7 @@ export const Hero = ({ data, theme }: SectionProps) => {
               size="lg" 
               className="h-20 px-14 rounded-none text-[12px] font-black uppercase tracking-[0.3em] shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:scale-105 transition-all w-full md:w-auto"
               style={{ backgroundColor: theme?.primary || "#C5A059" }}
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Start Enrollment <ArrowRight className="ml-3 h-4 w-4" />
             </Button>
