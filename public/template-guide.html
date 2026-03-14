@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unifynt Template Publication Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .step-number {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-900 leading-relaxed">
+
+    <!-- Header -->
+    <header class="bg-slate-900 py-20 px-6 overflow-hidden relative">
+        <div class="absolute inset-0 opacity-10 blur-3xl pointer-events-none">
+            <div class="absolute top-0 right-0 w-96 h-96 bg-blue-500 rounded-full"></div>
+            <div class="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500 rounded-full"></div>
+        </div>
+        <div class="max-w-5xl mx-auto relative z-10 text-center">
+            <h1 class="text-4xl md:text-6xl font-black text-white mb-6 tracking-tight">Publisher's Manual</h1>
+            <p class="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto">
+                Comprehensive guide to creating, registering, and deploying professional website templates on the Unifynt Ecosystem.
+            </p>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-20 -mt-10">
+        
+        <!-- Introduction Card -->
+        <div class="glass-card rounded-[2.5rem] p-10 shadow-2xl mb-20">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest">Workflow Overview</h2>
+            </div>
+            <p class="text-slate-600 font-medium leading-relaxed mb-8">
+                Publishing a new template requires synchronization between the <strong>Frontend UI Registry</strong> and the <strong>Backend Database</strong>. Follow these specific engineering steps to ensure a seamless "Publish" experience for the end-user.
+            </p>
+        </div>
+
+        <!-- Step 1 -->
+        <section class="mb-24 relative">
+            <div class="step-number absolute -left-12 top-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-black shadow-lg">1</div>
+            <div class="space-y-6">
+                <h3 class="text-3xl font-black text-slate-900">Frontend Component Architecture</h3>
+                <p class="text-slate-600 font-medium">Create a new module within the templates directory. Ensure all components use the standard prop interfaces for dynamic rendering.</p>
+                <div class="bg-slate-900 rounded-3xl p-6 shadow-inner">
+                    <p class="text-indigo-400 font-mono text-sm mb-2">// Path</p>
+                    <code class="text-white font-mono text-xs block">src/components/templates/[template-id]/</code>
+                </div>
+                <ul class="grid md:grid-cols-2 gap-4">
+                    <li class="flex items-start gap-3 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="w-5 h-5 bg-green-500 rounded-full shrink-0 mt-1"></div>
+                        <span class="font-bold text-slate-700">Implement <code class="bg-gray-100 px-1">index.tsx</code> as the primary entry point.</span>
+                    </li>
+                    <li class="flex items-start gap-3 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="w-5 h-5 bg-green-500 rounded-full shrink-0 mt-1"></div>
+                        <span class="font-bold text-slate-700">Maintain dynamic state using <code class="bg-gray-100 px-1">liveContent</code> and <code class="bg-gray-100 px-1">liveTheme</code>.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="mb-24 relative">
+            <div class="step-number absolute -left-12 top-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-black shadow-lg">2</div>
+            <div class="space-y-6">
+                <h3 class="text-3xl font-black text-slate-900">System Registration</h3>
+                <p class="text-slate-600 font-medium">To make the template selectable in the Admin Panel, you must register its metadata in the global registry.</p>
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl overflow-hidden">
+                    <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Modify: src/components/templates/registry.ts</h4>
+                    <pre class="bg-slate-50 p-6 rounded-2xl font-mono text-[11px] overflow-x-auto border border-slate-100 text-slate-600 border-l-4 border-l-blue-500">
+export const TEMPLATE_REGISTRY = {
+  // Add your new template here
+  "your-template-id": {
+    id: "your-template-id",
+    name: "Business Elite",
+    description: "Professional description...",
+    thumbnail: "/templates/thumb.jpg",
+    component: YourTemplateComponent
+  }
+};</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 3 (CRITICAL) -->
+        <section class="mb-24 relative">
+            <div class="step-number absolute -left-12 top-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-black shadow-lg">3</div>
+            <div class="space-y-6">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-3xl font-black text-slate-900">Database Synchronization</h3>
+                    <span class="bg-rose-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">Mandatory</span>
+                </div>
+                <p class="text-slate-600 font-medium">The backend uses <strong>Foreign Key Enforcement</strong>. A template ID selection will fail to save if it does not exist in the database's <code>SiteTemplate</code> table.</p>
+                
+                <div class="bg-slate-900 rounded-3xl p-8 text-white">
+                    <h4 class="text-indigo-400 font-bold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        Registration Script
+                    </h4>
+                    <p class="text-sm text-slate-400 mb-6">Create a temporary script <code>register.ts</code> in the server root:</p>
+                    <pre class="font-mono text-[10px] bg-slate-800 p-4 rounded-xl border border-slate-700 leading-relaxed overflow-x-auto">
+await prisma.siteTemplate.create({
+  data: {
+    templateCode: "your-template-id",
+    name: "Display Name",
+    isActive: true
+  }
+})</pre>
+                </div>
+                <div class="p-6 bg-amber-50 rounded-[2rem] border-2 border-amber-200">
+                    <p class="text-amber-800 text-sm font-bold flex items-center gap-2">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Critical Sync: The ID used in the Frontend Registry MUST match the TemplateCode in the Backend Database.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Checklist -->
+        <div class="bg-indigo-600 rounded-[3rem] p-12 text-white shadow-3xl text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+            <h2 class="text-3xl font-black mb-8">Go-Live Checklist</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-indigo-500/50 p-6 rounded-3xl border border-white/20">
+                    <p class="font-bold mb-2">Build Verification</p>
+                    <p class="text-xs text-indigo-100">Ensure no TypeScript or ESLint errors in the new template folder.</p>
+                </div>
+                <div class="bg-indigo-500/50 p-6 rounded-3xl border border-white/20">
+                    <p class="font-bold mb-2">JSON Structure</p>
+                    <p class="text-xs text-indigo-100">Verify <code>default-site-data.ts</code> contains all new UI data points.</p>
+                </div>
+                <div class="bg-indigo-500/50 p-6 rounded-3xl border border-white/20">
+                    <p class="font-bold mb-2">Publish Test</p>
+                    <p class="text-xs text-indigo-100">Select template in Admin and click "Publish" to verify DB persistence.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-20 text-center text-slate-400 text-xs font-bold uppercase tracking-[0.3em]">
+            © Unifynt Technologies • Advanced Engineering Team
+        </footer>
+    </main>
+
+</body>
+</html>
