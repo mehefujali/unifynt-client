@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, MonitorSmartphone, Save, ExternalLink, LayoutTemplate, Palette } from "lucide-react";
+import { Loader2, MonitorSmartphone, Save, ExternalLink, LayoutTemplate, Palette, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { DEFAULT_SITE_DATA } from "@/config/default-site-data";
 import { ThemeEditor } from "./theme-editor";
 import { ContentEditor } from "./content-editor";
 import { TemplateSelection } from "./template-selection";
+import { SeoEditor } from "./seo-editor";
 
 export default function WebsiteSettingsPage() {
   const queryClient = useQueryClient();
@@ -22,6 +23,11 @@ export default function WebsiteSettingsPage() {
   const [localTheme, setLocalTheme] = useState<any>(DEFAULT_SITE_DATA.theme);
   const [localContent, setLocalContent] = useState<any>(DEFAULT_SITE_DATA.content);
   const [localTemplateId, setLocalTemplateId] = useState<string>("enterprise");
+  const [localSeo, setLocalSeo] = useState<any>({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+  });
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["site-config"],
@@ -46,6 +52,12 @@ export default function WebsiteSettingsPage() {
       setLocalContent(mergedContent);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocalTemplateId(config.templateId || config.activeTemplateId || "enterprise");
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalSeo({
+        metaTitle: config.metaTitle || "",
+        metaDescription: config.metaDescription || "",
+        metaKeywords: config.metaKeywords || "",
+      });
     }
   }, [config]);
 
@@ -117,7 +129,8 @@ export default function WebsiteSettingsPage() {
             onClick={() => mutation.mutate({ 
               themeSettings: localTheme, 
               content: localContent,
-              templateId: localTemplateId
+              templateId: localTemplateId,
+              ...localSeo
             })}
             disabled={mutation.isPending}
           >
@@ -139,7 +152,7 @@ export default function WebsiteSettingsPage() {
 
             {/* Tab Headers */}
             <div className="px-4 py-3 border-b border-border bg-muted/30 shrink-0">
-              <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-lg h-9">
+              <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1 rounded-lg h-9">
                 <TabsTrigger
                   value="template"
                   className="text-[9px] font-black uppercase tracking-widest rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
@@ -160,6 +173,13 @@ export default function WebsiteSettingsPage() {
                 >
                   <Palette className="h-3 w-3 mr-1" />
                   Styling
+                </TabsTrigger>
+                <TabsTrigger
+                  value="seo"
+                  className="text-[9px] font-black uppercase tracking-widest rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+                >
+                  <Search className="h-3 w-3 mr-1" />
+                  SEO
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -183,6 +203,9 @@ export default function WebsiteSettingsPage() {
               </TabsContent>
               <TabsContent value="theme" className="m-0 p-0">
                 <ThemeEditor theme={localTheme} onChange={setLocalTheme} />
+              </TabsContent>
+              <TabsContent value="seo" className="m-0 p-0">
+                <SeoEditor seo={localSeo} onChange={setLocalSeo} />
               </TabsContent>
             </div>
           </Tabs>
