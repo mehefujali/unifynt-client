@@ -4,8 +4,14 @@ import { SectionProps } from "./types";
 import { motion } from "framer-motion";
 import { fadeUp, staggerContainer } from "./shared";
 
+interface StatItem {
+  label: string;
+  value: string;
+  sub: string;
+}
+
 export const Stats = ({ data, theme }: SectionProps) => {
-  const stats = data?.items || [
+  const stats: StatItem[] = data?.items || [
     { label: "Graduation Rate", value: "98%", sub: "Top 1% Nationwide" },
     { label: "Faculty Scholars", value: "120+", sub: "PhD & Master Holders" },
     { label: "Student Nationalities", value: "25+", sub: "Global Perspective" },
