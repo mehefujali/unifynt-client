@@ -1,6 +1,7 @@
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import SubscriptionGuard from "@/components/layout/subscription-guard";
+import PasskeyReminder from "@/components/dashboard/passkey-reminder";
 
 export default function DashboardLayout({
     children,
@@ -20,6 +21,7 @@ export default function DashboardLayout({
                             {children}
                         </div>
                     </SubscriptionGuard>
+                    <PasskeyReminder />
                 </main>
             </div>
         </div>

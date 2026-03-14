@@ -62,14 +62,20 @@ export const useAuth = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const logout = () => {
-    localStorage.removeItem("accessToken");
-    // Reset in-memory auth state so the sidebar doesn't flash stale data
-    setHasToken(false);
-    setTokenData(null);
-    // Clear cached user data from React Query
-    queryClient.removeQueries({ queryKey: ["authUser"] });
-    router.push("/login");
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      localStorage.removeItem("accessToken");
+      // Reset in-memory auth state so the sidebar doesn't flash stale data
+      setHasToken(false);
+      setTokenData(null);
+      // Clear cached user data from React Query
+      queryClient.removeQueries({ queryKey: ["authUser"] });
+      router.push("/login");
+    }
   };
 
   // isLoading is true in two scenarios:

@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import { Progress } from "@/components/ui/progress";
 import { useThemeColor } from "@/providers/theme-color-provider";
+import PasskeyReminder from "@/components/dashboard/passkey-reminder";
 
 export default function AdminDashboard() {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -479,6 +480,7 @@ export default function AdminDashboard() {
                     </DashboardCard>
                 </div>
             </div>
+            <PasskeyReminder />
         </PermissionGate>
     );
 }

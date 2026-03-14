@@ -23,8 +23,14 @@ import {
     ShieldAlert,
     Palette,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Fingerprint,
+    Trash2,
+    Calendar,
+    Smartphone
 } from "lucide-react";
+import { startRegistration } from "@simplewebauthn/browser";
+import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 
@@ -216,6 +222,48 @@ export function ProfileEditor() {
         },
         onError: (error: any) => toast.error(error.response?.data?.message || "Failed to disable 2FA"),
     });
+
+    const { data: passkeysRes, isLoading: isPasskeysLoading } = useQuery({
+        queryKey: ["passkeys"],
+        queryFn: async () => {
+            const { data } = await api.get("/auth/passkey/list");
+            return data.data;
+        },
+    });
+
+    const deletePasskeyMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return api.delete(`/auth/passkey/${id}`);
+        },
+        onSuccess: () => {
+            toast.success("Passkey removed");
+            queryClient.invalidateQueries({ queryKey: ["passkeys"] });
+        },
+        onError: (error: any) => toast.error(error.response?.data?.message || "Failed to remove passkey"),
+    });
+
+    const handleRegisterPasskey = async () => {
+        try {
+            setIsUploading(true);
+            const { data: optionsRes } = await api.post("/auth/passkey/register/options");
+            const options = optionsRes.data;
+
+            const clientResponse = await startRegistration({ optionsJSON: options });
+
+            await api.post("/auth/passkey/register/verify", clientResponse);
+            toast.success("Passkey registered successfully!");
+            queryClient.invalidateQueries({ queryKey: ["passkeys"] });
+        } catch (error: any) {
+            if (error.name === "NotAllowedError") {
+                toast.error("Passkey registration cancelled.");
+            } else {
+                const message = error.response?.data?.message || "Passkey registration failed.";
+                toast.error(message);
+            }
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -463,6 +511,83 @@ export function ProfileEditor() {
                                             <h5 className="font-bold text-sm">Mandatory Protocol</h5>
                                             <p className="text-xs text-muted-foreground">Highly recommended for all administrative personnel.</p>
                                         </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Passkey Management Block */}
+                            <Card className="border border-border shadow-sm overflow-hidden rounded-xl">
+                                <CardHeader className="bg-muted/30 border-b border-border px-8 py-6">
+                                    <CardTitle className="text-xl font-bold tracking-tight flex items-center gap-3">
+                                        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                            <Fingerprint className="h-5 w-5" />
+                                        </div>
+                                        Passkeys & Biometrics
+                                    </CardTitle>
+                                    <CardDescription className="text-xs font-medium">Use your device fingerprint or face ID for instant, passwordless access.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-8">
+                                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-border/50 pb-8 mb-8">
+                                        <div className="space-y-2 max-w-lg">
+                                            <h4 className="font-bold text-sm">Hardware-Level Security</h4>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                                Passkeys are a safer and easier replacement for passwords. With passkeys, you can sign in to your portal using your fingerprint, face, or screen lock.
+                                            </p>
+                                        </div>
+                                        <Button 
+                                            type="button" 
+                                            onClick={handleRegisterPasskey}
+                                            disabled={isUploading}
+                                            className="h-12 px-8 font-bold border-2 border-primary/20 hover:border-primary/50 transition-all rounded-xl shadow-lg bg-background text-foreground hover:bg-muted group"
+                                        >
+                                            {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Fingerprint className="mr-2 h-5 w-5 text-primary group-hover:scale-110 transition-transform" />}
+                                            Add New Passkey
+                                        </Button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h5 className="text-xs font-bold uppercase tracking-widest text-muted-foreground pl-1">Registered Devices</h5>
+                                        {isPasskeysLoading ? (
+                                            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary/40" /></div>
+                                        ) : passkeysRes?.length > 0 ? (
+                                            <div className="grid gap-3">
+                                                {passkeysRes.map((pk: any) => (
+                                                    <div key={pk.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/20 border border-border/50 group hover:border-primary/30 transition-all">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="h-10 w-10 rounded-xl bg-background border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                                                                <Smartphone className="h-5 w-5" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-bold capitalize">{pk.credentialDeviceType} Device</p>
+                                                                <div className="flex items-center gap-3 mt-1">
+                                                                    <p className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+                                                                        <Calendar className="h-3 w-3" />
+                                                                        Added {new Date(pk.createdAt).toLocaleDateString()}
+                                                                    </p>
+                                                                    {pk.credentialBackedUp && (
+                                                                        <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">Synced</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <Button 
+                                                            variant="ghost" 
+                                                            size="icon" 
+                                                            className="h-9 w-9 text-muted-foreground hover:text-red-500 hover:bg-red-500/5 rounded-xl transition-all"
+                                                            onClick={() => deletePasskeyMutation.mutate(pk.id)}
+                                                            disabled={deletePasskeyMutation.isPending}
+                                                        >
+                                                            {deletePasskeyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-12 bg-muted/10 rounded-2xl border border-dashed border-border">
+                                                <Fingerprint className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
+                                                <p className="text-sm font-medium text-muted-foreground">No passkeys registered yet.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

@@ -7,7 +7,7 @@ export function ThemeWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     
     // Routes that are allowed to have dark mode/theme persistence
-    const dashboardRoutes = [
+    const themeAllowedRoutes = [
         "/admin",
         "/super-admin",
         "/dashboard",
@@ -17,21 +17,22 @@ export function ThemeWrapper({ children }: { children: React.ReactNode }) {
         "/parent",
         "/accountant",
         "/profile",
-        "/settings"
+        "/settings",
+        "/login",
+        "/register"
     ];
 
-    // Check if the current path is part of the dashboard/internal app
-    const isDashboard = dashboardRoutes.some(route => pathname?.startsWith(route));
+    // Check if the current path is part of the allowed routes
+    const isThemeAllowed = themeAllowedRoutes.some(route => pathname?.startsWith(route));
 
-    // Force light theme for public/marketing and auth pages
-    // If it's a dashboard route, we allow the user's preference (or system default)
-    const forcedTheme = isDashboard ? undefined : "light";
+    // Force light theme ONLY for marketing/public/template pages
+    const forcedTheme = isThemeAllowed ? undefined : "light";
 
     return (
         <ThemeProvider
             attribute="class"
             defaultTheme="light"
-            enableSystem={isDashboard}
+            enableSystem={isThemeAllowed}
             disableTransitionOnChange
             forcedTheme={forcedTheme}
         >
