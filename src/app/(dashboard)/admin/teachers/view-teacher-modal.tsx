@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { TeacherService } from "@/services/teacher.service";
+import { getFileUrl } from "@/lib/utils";
 
 interface ViewTeacherModalProps {
     teacherId: string | null;
@@ -54,7 +55,7 @@ export function ViewTeacherModal({ teacherId, open, onOpenChange }: ViewTeacherM
                     <SheetHeader>
                         <div className="flex items-start gap-6">
                             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                                <AvatarImage src={teacher?.profileImage} className="object-cover" />
+                                <AvatarImage src={getFileUrl(teacher?.profileImage)} className="object-cover" />
                                 <AvatarFallback className="bg-primary/10 text-primary text-3xl font-bold">
                                     {teacher ? `${teacher.firstName?.charAt(0)}${teacher.lastName?.charAt(0)}` : <User />}
                                 </AvatarFallback>
@@ -114,7 +115,11 @@ export function ViewTeacherModal({ teacherId, open, onOpenChange }: ViewTeacherM
                                                 <p className="text-sm font-semibold flex items-center gap-2">
                                                     <User className="w-4 h-4 text-muted-foreground" />
                                                     <span className="capitalize">{teacher.gender?.toLowerCase()}</span>
-                                                    {teacher.dateOfBirth && ` • ${format(new Date(teacher.dateOfBirth), "dd MMM yyyy")}`}
+                                                    {(() => {
+                                                        if (!teacher.dateOfBirth) return null;
+                                                        const date = new Date(teacher.dateOfBirth);
+                                                        return !isNaN(date.getTime()) ? ` • ${format(date, "dd MMM yyyy")}` : null;
+                                                    })()}
                                                 </p>
                                             </div>
                                             <div className="space-y-1.5">
@@ -173,7 +178,14 @@ export function ViewTeacherModal({ teacherId, open, onOpenChange }: ViewTeacherM
                                             </div>
                                             <div className="space-y-1.5">
                                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Joining Date</p>
-                                                <p className="text-sm font-semibold flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> {teacher.joiningDate ? format(new Date(teacher.joiningDate), "dd MMM yyyy") : "N/A"}</p>
+                                                <p className="text-sm font-semibold flex items-center gap-2">
+                                                    <Calendar className="w-4 h-4 text-muted-foreground" /> 
+                                                    {(() => {
+                                                        if (!teacher.joiningDate) return "N/A";
+                                                        const date = new Date(teacher.joiningDate);
+                                                        return !isNaN(date.getTime()) ? format(date, "dd MMM yyyy") : "N/A";
+                                                    })()}
+                                                </p>
                                             </div>
                                             <div className="space-y-1.5">
                                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Assigned Section</p>

@@ -18,6 +18,10 @@ import {
   Bell,
   Mailbox,
   TrendingUp,
+  MessageCircle,
+  CreditCard,
+  LifeBuoy,
+  Library,
 } from "lucide-react";
 
 export type SubItem = {
@@ -268,6 +272,29 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
     ],
   },
   {
+    title: "Library Management",
+    href: "#",
+    icon: Library,
+    requiredPermissions: ["LIBRARY_VIEW"],
+    subItems: [
+      {
+        title: "Book List",
+        href: "/admin/library/books",
+        requiredPermissions: ["LIBRARY_VIEW"],
+      },
+      {
+        title: "Issue/Return",
+        href: "/admin/library/circulation",
+        requiredPermissions: ["LIBRARY_VIEW"],
+      },
+      {
+        title: "Members",
+        href: "/admin/library/members",
+        requiredPermissions: ["LIBRARY_VIEW"],
+      },
+    ],
+  },
+  {
     title: "Finance",
     href: "#",
     icon: Banknote,
@@ -315,16 +342,10 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
     ],
   },
   {
-    title: "Administration",
+    title: "Communication",
     href: "#",
-    icon: Settings,
-    requiredPermissions: [
-      "SMS_VIEW",
-      "SMS_SEND",
-      "SMS_MANAGE",
-      "SITE_SETTINGS_EDIT",
-      "SCHOOL_EDIT",
-    ],
+    icon: MessageCircle,
+    requiredPermissions: ["SMS_VIEW", "SMS_SEND", "SMS_MANAGE"],
     subItems: [
       {
         title: "SMS Center",
@@ -336,14 +357,20 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
         href: "/admin/email",
         requiredPermissions: ["SMS_VIEW", "SMS_SEND", "SMS_MANAGE"],
       },
+    ],
+  },
+  {
+    title: "Administration",
+    href: "#",
+    icon: Settings,
+    requiredPermissions: [
+      "SITE_SETTINGS_EDIT",
+      "SCHOOL_EDIT",
+    ],
+    subItems: [
       {
         title: "Payment Gateway",
         href: "/admin/settings/payment",
-        requiredPermissions: ["SCHOOL_EDIT"],
-      },
-      {
-        title: "Billing & Sub",
-        href: "/admin/billing",
         requiredPermissions: ["SCHOOL_EDIT"],
       },
       {
@@ -351,7 +378,23 @@ const ADMIN_PANEL_ITEMS: NavItem[] = [
         href: "/admin/settings/website",
         requiredPermissions: ["SITE_SETTINGS_EDIT"],
       },
+      {
+        title: "Email Config",
+        href: "/admin/settings/email-config",
+        requiredPermissions: ["SCHOOL_EDIT"],
+      },
+      {
+        title: "Support Reports",
+        href: "/admin/reports",
+        requiredPermissions: ["SCHOOL_EDIT"],
+      },
     ],
+  },
+  {
+    title: "Billing & Plans",
+    href: "/admin/billing",
+    icon: CreditCard,
+    requiredPermissions: ["SCHOOL_EDIT"],
   },
 ];
 
@@ -393,6 +436,12 @@ export const navItems: Record<string, NavItem[]> = {
       href: "/super-admin/audit-logs",
       icon: ShieldAlert,
       color: "text-emerald-500",
+    },
+    {
+      title: "User Reports",
+      href: "/admin/reports",
+      icon: LifeBuoy,
+      color: "text-rose-600",
     },
     { title: "Global Settings", href: "/super-admin/settings", icon: Settings },
   ],

@@ -195,7 +195,16 @@ export function NotificationBell() {
                                                 {notification.title}
                                             </p>
                                             <span className="text-[10px] font-medium text-zinc-400 whitespace-nowrap mt-0.5">
-                                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                                {(() => {
+                                                    try {
+                                                        const date = new Date(notification.createdAt);
+                                                        return !isNaN(date.getTime()) 
+                                                            ? formatDistanceToNow(date, { addSuffix: true }) 
+                                                            : "just now";
+                                                    } catch {
+                                                        return "just now";
+                                                    }
+                                                })()}
                                             </span>
                                         </div>
                                         <p className={cn(

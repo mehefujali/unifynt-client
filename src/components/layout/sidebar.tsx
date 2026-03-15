@@ -67,38 +67,44 @@ const SidebarItemNode = ({
     };
 
     return (
-        <div className="flex flex-col mb-1.5">
+        <div className="flex flex-col mb-1 group px-1">
             <Link
                 href={item.href}
                 onClick={handleGroupClick}
                 title={isCollapsed ? item.title : undefined}
                 className={cn(
-                    "group relative flex items-center rounded-lg transition-all duration-200 ease-in-out font-medium text-[14px] cursor-pointer outline-none",
+                    "group relative flex items-center rounded-xl transition-all duration-300 ease-in-out font-semibold text-[13.5px] cursor-pointer outline-none select-none my-0.5",
                     isCollapsed
-                        ? "justify-center h-10 w-10 mx-auto"
-                        : "justify-between px-3 py-2.5",
+                        ? "justify-center h-11 w-11 mx-auto"
+                        : "justify-between px-3.5 py-3",
                     isActive && !hasSubItems
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold"
+                        ? "bg-slate-900/5 dark:bg-zinc-100/10 text-slate-900 dark:text-zinc-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
                         : isActive && hasSubItems
-                            ? "bg-transparent text-sidebar-foreground font-semibold"
-                            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                            ? "bg-transparent text-slate-800 dark:text-zinc-200"
+                            : "text-slate-500 hover:bg-slate-900/[0.03] dark:hover:bg-zinc-100/[0.05] hover:text-slate-900 dark:hover:text-zinc-100"
                 )}
             >
                 {isActive && !isCollapsed && !hasSubItems && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-zinc-900 dark:bg-zinc-200 rounded-r-md" />
+                    <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 w-1.5 h-6 bg-slate-900 dark:bg-zinc-100 rounded-full shadow-[0_0_12px_rgba(0,0,0,0.1)]" />
                 )}
 
-                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
-                    <Icon
-                        className={cn(
-                            "flex-shrink-0 transition-transform duration-200",
-                            isCollapsed ? "h-[18px] w-[18px]" : "h-4 w-4",
-                            isActive ? "text-zinc-900 dark:text-zinc-200" : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
-                        )}
-                        strokeWidth={isActive ? 2.5 : 2}
-                    />
+                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3.5")}>
+                    <div className={cn(
+                        "flex items-center justify-center rounded-lg transition-all duration-300",
+                        isCollapsed ? "h-8 w-8" : "",
+                        isActive ? "scale-110" : "group-hover:scale-110"
+                    )}>
+                        <Icon
+                            className={cn(
+                                "flex-shrink-0 transition-colors duration-300",
+                                isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
+                                isActive ? "text-slate-900 dark:text-zinc-100" : "text-slate-400 group-hover:text-slate-900 dark:group-hover:text-zinc-300"
+                            )}
+                            strokeWidth={isActive ? 2.5 : 2}
+                        />
+                    </div>
                     {!isCollapsed && (
-                        <span className="tracking-tight whitespace-nowrap text-sm">
+                        <span className="tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
                             {item.title}
                         </span>
                     )}
@@ -107,11 +113,11 @@ const SidebarItemNode = ({
                 {hasSubItems && !isCollapsed && (
                     <ChevronRight
                         className={cn(
-                            "h-4 w-4 transition-transform duration-200 ease-out",
-                            isActive ? "text-zinc-900 dark:text-zinc-200" : "text-zinc-400",
+                            "h-3.5 w-3.5 transition-transform duration-300 ease-in-out",
+                            isActive ? "text-slate-900 dark:text-zinc-100" : "text-slate-400",
                             isOpen && "rotate-90"
                         )}
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                     />
                 )}
             </Link>
@@ -119,38 +125,36 @@ const SidebarItemNode = ({
             {hasSubItems && (
                 <div
                     className={cn(
-                        "grid transition-all duration-300 ease-in-out",
-                        isOpen && !isCollapsed ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0"
+                        "overflow-hidden transition-all duration-300 ease-in-out",
+                        isOpen && !isCollapsed ? "max-h-[500px] opacity-100 mt-1" : "max-h-0 opacity-0"
                     )}
                 >
-                    <div className="overflow-hidden">
-                        <div className="flex flex-col gap-0.5 pl-[34px] pr-2 py-1 relative">
-                            <div className="absolute left-[19px] top-0 bottom-2 w-px bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="flex flex-col gap-1 pl-11 pr-2 py-1 relative">
+                        <div className="absolute left-[22px] top-0 bottom-4 w-px bg-slate-200 dark:bg-zinc-800" />
 
-                            {item.subItems!.map((sub, idx) => {
-                                const isSubActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
-                                return (
-                                    <Link
-                                        key={idx}
-                                        href={sub.href}
+                        {item.subItems!.map((sub, idx) => {
+                            const isSubActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+                            return (
+                                <Link
+                                    key={idx}
+                                    href={sub.href}
+                                    className={cn(
+                                        "relative flex items-center px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200",
+                                        isSubActive
+                                            ? "text-slate-900 dark:text-zinc-100 bg-slate-900/[0.04] dark:bg-zinc-100/[0.06] shadow-sm"
+                                            : "text-slate-500 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-900/[0.02] dark:hover:bg-zinc-100/[0.03]"
+                                    )}
+                                >
+                                    <div
                                         className={cn(
-                                            "relative flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-200 group/sub",
-                                            isSubActive
-                                                ? "text-sidebar-accent-foreground font-semibold bg-sidebar-accent/50"
-                                                : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
+                                            "absolute -left-[19px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full border border-slate-200 dark:border-zinc-800 transition-all duration-200",
+                                            isSubActive ? "bg-slate-900 dark:bg-zinc-100 border-transparent scale-100" : "bg-white dark:bg-zinc-950 scale-75 group-hover:scale-100"
                                         )}
-                                    >
-                                        <div
-                                            className={cn(
-                                                "absolute -left-[15px] top-1/2 -translate-y-1/2 w-2 h-px transition-all duration-200",
-                                                isSubActive ? "bg-zinc-900 dark:bg-zinc-200" : "bg-zinc-200 dark:bg-zinc-800 group-hover/sub:bg-zinc-400"
-                                            )}
-                                        />
-                                        <span>{sub.title}</span>
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                                    />
+                                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">{sub.title}</span>
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -236,18 +240,18 @@ export default function Sidebar() {
     return (
         <aside
             className={cn(
-                "hidden h-screen flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0",
+                "hidden h-screen flex-col border-r border-sidebar-border bg-sidebar/80 backdrop-blur-xl transition-[width] duration-300 ease-in-out lg:flex sticky top-0 z-50 shrink-0 shadow-[0_0_20px_rgba(0,0,0,0.02)]",
                 isCollapsed ? "w-20" : "w-64"
             )}
         >
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute -right-3 top-6 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-200 hover:scale-105 focus:outline-none text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-md transition-all duration-300 hover:scale-110 focus:outline-none text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 group"
             >
                 {isCollapsed ? (
-                    <PanelLeft className="h-3.5 w-3.5" />
+                    <PanelLeft className="h-3 w-3 group-hover:scale-110 transition-transform" />
                 ) : (
-                    <PanelLeftClose className="h-3.5 w-3.5" />
+                    <PanelLeftClose className="h-3 w-3 group-hover:scale-110 transition-transform" />
                 )}
             </button>
 
@@ -277,8 +281,8 @@ export default function Sidebar() {
                 </Link>
             </div>
 
-            <ScrollArea className="flex-1 py-4 custom-scrollbar overflow-hidden">
-                <nav className="flex flex-col px-3">
+            <ScrollArea className="flex-1 py-6 custom-scrollbar overflow-hidden">
+                <nav className="flex flex-col px-3 space-y-1">
                     {authorizedNavItems.length > 0 ? (
                         authorizedNavItems.map((item, index) => (
                             <SidebarItemNode
@@ -291,59 +295,71 @@ export default function Sidebar() {
                         ))
                     ) : (
                         <div className="p-4 text-center mt-10 flex flex-col items-center justify-center gap-2">
-                            <Lock className="h-6 w-6 text-zinc-300 dark:text-zinc-700 mb-2" />
-                            <p className="text-xs text-zinc-500 font-medium px-4 text-balance">
-                                No modules available.
+                            <Lock className="h-8 w-8 text-zinc-200 dark:text-zinc-800 mb-2" />
+                            <p className="text-xs text-zinc-400 font-medium px-4 text-balance italic">
+                                Access Restricted
                             </p>
                         </div>
                     )}
                 </nav>
             </ScrollArea>
 
-            <div className="p-4 flex-shrink-0 border-t border-zinc-100 dark:border-zinc-900">
+            <div className="mt-auto p-4 flex-shrink-0">
                 <div
                     className={cn(
-                        "flex items-center rounded-xl transition-all duration-200",
-                        isCollapsed ? "justify-center flex-col gap-2" : "justify-between"
+                        "flex items-center p-2 gap-3 transition-all duration-300",
+                        isCollapsed ? "flex-col bg-transparent" : "rounded-2xl bg-slate-900/[0.03] dark:bg-zinc-100/[0.04] border border-sidebar-border/30 shadow-sm"
                     )}
                 >
                     <Link
                         href={profileRoute}
                         className={cn(
-                            "flex items-center overflow-hidden flex-1 group cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 p-2 rounded-lg transition-colors -ml-2",
-                            isCollapsed ? "justify-center w-full p-0 hover:bg-transparent" : "gap-3"
+                            "flex items-center flex-1 overflow-hidden group cursor-pointer transition-all active:scale-[0.98]",
+                            isCollapsed ? "justify-center" : "gap-3"
                         )}
                         title="View Personal Profile"
                     >
-                        <Avatar className="h-9 w-9 border border-sidebar-border">
+                        <Avatar className={cn(
+                            "transition-all duration-300 border-2 border-white dark:border-zinc-900 shadow-sm",
+                            isCollapsed ? "h-11 w-11" : "h-9 w-9"
+                        )}>
                             <AvatarImage src={profileImage} alt={displayName} className="object-cover" />
-                            <AvatarFallback className="bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-300 font-semibold text-xs">
+                            <AvatarFallback className="bg-slate-900 dark:bg-zinc-100 text-white dark:text-slate-900 font-bold text-xs">
                                 {getInitials(displayName)}
                             </AvatarFallback>
                         </Avatar>
 
                         {!isCollapsed && (
-                            <div className="flex flex-col whitespace-nowrap">
-                                <span className="text-[13px] font-semibold text-sidebar-foreground truncate max-w-[110px] leading-tight">
+                            <div className="flex flex-col whitespace-nowrap overflow-hidden">
+                                <span className="text-[13px] font-bold text-slate-900 dark:text-zinc-100 truncate group-hover:text-primary transition-colors">
                                     {displayName}
                                 </span>
-                                <span className="text-[11px] font-medium text-sidebar-foreground/50 truncate max-w-[110px]">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">
                                     {user?.role ? user.role.replace("_", " ") : "USER"}
                                 </span>
                             </div>
                         )}
                     </Link>
 
-                    <button
-                        onClick={logout}
-                        className={cn(
-                            "flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors",
-                            isCollapsed ? "h-9 w-9 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 mt-2" : "h-8 w-8 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        )}
-                        title="Logout"
-                    >
-                        <LogOut className="h-4 w-4" />
-                    </button>
+                    {!isCollapsed && (
+                        <button
+                            onClick={logout}
+                            className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all active:scale-95"
+                            title="Logout"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </button>
+                    )}
+
+                    {isCollapsed && (
+                        <button
+                            onClick={logout}
+                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-900/[0.05] dark:bg-zinc-100/[0.05] text-slate-400 hover:text-rose-500 transition-all hover:scale-110"
+                            title="Logout"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </aside>

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getFileUrl } from "./utils";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1",
@@ -42,8 +43,29 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+// Utility to recursively transform URLs in an object
+const transformUrls = (obj: any): any => {
+  if (Array.isArray(obj)) {
+    return obj.map(transformUrls);
+  } else if (obj !== null && typeof obj === "object") {
+    return Object.keys(obj).reduce((acc: any, key) => {
+      acc[key] = transformUrls(obj[key]);
+      return acc;
+    }, {});
+  } else if (typeof obj === "string") {
+    return getFileUrl(obj);
+  }
+  return obj;
+};
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Automatically transform S3 URLs in the response data
+    if (response.data) {
+      response.data = transformUrls(response.data);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

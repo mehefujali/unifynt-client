@@ -38,6 +38,11 @@ export const useSocket = () => {
       if (currentUserId) {
         socketInstance.emit("join chat", `user_notifications_${currentUserId}`);
       }
+
+      // 4. Join role-specific room
+      if (user.role) {
+        socketInstance.emit("join chat", `role_notifications_${user.role}`);
+      }
     });
 
     // eslint-disable-next-line react-hooks/set-state-in-effect

@@ -268,7 +268,11 @@ export default function ApplicationsPage() {
                       {app.phone || "N/A"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(app.createdAt), "dd MMM yyyy")}
+                      {(() => {
+                        if (!app.createdAt) return "N/A";
+                        const date = new Date(app.createdAt);
+                        return !isNaN(date.getTime()) ? format(date, "dd MMM yyyy") : "N/A";
+                      })()}
                     </TableCell>
                     <TableCell>
                       {(() => {

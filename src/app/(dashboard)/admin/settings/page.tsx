@@ -8,30 +8,13 @@ import * as z from "zod/v3";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Cropper from "react-easy-crop";
-import {
-    Loader2,
-    Lock,
-    Globe,
-    Mail,
-    FileText,
-    ExternalLink,
-    Settings,
-    Copy,
-    RefreshCw,
-    Check,
-    MessageCircle,
-    PhoneCall,
-    UploadCloud,
-    CheckCircle2,
-    Save
-} from "lucide-react";
-
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Save, Loader2, Lock, Globe, Mail, FileText, ExternalLink, Settings, Copy, RefreshCw, Check, MessageCircle, PhoneCall, UploadCloud, CheckCircle2 } from "lucide-react";
 
 import api from "@/lib/axios";
 import { useAuth } from "@/hooks/use-auth";
@@ -59,6 +42,13 @@ const schoolProfileSchema = z.object({
     timezone: z.string().optional().or(z.literal("")),
     currency: z.string().optional().or(z.literal("")),
     attendanceType: z.string().optional().or(z.literal("DAILY")),
+    // SMTP Fields
+    emailHost: z.string().optional().or(z.literal("")),
+    emailPort: z.number({ invalid_type_error: "Must be a number" }).optional(),
+    emailUser: z.string().optional().or(z.literal("")),
+    emailPass: z.string().optional().or(z.literal("")),
+    emailFrom: z.string().optional().or(z.literal("")),
+    useCustomEmail: z.boolean(),
 });
 
 type SchoolProfileFormValues = z.infer<typeof schoolProfileSchema>;
@@ -141,7 +131,10 @@ export default function AdminWorkspaceProfilePage() {
     });
 
     const form = useForm<SchoolProfileFormValues>({
-        resolver: zodResolver(schoolProfileSchema),
+        resolver: zodResolver(schoolProfileSchema) as any,
+        defaultValues: {
+            useCustomEmail: false,
+        }
     });
 
     const passwordForm = useForm<PasswordFormValues>({
@@ -171,6 +164,12 @@ export default function AdminWorkspaceProfilePage() {
                 timezone: schoolData.timezone || "Asia/Kolkata",
                 currency: schoolData.currency || "INR",
                 attendanceType: schoolData.attendanceType || "DAILY",
+                emailHost: schoolData.emailHost || "",
+                emailPort: schoolData.emailPort || 587,
+                emailUser: schoolData.emailUser || "",
+                emailPass: schoolData.emailPass || "",
+                emailFrom: schoolData.emailFrom || "",
+                useCustomEmail: schoolData.useCustomEmail || false,
             });
         }
     }, [schoolData, form]);
@@ -211,6 +210,8 @@ export default function AdminWorkspaceProfilePage() {
             }
         },
     });
+    
+
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];

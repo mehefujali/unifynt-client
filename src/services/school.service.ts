@@ -45,5 +45,9 @@ export const SchoolService = {
       params: { domain, subdomain }
     });
     return response.data; // This will now contain { data: { aRecord, cnameRecord }, serverIp: '...' }
+  },
+  testSmtp: async (data: any) => {
+    const response = await api.post(`/emails/test-smtp`, data);
+    return response.data;
   }
 };
